@@ -1,0 +1,16 @@
+# Manifiestos estáticos (nginx-deployment.yaml, etc.) SÍ se versionan.
+# Se ignora cualquier material generado o sensible que termine en esta carpeta.
+
+# ─── Kubeconfig / credenciales de clúster ──────
+kubeconfig*
+*.kubeconfig
+*-kubeconfig.yaml
+
+# ─── Secretos / TLS ─────────────────────────────
+*-secret.yaml
+secrets/
+*.key
+*.pem
+*.crt
+
+!.gitkeep

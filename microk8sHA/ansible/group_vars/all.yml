@@ -1,0 +1,20 @@
+---
+# Variables globales del clúster microk8s (mapean la tabla conceptual de la tesis)
+
+# Canal de snap que fija la serie exacta de Kubernetes a instalar.
+# 1.36/stable alinea la versión con k3s v1.36.3+k3s1 para una comparación justa de consumo.
+# Combinado con snap_refresh_timer (hold forever), el revision del snap queda congelado.
+microk8s_channel: 1.36/stable
+
+# Controla las actualizaciones automáticas del snap de MicroK8s:
+# "forever" desactiva el auto-refresh; un valor tipo "24h" o "2026-12-31T00:00:00Z" lo difiere.
+snap_refresh_timer: forever
+
+# Flag --worker para nodos de cómputo puro (no tocan el plano de control ni el quórum de dqlite).
+# false por defecto = el nodo se une como plano de control (HA). Poner true solo en Workers.
+microk8s_worker_flag: false
+
+# SANs adicionales que se agregan a csr.conf.template en los MASTER para que los certificados
+# del API server validen la IP del Load Balancer (VIP de keepalived).
+microk8s_extra_sans:
+  - 192.168.100.100

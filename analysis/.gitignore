@@ -1,0 +1,11 @@
+# estadistica.py y notebooks/ SÍ se versionan.
+# Se ignoran artefactos de ejecución de Python/Jupyter.
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+*.egg-info/
+
+!.gitkeep

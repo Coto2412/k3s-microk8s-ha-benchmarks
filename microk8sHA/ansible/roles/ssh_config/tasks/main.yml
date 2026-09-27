@@ -1,0 +1,63 @@
+---
+# Rol ssh_config: configuración segura de SSH en cada nodo
+
+# Generar llaves del host si no existen
+- name: Generar llaves del host SSH
+  command: ssh-keygen -A
+  changed_when: false
+
+# Configurar sshd para deshabilitar acceso por contraseña
+- name: Deshabilitar autenticación por contraseña en SSH
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: Reiniciar sshd
+
+# Configurar sshd para deshabilitar login de root
+- name: Deshabilitar login directo de root por SSH
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+  notify: Reiniciar sshd
+
+# Configurar sshd para usar autenticación por llave pública
+- name: Habilitar autenticación por llave pública en SSH
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PubkeyAuthentication'
+    line: 'PubkeyAuthentication yes'
+    state: present
+  notify: Reiniciar sshd
+
+# Asegurar que el directorio .ssh existe para jdelpino
+- name: Crear directorio .ssh para jdelpino
+  file:
+    path: /home/jdelpino/.ssh
+    state: directory
+    owner: jdelpino
+    group: jdelpino
+    mode: '0700'
+
+# Configurar llave pública autorizada para jdelpino
+- name: Configurar llave pública autorizada para jdelpino
+  authorized_key:
+    user: jdelpino
+    state: present
+    key: "{{ lookup('file', playbook_dir + '/../keys/key.pub') }}"
+
+# Configurar permisos correctos en sshd_config
+- name: Asegurar permisos de sshd_config
+  file:
+    path: /etc/ssh/sshd_config
+    mode: '0644'
+
+# Habilitar e iniciar el servicio SSH
+- name: Habilitar servicio SSH
+  systemd:
+    name: ssh
+    enabled: true
+    state: started

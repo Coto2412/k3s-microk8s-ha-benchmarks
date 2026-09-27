@@ -4,10 +4,10 @@ Implementación automatizada de un clúster **k3s en alta disponibilidad (HA)** 
 
 ## Arquitectura
 
-```mermaid
+```mermaid1
 graph TB
     subgraph "Host Físico (KVM)"
-        LB1["k3s-node1<br/>192.168.100.10<br/>Keepalived: MASTER (prio 100)<br/>HAProxy: bind VIP:6443"]
+        LB1["k3s-node1<br/>192.168.100.10<br/>Keepalived: MASTER (prio 100)<br/>HAProxy: bind 0.0.0.0:6443"]
         LB2["k3s-node2<br/>192.168.100.11<br/>Keepalived: BACKUP (prio 90)<br/>HAProxy: bind 0.0.0.0:6443"]
         LB3["k3s-node3<br/>192.168.100.12<br/>Keepalived: BACKUP (prio 80)<br/>HAProxy: bind 0.0.0.0:6443"]
     end
@@ -74,15 +74,15 @@ sequenceDiagram
     A->>N1: keepalived (MASTER, prio 100)
     A->>N2: keepalived (BACKUP, prio 90)
     A->>N3: keepalived (BACKUP, prio 80)
-    A->>N1: haproxy (bind VIP:6443)
+    A->>N1: haproxy (bind 0.0.0.0:6443)
     A->>N2: haproxy (bind 0.0.0.0:6443)
     A->>N3: haproxy (bind 0.0.0.0:6443)
     A->>N1: k3s_server --cluster-init
     Note over N1: Genera node-token
-    A->>N1: Leer token y compartir vía hostvars
+    A->>N1: Leer token (delegate_to + run_once)
     N1-->>A: k3s_token
-    A->>N2: k3s_server --server VIP:6443 --token
-    A->>N3: k3s_server --server VIP:6443 --token
+    A->>N2: k3s_server --server Master1:6443 --token
+    A->>N3: k3s_server --server Master1:6443 --token
     Note over N1,N3: Clúster HA formado (embedded etcd)
 ```
 
@@ -197,8 +197,14 @@ ansible-playbook playbook.yml
 ```
 
 Este playbook:
-1. **Nodo 1:** Aplica common → ssh_config → keepalived (MASTER) → haproxy (bind VIP) → k3s (--cluster-init)
-2. **Nodos 2 y 3:** Aplica common → ssh_config → keepalived (BACKUP) → haproxy (bind 0.0.0.0) → k3s (--server VIP:6443)
+1. **Nodo 1:** Aplica common → ssh_config → keepalived (MASTER) → haproxy (bind 0.0.0.0) → k3s (--cluster-init --bind-address)
+2. **Nodos 2 y 3:** Aplica common → ssh_config → keepalived (BACKUP) → haproxy (bind 0.0.0.0) → k3s (--server Master1 --bind-address)
+
+Los masters adicionales se unen **directamente al Master 1** (no al VIP): durante la formación inicial solo el primer servidor tiene etcd inicializado, y unirse por el balanceador enrutaría el bootstrap hacia nodos aún no listos. El VIP+HAProxy quedan como punto de entrada para clientes. En estado estable los 3 nodos son simétricos y la tolerancia a falla es idéntica.
+
+Cada servidor k3s se instala con `--bind-address <su IP>` para que la API responda por su IP propia sin entrar en conflicto con HAProxy (que escucha `0.0.0.0:6443` para servir el VIP): la regla "bind más específico gana" hace que el join al Master 1 llegue al k3s y no al balanceador.
+
+La versión de k3s se fija en `ansible/group_vars/all.yml` (`k3s_version`, propagada con `INSTALL_K3S_VERSION`) y el `package_upgrade` de cloud-init está desactivado, garantizando entornos bit-idénticos entre reconstrucciones (kernel/paquetes no cambian entre corridas de medición).
 
 ### 9. Verificar el clúster
 

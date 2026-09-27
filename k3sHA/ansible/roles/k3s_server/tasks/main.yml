@@ -18,39 +18,35 @@
 # Instalar k3s en el primer nodo como servidor inicial del clúster
 - name: Instalar k3s en el primer nodo
   environment:
-    INSTALL_K3S_EXEC: "--cluster-init --tls-san 192.168.100.100 --tls-san 192.168.100.10 --tls-san 192.168.100.11 --tls-san 192.168.100.12"
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
+    INSTALL_K3S_EXEC: "--cluster-init --bind-address {{ ansible_host }} --tls-san 192.168.100.100 --tls-san 192.168.100.10 --tls-san 192.168.100.11 --tls-san 192.168.100.12"
   command: /tmp/k3s-install.sh
   args:
     creates: /usr/local/bin/k3s
   when: inventory_hostname == 'k3s-node1'
   register: k3s_first_node
 
-# Esperar a que el token del nodo esté disponible en el primer nodo
+# Esperar a que el token esté disponible en el primer nodo
 - name: Esperar token de k3s en el primer nodo
   wait_for:
     path: /var/lib/rancher/k3s/server/node-token
     state: present
     timeout: 60
-  when: inventory_hostname == 'k3s-node1'
+  delegate_to: k3s-node1
+  run_once: true
 
 # Leer el token de unión desde el primer nodo
 - name: Leer token de k3s desde el primer nodo
   slurp:
     src: /var/lib/rancher/k3s/server/node-token
   register: k3s_token_slurp
-  when: inventory_hostname == 'k3s-node1'
+  delegate_to: k3s-node1
+  run_once: true
 
-# Establecer el token como variable para el primer nodo
+# Establecer el token como variable en todos los nodos del play
 - name: Establecer token de k3s como variable
   set_fact:
     k3s_token: "{{ k3s_token_slurp.content | b64decode | trim }}"
-  when: inventory_hostname == 'k3s-node1'
-
-# Compartir el token con los demás nodos del clúster
-- name: Compartir token con los demás nodos
-  set_fact:
-    k3s_token: "{{ hostvars['k3s-node1']['k3s_token'] }}"
-  when: inventory_hostname != 'k3s-node1'
 
 # Validar que el token esté disponible para los nodos adicionales
 - name: Validar token de k3s en nodos adicionales
@@ -61,10 +57,11 @@
     fail_msg: "Token de k3s no disponible para unir el nodo al clúster"
   when: inventory_hostname != 'k3s-node1'
 
-# Instalar k3s en los nodos adicionales uniéndolos al clúster
+# Instalar k3s en los nodos adicionales, uniéndolos directamente al primer servidor
 - name: Instalar k3s en nodos adicionales
   environment:
-    INSTALL_K3S_EXEC: "--server https://192.168.100.100:6443 --token {{ k3s_token }} --tls-san 192.168.100.100 --tls-san 192.168.100.10 --tls-san 192.168.100.11 --tls-san 192.168.100.12"
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
+    INSTALL_K3S_EXEC: "--server https://{{ hostvars['k3s-node1']['ansible_host'] }}:6443 --token {{ k3s_token }} --bind-address {{ ansible_host }} --tls-san 192.168.100.100 --tls-san 192.168.100.10 --tls-san 192.168.100.11 --tls-san 192.168.100.12"
   command: /tmp/k3s-install.sh
   args:
     creates: /usr/local/bin/k3s

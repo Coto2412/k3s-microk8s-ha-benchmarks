@@ -1,0 +1,206 @@
+---
+# Rol microk8s_server: instalación y configuración del clúster microk8s en alta disponibilidad
+#
+# Mapea las variables conceptuales de la tesis:
+#   microk8s_channel      -> canal snap fijado en la instalación
+#   microk8s_join_command -> token de unión generado con microk8s add-node (un token por nodo)
+#   microk8s_worker_flag  -> agrega --worker al join (computo puro)
+#   microk8s_extra_sans   -> IPs adicionales en csr.conf.template (certificados del API server)
+#   snap_refresh_timer    -> snap refresh --hold para evitar auto-actualizaciones
+#
+# Diseño de puertos: el API server queda en 16443 (wildcard) y HAProxy escucha en
+# 16444 (el VIP). Un puerto solo admite un listener en Linux, así que los puertos
+# deben ser distintos para que coexistan en el mismo nodo.
+
+# Instalar microk8s desde snap con el canal fijado
+- name: Instalar microk8s
+  command: snap install microk8s --classic --channel={{ microk8s_channel }}
+  args:
+    creates: /snap/bin/microk8s
+  register: resultado_install
+
+# Agregar al usuario del clúster al grupo microk8s
+- name: Agregar {{ cluster_user }} al grupo microk8s
+  user:
+    name: "{{ cluster_user }}"
+    groups: microk8s
+    append: true
+
+# Postergar/desactivar el auto-refresh del snap (reproducibilidad de las mediciones)
+- name: Configurar snap_refresh_timer en el snap microk8s
+  command: snap refresh --hold={{ snap_refresh_timer }} microk8s
+
+# Esperar la primera inicialización de microk8s (solo en instalación nueva,
+# garantiza que existan los archivos de args y que el API server esté arriba)
+- name: Esperar primera inicializacion de microk8s
+  wait_for:
+    host: "{{ ansible_host }}"
+    port: 16443
+    timeout: 300
+  when: resultado_install.changed
+
+# Limpieza del bind-address legacy: versiones anteriores fijaban
+# --bind-address/--advertise-address a la IP del nodo, lo que impedía al API
+# server convivir con haproxy en el mismo puerto y rompía microk8s kubectl local.
+# Con haproxy en 16444 ya no es necesario: el API server queda en wildcard 16443.
+- name: Eliminar bind-address legacy en kube-apiserver
+  lineinfile:
+    path: /var/snap/microk8s/current/args/kube-apiserver
+    regexp: '^--bind-address='
+    state: absent
+  register: cambio_bind
+
+- name: Eliminar advertise-address legacy en kube-apiserver
+  lineinfile:
+    path: /var/snap/microk8s/current/args/kube-apiserver
+    regexp: '^--advertise-address='
+    state: absent
+  register: cambio_advertise
+
+- name: Reiniciar microk8s si cambio la configuracion de la API
+  command: snap restart microk8s
+  when: cambio_bind.changed or cambio_advertise.changed
+
+- name: Esperar API de microk8s en la IP del nodo
+  wait_for:
+    host: "{{ ansible_host }}"
+    port: 16443
+    timeout: 300
+
+# Primer nodo: habilitar servicios esenciales (solo nodo principal)
+- name: Habilitar dns y storage en microk8s
+  command: microk8s enable dns storage
+  args:
+    creates: /var/snap/microk8s/current/args/coredns
+  when: inventory_hostname == 'microk8s-node1'
+  register: resultado_addons
+  retries: 5
+  delay: 15
+  until: resultado_addons is succeeded
+  failed_when: false
+
+# Nodos adicionales: obtener token de unión (uno por nodo, son de un solo uso).
+# Se delega en el primer nodo (join directo al master, no via VIP).
+# Solo se une si el microk8s se instaló en ESTA corrida (idempotencia: un nodo
+# ya unido no debe volver a ejecutar join).
+- name: Obtener comando de unión desde el primer nodo
+  delegate_to: microk8s-node1
+  become: true
+  command: microk8s add-node --token-ttl 3600
+  register: microk8s_join_output
+  changed_when: false
+  when:
+    - inventory_hostname != 'microk8s-node1'
+    - resultado_install.changed
+
+- name: Guardar comando de unión de este nodo
+  set_fact:
+    microk8s_join_command: >-
+      {{ microk8s_join_output.stdout
+         | regex_search('microk8s join \S+') | trim }}
+  when:
+    - inventory_hostname != 'microk8s-node1'
+    - resultado_install.changed
+
+- name: Validar comando de unión disponible
+  assert:
+    that:
+      - microk8s_join_command is defined
+      - microk8s_join_command | length > 0
+    fail_msg: "No se pudo obtener el comando de unión desde microk8s-node1"
+  when:
+    - inventory_hostname != 'microk8s-node1'
+    - resultado_install.changed
+
+- name: Unir nodo al clúster microk8s
+  command: "{{ microk8s_join_command }}{{ ' --worker' if microk8s_worker_flag | bool else '' }}"
+  register: resultado_join
+  retries: 5
+  delay: 10
+  until: resultado_join.rc == 0
+  when:
+    - inventory_hostname != 'microk8s-node1'
+    - resultado_install.changed
+
+- name: Esperar API de microk8s en nodos adicionales
+  wait_for:
+    host: "{{ ansible_host }}"
+    port: 16443
+    timeout: 300
+  when: inventory_hostname != 'microk8s-node1'
+
+# SANs adicionales (VIP del LB) en los certificados del API server.
+# Se aplican DESPUES de la formacion del clúster: el join reemplaza los
+# certificados locales por los firmados con la CA del clúster.
+- name: Agregar SANs adicionales a csr.conf.template
+  loop: "{{ microk8s_extra_sans }}"
+  loop_control:
+    index_var: idx
+  lineinfile:
+    path: /var/snap/microk8s/current/certs/csr.conf.template
+    regexp: '^IP\.{{ 3 + idx }} = {{ item }}$'
+    line: 'IP.{{ 3 + idx }} = {{ item }}'
+    insertafter: '^IP\.{{ 2 + idx }}'
+  register: cambio_sans
+
+- name: Regenerar certificado del servidor con las SANs adicionales
+  command: microk8s refresh-certs -e server.crt
+  register: resultado_refresh
+  retries: 5
+  delay: 10
+  until: resultado_refresh is succeeded
+  when: cambio_sans.changed
+
+- name: Reiniciar microk8s si cambiaron las SANs
+  command: snap restart microk8s
+  when: cambio_sans.changed
+
+- name: Esperar API de microk8s tras aplicar SANs
+  wait_for:
+    host: "{{ ansible_host }}"
+    port: 16443
+    timeout: 300
+  when: cambio_sans.changed
+
+# Crear directorio de configuración kube para el usuario del clúster
+- name: Crear directorio kube config
+  file:
+    path: "/home/{{ cluster_user }}/.kube"
+    state: directory
+    owner: "{{ cluster_user }}"
+    group: "{{ cluster_user }}"
+    mode: '0755'
+
+# Copiar kubeconfig de microk8s al usuario (solo nodo principal)
+- name: Copiar kubeconfig de microk8s al usuario
+  command: microk8s config
+  register: microk8s_kubeconfig
+  changed_when: false
+  when: inventory_hostname == 'microk8s-node1'
+
+- name: Guardar kubeconfig en el usuario
+  copy:
+    content: "{{ microk8s_kubeconfig.stdout }}"
+    dest: "/home/{{ cluster_user }}/.kube/config"
+    owner: "{{ cluster_user }}"
+    group: "{{ cluster_user }}"
+    mode: '0600'
+  when: inventory_hostname == 'microk8s-node1'
+
+# Apuntar el kubeconfig al VIP:16444 para acceder siempre via el Load Balancer
+- name: Apuntar kubeconfig al VIP
+  lineinfile:
+    path: "/home/{{ cluster_user }}/.kube/config"
+    regexp: '^\s*server: https://[^:]+:16443'
+    line: "    server: https://{{ vip_address | default('192.168.100.100') }}:16444"
+  when: inventory_hostname == 'microk8s-node1'
+
+# Agregar variable de entorno KUBECONFIG al bashrc del usuario
+- name: Agregar KUBECONFIG al bashrc
+  lineinfile:
+    path: "/home/{{ cluster_user }}/.bashrc"
+    line: 'export KUBECONFIG=/home/{{ cluster_user }}/.kube/config'
+    create: true
+    owner: "{{ cluster_user }}"
+    group: "{{ cluster_user }}"
+    mode: '0644'

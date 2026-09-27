@@ -1,0 +1,8 @@
+# data/ es solo salida experimental (snapshots de Prometheus, JSON de k6,
+# metadatos de corridas): no se versiona contenido, solo la estructura.
+# Snapshots de TSDB y resultados crudos van fuera del repo (backup aparte).
+
+*
+!*/
+!.gitignore
+!.gitkeep

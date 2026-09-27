@@ -1,0 +1,33 @@
+# ─── SSH Keys ──────────────────────────────────
+keys/
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# ─── Terraform ─────────────────────────────────
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.*
+terraform/*.tfvars
+terraform/*.tfvars.json
+
+# ─── Ansible ───────────────────────────────────
+ansible/inventory.ini
+ansible/*.retry
+ansible/**/*.retry
+
+# ─── Cloud-Init (generated) ────────────────────
+terraform/config/*.cfg
+!terraform/config/cloud-init.cfg
+!terraform/config/network-config.cfg
+
+# ─── OS / Editor ──────────────────────────────
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc

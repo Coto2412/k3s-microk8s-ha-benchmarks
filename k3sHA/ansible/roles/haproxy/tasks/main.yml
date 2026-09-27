@@ -13,11 +13,12 @@
     src: haproxy.cfg.j2
     dest: /etc/haproxy/haproxy.cfg
     mode: '0644'
-  notify: Reiniciar haproxy
 
-# Habilitar e iniciar el servicio haproxy
-- name: Habilitar servicio haproxy
+# Reiniciar y habilitar el servicio (state=restarted: el paquete auto-inicia
+# haproxy con su config por defecto, que no escucha en 6443; sin reiniciar
+# aquí, el VIP nunca responde)
+- name: Reiniciar y habilitar servicio haproxy
   systemd:
     name: haproxy
     enabled: true
-    state: started
+    state: restarted

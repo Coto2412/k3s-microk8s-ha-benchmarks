@@ -1,0 +1,41 @@
+# Configuración global de keepalived
+global_defs {
+  router_id MICROK8S_HA
+}
+
+# Script de verificación para comprobar que haproxy está funcionando
+vrrp_script chk_haproxy {
+  script "killall -0 haproxy"
+  interval 2
+  weight 2
+}
+
+# Instancia VRRP para la IP virtual
+vrrp_instance VI_1 {
+  # Estado inicial: MASTER o BACKUP (definido por inventario)
+  state {{ keepalived_state }}
+  # Interfaz de red donde se asignará la IP virtual
+  interface {{ keepalived_interface | default('ens3') }}
+  # Identificador del enrutador virtual
+  virtual_router_id 51
+  # Prioridad del nodo (MASTER=100, BACKUP=90, BACKUP=80)
+  priority {{ keepalived_priority }}
+  # Intervalo de anuncios VRRP en segundos
+  advert_int 1
+
+  # Autenticación entre nodos VRRP
+  authentication {
+    auth_type PASS
+    auth_pass {{ keepalived_auth_pass | default('microk8s-cluster') }}
+  }
+
+  # Dirección IP virtual que flotará entre los nodos
+  virtual_ipaddress {
+    {{ vip_address | default('192.168.100.100') }}
+  }
+
+  # Script de verificación de haproxy
+  track_script {
+    chk_haproxy
+  }
+}

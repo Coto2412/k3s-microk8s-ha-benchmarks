@@ -1,0 +1,10 @@
+# Scripts k6 (idle.js, media.js, alta.js, fallo-controlado.sh) SÍ se versionan.
+# Se ignora salida generada si algún run deja resultados en esta carpeta
+# en vez de en data/k6-resultados/.
+
+*.json
+*.log
+results/
+node_modules/
+
+!.gitkeep

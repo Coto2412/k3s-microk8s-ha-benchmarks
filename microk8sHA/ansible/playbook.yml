@@ -1,9 +1,9 @@
 ---
-# Playbook principal para configurar el clúster k3s en alta disponibilidad
+# Playbook principal para configurar el clúster microk8s en alta disponibilidad
 
 # Play 1: configurar nodo principal y levantar el VIP
-- name: Configurar nodo principal del clúster k3s
-  hosts: k3s-node1
+- name: Configurar nodo principal del clúster microk8s
+  hosts: microk8s-node1
   become: true
   force_handlers: true
   roles:
@@ -15,19 +15,19 @@
     - keepalived
     # Rol de configuración de haproxy para balanceo de carga
     - haproxy
-    # Rol de instalación y configuración de k3s
-    - k3s_server
+    # Rol de instalación y configuración de microk8s
+    - microk8s_server
   tasks:
-    # Esperar a que la API de k3s responda en el VIP
-    - name: Esperar API de k3s en el VIP
+    # Esperar a que la API de microk8s responda a traves del VIP (HAProxy escucha en 16444)
+    - name: Esperar API de microk8s en el VIP
       wait_for:
         host: 192.168.100.100
-        port: 6443
-        timeout: 120
+        port: 16444
+        timeout: 180
 
-# Play 2: unir nodos adicionales usando el VIP
-- name: Configurar nodos adicionales del clúster k3s
-  hosts: k3s-node2:k3s-node3
+# Play 2: unir nodos adicionales directamente al nodo principal
+- name: Configurar nodos adicionales del clúster microk8s
+  hosts: microk8s-node2:microk8s-node3
   become: true
   force_handlers: true
   roles:
@@ -39,5 +39,5 @@
     - keepalived
     # Rol de configuración de haproxy para balanceo de carga
     - haproxy
-    # Rol de instalación y configuración de k3s
-    - k3s_server
+    # Rol de instalación y configuración de microk8s
+    - microk8s_server

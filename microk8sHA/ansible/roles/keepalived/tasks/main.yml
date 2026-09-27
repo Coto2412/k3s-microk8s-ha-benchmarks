@@ -14,8 +14,8 @@
     dest: /etc/keepalived/keepalived.conf
     mode: '0644'
 
-# Reiniciar y habilitar el servicio (mismo patrón que haproxy: garantizar que
-# el servicio quede corriendo con la config desplegada sin depender de handlers)
+# Reiniciar y habilitar el servicio (mismo patrón que haproxy: garantizar que el
+# servicio quede corriendo con la config desplegada sin depender de handlers)
 - name: Reiniciar y habilitar servicio keepalived
   systemd:
     name: keepalived
