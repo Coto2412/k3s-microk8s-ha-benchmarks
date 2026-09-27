@@ -17,4 +17,4 @@ microk8s_worker_flag: false
 # SANs adicionales que se agregan a csr.conf.template en los MASTER para que los certificados
 # del API server validen la IP del Load Balancer (VIP de keepalived).
 microk8s_extra_sans:
-  - 192.168.100.100
+  - "{{ vip_address }}"

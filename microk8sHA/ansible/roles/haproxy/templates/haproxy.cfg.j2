@@ -34,11 +34,12 @@ frontend microk8s_api
   option tcplog
   default_backend microk8s_servers
 
-# Backend: servidores microk8s con balanceo roundrobin en el puerto real del API server
+# Backend: servidores microk8s con balanceo roundrobin en el puerto real del
+# API server (lista dinámica, no hardcodeada, sobrevive renumeración de IPs)
 backend microk8s_servers
   mode tcp
   option tcp-check
   balance roundrobin
-  server microk8s-node1 192.168.100.10:16443 check
-  server microk8s-node2 192.168.100.11:16443 check
-  server microk8s-node3 192.168.100.12:16443 check
+{% for host in groups['microk8s_cluster'] %}
+  server {{ host }} {{ hostvars[host]['ansible_host'] }}:16443 check
+{% endfor %}

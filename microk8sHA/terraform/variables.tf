@@ -9,7 +9,7 @@ variable "vm_count" {
 variable "vm_memory" {
   description = "Memoria RAM por máquina virtual en MB"
   type        = number
-  default     = 3072
+  default     = 4096
 }
 
 # Cantidad de vCPUs asignados a cada VM
@@ -23,7 +23,7 @@ variable "vm_cpu" {
 variable "vm_disk_size" {
   description = "Tamaño del disco raíz en GB"
   type        = number
-  default     = 20
+  default     = 50
 }
 
 # Nombre de la red libvirt
@@ -40,11 +40,11 @@ variable "network_cidr" {
   default     = "192.168.100.0/24"
 }
 
-# Ruta de la imagen cloud de Ubuntu 22.04
+# Ruta de la imagen cloud de Ubuntu 24.04 LTS (sin valor por defecto — debe
+# definirse en tfvars; no se hardcodea ruta local ni queda log de usuario/host)
 variable "base_image" {
-  description = "Ruta de la imagen cloud de Ubuntu 22.04"
+  description = "Ruta de la imagen cloud de Ubuntu 24.04 LTS (noble)"
   type        = string
-  default     = "/home/coto/vmstore/images/jammy-server-cloudimg-amd64.img"
 }
 
 # Llave pública SSH para acceso a las VMs
@@ -65,7 +65,6 @@ variable "ssh_private_key" {
 variable "cluster_user" {
   description = "Usuario administrativo para las máquinas virtuales y conexión Ansible"
   type        = string
-  default     = "jdelpino"
 }
 
 # Dirección IP virtual para keepalived
@@ -86,5 +85,5 @@ variable "vm_names" {
 variable "vm_ips" {
   description = "Direcciones IP estáticas para las máquinas virtuales"
   type        = list(string)
-  default     = ["192.168.100.10", "192.168.100.11", "192.168.100.12"]
+  default     = ["192.168.100.11", "192.168.100.12", "192.168.100.13"]
 }

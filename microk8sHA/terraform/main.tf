@@ -39,16 +39,17 @@ resource "local_file" "ansible_inventory" {
   filename = "${path.module}/../ansible/inventory.ini"
 }
 
-# Creación de la red virtual microk8s-tesis con modo route
+# Creación de la red virtual microk8s-tesis en modo nat
 resource "libvirt_network" "microk8s_network" {
   name      = var.network_name
-  mode      = "route"
+  mode      = "nat"
   domain    = "microk8s-tesis.local"
   addresses = [var.network_cidr]
 
-  # DHCP deshabilitado (IPs estáticas vía cloud-init)
+  # DHCP habilitado: IP estática por reserva de host (MAC->IP) vía
+  # el atributo `addresses` de cada network_interface más abajo.
   dhcp {
-    enabled = false
+    enabled = true
   }
 
   # Iniciar la red automáticamente al arrancar libvirt
@@ -105,11 +106,13 @@ resource "libvirt_domain" "microk8s_node" {
   # Disco cloud-init para configuración inicial
   cloudinit = libvirt_cloudinit_disk.cloudinit[count.index].id
 
-  # Interfaz de red conectada a la red microk8s-tesis
+  # Interfaz de red conectada a la red microk8s-tesis.
+  # `addresses` fija la reserva DHCP por MAC (IP estática determinística).
   network_interface {
     network_id     = libvirt_network.microk8s_network.id
     hostname       = var.vm_names[count.index]
-    wait_for_lease = false
+    addresses      = [var.vm_ips[count.index]]
+    wait_for_lease = true
     mac            = local.vm_macs[count.index]
   }
 

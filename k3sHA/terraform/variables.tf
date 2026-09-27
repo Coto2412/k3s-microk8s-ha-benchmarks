@@ -9,7 +9,7 @@ variable "vm_count" {
 variable "vm_memory" {
   description = "Memoria RAM por máquina virtual en MB"
   type        = number
-  default     = 3072
+  default     = 4096
 }
 
 # Cantidad de vCPUs asignados a cada VM
@@ -23,7 +23,7 @@ variable "vm_cpu" {
 variable "vm_disk_size" {
   description = "Tamaño del disco raíz en GB"
   type        = number
-  default     = 20
+  default     = 50
 }
 
 # Nombre de la red libvirt
@@ -47,9 +47,9 @@ variable "network_bridge" {
   default     = "k3s-br0"
 }
 
-# Ruta de la imagen cloud de Ubuntu 22.04 (sin valor por defecto — debe definirse en tfvars)
+# Ruta de la imagen cloud de Ubuntu 24.04 LTS (sin valor por defecto — debe definirse en tfvars)
 variable "base_image" {
-  description = "Ruta de la imagen cloud de Ubuntu 22.04"
+  description = "Ruta de la imagen cloud de Ubuntu 24.04 LTS (noble)"
   type        = string
 }
 
@@ -91,5 +91,5 @@ variable "vm_names" {
 variable "vm_ips" {
   description = "Direcciones IP estáticas para las máquinas virtuales"
   type        = list(string)
-  default     = ["192.168.100.10", "192.168.100.11", "192.168.100.12"]
+  default     = ["192.168.100.11", "192.168.100.12", "192.168.100.13"]
 }

@@ -21,7 +21,7 @@
     # Esperar a que la API de k3s responda en el VIP
     - name: Esperar API de k3s en el VIP
       wait_for:
-        host: 192.168.100.100
+        host: "{{ vip_address }}"
         port: 6443
         timeout: 120
 

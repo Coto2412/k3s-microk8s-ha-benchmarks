@@ -31,7 +31,7 @@ vrrp_instance VI_1 {
 
   # Dirección IP virtual que flotará entre los nodos
   virtual_ipaddress {
-    192.168.100.100
+    {{ vip_address }}
   }
 
   # Script de verificación de haproxy

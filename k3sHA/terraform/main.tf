@@ -25,21 +25,23 @@ resource "local_file" "ansible_inventory" {
     "[k3s_cluster:vars]",
     "ansible_user=${var.cluster_user}",
     "cluster_user=${var.cluster_user}",
+    "vip_address=${var.vip_address}",
     "ansible_ssh_private_key_file=../keys/key",
   ])
   filename = "${path.module}/../ansible/inventory.ini"
 }
 
-# Creación de la red virtual k3s-tesis con modo route
+# Creación de la red virtual k3s-tesis en modo nat
 resource "libvirt_network" "k3s_network" {
   name      = var.network_name
-  mode      = "route"
+  mode      = "nat"
   domain    = "k3s-tesis.local"
   addresses = [var.network_cidr]
 
-  # DHCP deshabilitado (IPs estáticas vía cloud-init)
+  # DHCP habilitado: IP estática por reserva de host (MAC->IP) vía
+  # el atributo `addresses` de cada network_interface más abajo.
   dhcp {
-    enabled = false
+    enabled = true
   }
 
   # Iniciar la red automáticamente al arrancar libvirt
@@ -96,11 +98,13 @@ resource "libvirt_domain" "k3s_node" {
   # Disco cloud-init para configuración inicial
   cloudinit = libvirt_cloudinit_disk.cloudinit[count.index].id
 
-  # Interfaz de red conectada a la red k3s-tesis
+  # Interfaz de red conectada a la red k3s-tesis.
+  # `addresses` fija la reserva DHCP por MAC (IP estática determinística).
   network_interface {
     network_id     = libvirt_network.k3s_network.id
     hostname       = var.vm_names[count.index]
-    wait_for_lease = false
+    addresses      = [var.vm_ips[count.index]]
+    wait_for_lease = true
     mac            = local.vm_macs[count.index]
   }
 
