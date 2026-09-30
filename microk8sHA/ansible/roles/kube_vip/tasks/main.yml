@@ -1,0 +1,43 @@
+---
+# Rol kube_vip: acceso redundante al plano de control vía IP virtual (ARP).
+# Reemplaza a Keepalived+HAProxy. Se aplica con `microk8s kubectl apply`
+# desde el nodo principal (MicroK8s no auto-aplica manifests como k3s).
+
+# Gate: microk8s status --wait-ready, no wait_for de puerto — un puerto
+# puede responder en medio de un reinicio de MicroK8s.
+- name: Esperar a que MicroK8s esté realmente listo antes de aplicar
+  command: microk8s status --wait-ready --timeout 900
+  changed_when: false
+  when: inventory_hostname == 'microk8s-node1'
+
+- name: Copiar manifest de kube-vip al nodo principal
+  template:
+    src: kube-vip.yaml.j2
+    dest: /tmp/kube-vip.yaml
+    mode: '0644'
+  when: inventory_hostname == 'microk8s-node1'
+
+- name: Aplicar manifest de kube-vip (RBAC + DaemonSet)
+  command: microk8s kubectl apply -f /tmp/kube-vip.yaml
+  register: kube_vip_apply
+  changed_when: "'unchanged' not in kube_vip_apply.stdout"
+  retries: 5
+  delay: 10
+  until: kube_vip_apply is succeeded
+  when: inventory_hostname == 'microk8s-node1'
+
+# Segundo gate: kube-vip asume la VIP en ens3 recién al quedar Running,
+# lo que puede disparar un reinicio interno de MicroK8s (ver microk8s_server).
+- name: Esperar a que MicroK8s esté listo tras la posible re-generación de certs por apiserver-kicker
+  command: microk8s status --wait-ready --timeout 900
+  changed_when: false
+  when: inventory_hostname == 'microk8s-node1'
+
+- name: Esperar a que el DaemonSet de kube-vip esté listo
+  command: microk8s kubectl -n kube-system rollout status ds/kube-vip-ds --timeout=120s
+  changed_when: false
+  register: kube_vip_rollout
+  retries: 3
+  delay: 10
+  until: kube_vip_rollout.rc == 0
+  when: inventory_hostname == 'microk8s-node1'

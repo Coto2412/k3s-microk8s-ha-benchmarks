@@ -11,18 +11,17 @@
     - common
     # Rol de configuración segura de SSH
     - ssh_config
-    # Rol de configuración de keepalived para IP virtual
-    - keepalived
-    # Rol de configuración de haproxy para balanceo de carga
-    - haproxy
     # Rol de instalación y configuración de microk8s
     - microk8s_server
+    # Rol de kube-vip para IP virtual del plano de control (ARP)
+    - kube_vip
   tasks:
-    # Esperar a que la API de microk8s responda a traves del VIP (HAProxy escucha en 16444)
+    # Esperar a que la API de microk8s responda a través del VIP (kube-vip
+    # anuncia por ARP directo al puerto real del API server, sin proxy TCP)
     - name: Esperar API de microk8s en el VIP
       wait_for:
-        host: 192.168.100.100
-        port: 16444
+        host: "{{ vip_address }}"
+        port: 16443
         timeout: 180
 
 # Play 2: unir nodos adicionales directamente al nodo principal
@@ -35,9 +34,7 @@
     - common
     # Rol de configuración segura de SSH
     - ssh_config
-    # Rol de configuración de keepalived para IP virtual
-    - keepalived
-    # Rol de configuración de haproxy para balanceo de carga
-    - haproxy
     # Rol de instalación y configuración de microk8s
     - microk8s_server
+    # Rol de kube-vip para IP virtual del plano de control (ARP)
+    - kube_vip

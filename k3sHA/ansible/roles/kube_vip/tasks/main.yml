@@ -1,0 +1,24 @@
+---
+# Rol kube_vip: acceso redundante al plano de control vía IP virtual (ARP).
+# Reemplaza a Keepalived+HAProxy. kube-vip corre dentro del propio clúster
+# como DaemonSet; no requiere balanceador externo porque cada servidor k3s
+# ya escucha el puerto de la API en todas sus interfaces (wildcard).
+
+# k3s aplica automáticamente cualquier manifest dejado en este directorio
+# (AddOn controller integrado) — no hace falta `kubectl apply` manual.
+# Solo se coloca en el primer nodo: son objetos de clúster, no por-nodo.
+- name: Desplegar manifest de kube-vip (RBAC + DaemonSet)
+  template:
+    src: kube-vip.yaml.j2
+    dest: /var/lib/rancher/k3s/server/manifests/kube-vip.yaml
+    mode: '0644'
+  when: inventory_hostname == 'k3s-node1'
+
+- name: Esperar a que el DaemonSet de kube-vip esté listo
+  command: kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml -n kube-system rollout status ds/kube-vip-ds --timeout=120s
+  changed_when: false
+  register: kube_vip_rollout
+  retries: 3
+  delay: 10
+  until: kube_vip_rollout.rc == 0
+  when: inventory_hostname == 'k3s-node1'

@@ -1,28 +1,23 @@
-# Configuración de keepalived por nodo y llave SSH
+# Configuración de la llave pública SSH
 locals {
-  keepalived_states     = ["MASTER", "BACKUP", "BACKUP"]
-  keepalived_priorities = [100, 90, 80]
-  ssh_public_key        = var.ssh_public_key != "" ? var.ssh_public_key : file("${path.module}/../keys/key.pub")
-  vm_macs               = ["52:54:00:20:00:01", "52:54:00:20:00:02", "52:54:00:20:00:03"]
+  ssh_public_key = var.ssh_public_key != "" ? var.ssh_public_key : file("${path.module}/../keys/key.pub")
+  vm_macs        = ["52:54:00:20:00:01", "52:54:00:20:00:02", "52:54:00:20:00:03"]
+
+  # Pinning de CPU: cada VM a un núcleo físico completo (2 hilos SMT), sin
+  # compartir núcleo con el host ni con otra VM. Núcleo 0 (hilos 0-1) queda
+  # reservado para el host/observabilidad, fuera de este mapeo. Mismo
+  # mapeo que k3sHA (nunca corren simultáneo, sin conflicto).
+  vm_cpusets = [["2", "3"], ["4", "5"], ["6", "7"]]
 }
 
 # Generación del inventario de Ansible directamente desde Terraform
 resource "local_file" "ansible_inventory" {
   content = join("\n", [
-    "# Grupo de servidores microk8s con configuración de keepalived",
+    "# Grupo de servidores microk8s",
     "[microk8s_servers]",
     join("\n", [
       for i in range(var.vm_count) :
-      format(
-        "# Nodo %d - %s de keepalived con prioridad %d\n%s ansible_host=%s keepalived_state=%s keepalived_priority=%d haproxy_bind_ip=0.0.0.0",
-        i + 1,
-        local.keepalived_states[i],
-        local.keepalived_priorities[i],
-        var.vm_names[i],
-        var.vm_ips[i],
-        local.keepalived_states[i],
-        local.keepalived_priorities[i]
-      )
+      "${var.vm_names[i]} ansible_host=${var.vm_ips[i]}"
     ]),
     "",
     "# Grupo principal que incluye todos los servidores microk8s",
@@ -49,6 +44,13 @@ resource "libvirt_network" "microk8s_network" {
   # DHCP habilitado: IP estática por reserva de host (MAC->IP) vía
   # el atributo `addresses` de cada network_interface más abajo.
   dhcp {
+    enabled = true
+  }
+
+  # DNS habilitado: el netplan de las VMs ya no fija nameservers estáticos
+  # (viene todo por DHCP), así que dnsmasq debe resolver/reenviar consultas
+  # o los nodos no tienen resolución de nombres para apt/descargas.
+  dns {
     enabled = true
   }
 
@@ -106,6 +108,15 @@ resource "libvirt_domain" "microk8s_node" {
   # Disco cloud-init para configuración inicial
   cloudinit = libvirt_cloudinit_disk.cloudinit[count.index].id
 
+  # Pinning de CPU (el provider no expone cputune/vcpupin nativo, se inyecta
+  # vía XSLT sobre el XML generado).
+  xml {
+    xslt = templatefile("${path.module}/config/vcpupin.xsl.tftpl", {
+      cpu0 = local.vm_cpusets[count.index][0]
+      cpu1 = local.vm_cpusets[count.index][1]
+    })
+  }
+
   # Interfaz de red conectada a la red microk8s-tesis.
   # `addresses` fija la reserva DHCP por MAC (IP estática determinística).
   network_interface {
@@ -144,8 +155,8 @@ output "vm_ips" {
   description = "Direcciones IP de los nodos microk8s"
 }
 
-# Salida con la dirección IP virtual de keepalived
+# Salida con la dirección IP virtual del plano de control (kube-vip)
 output "vip_address" {
   value       = var.vip_address
-  description = "Dirección IP virtual para keepalived"
+  description = "Dirección IP virtual del plano de control (kube-vip)"
 }

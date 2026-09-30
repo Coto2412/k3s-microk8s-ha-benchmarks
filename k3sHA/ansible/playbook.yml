@@ -11,12 +11,10 @@
     - common
     # Rol de configuración segura de SSH
     - ssh_config
-    # Rol de configuración de keepalived para IP virtual
-    - keepalived
-    # Rol de configuración de haproxy para balanceo de carga
-    - haproxy
     # Rol de instalación y configuración de k3s
     - k3s_server
+    # Rol de kube-vip para IP virtual del plano de control (ARP)
+    - kube_vip
   tasks:
     # Esperar a que la API de k3s responda en el VIP
     - name: Esperar API de k3s en el VIP
@@ -35,9 +33,7 @@
     - common
     # Rol de configuración segura de SSH
     - ssh_config
-    # Rol de configuración de keepalived para IP virtual
-    - keepalived
-    # Rol de configuración de haproxy para balanceo de carga
-    - haproxy
     # Rol de instalación y configuración de k3s
     - k3s_server
+    # Rol de kube-vip para IP virtual del plano de control (ARP)
+    - kube_vip

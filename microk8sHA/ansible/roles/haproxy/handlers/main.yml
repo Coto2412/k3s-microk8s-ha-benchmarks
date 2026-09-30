@@ -1,6 +1,0 @@
----
-# Handler para reiniciar el servicio haproxy
-- name: Reiniciar haproxy
-  systemd:
-    name: haproxy
-    state: restarted

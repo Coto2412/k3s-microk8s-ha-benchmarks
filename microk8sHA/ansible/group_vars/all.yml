@@ -15,6 +15,13 @@ snap_refresh_timer: forever
 microk8s_worker_flag: false
 
 # SANs adicionales que se agregan a csr.conf.template en los MASTER para que los certificados
-# del API server validen la IP del Load Balancer (VIP de keepalived).
+# del API server validen la IP virtual del plano de control (VIP de kube-vip).
 microk8s_extra_sans:
   - "{{ vip_address }}"
+
+# kube-vip: versión de imagen fijada (pinned) para reproducibilidad.
+# Verificar última estable en https://github.com/kube-vip/kube-vip/releases
+# antes del primer despliegue real.
+kube_vip_version: v0.8.9
+kube_vip_interface: ens3
+kube_vip_port: 16443

@@ -1,6 +1,0 @@
----
-# Handler para reiniciar el servicio keepalived
-- name: Reiniciar keepalived
-  systemd:
-    name: keepalived
-    state: restarted

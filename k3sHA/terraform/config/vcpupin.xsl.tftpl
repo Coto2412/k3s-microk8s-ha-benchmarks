@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:output omit-xml-declaration="yes"/>
+  <xsl:template match="@*|node()">
+    <xsl:copy>
+      <xsl:apply-templates select="@*|node()"/>
+    </xsl:copy>
+  </xsl:template>
+  <xsl:template match="/domain/vcpu">
+    <xsl:copy-of select="."/>
+    <cputune>
+      <vcpupin vcpu="0" cpuset="${cpu0}"/>
+      <vcpupin vcpu="1" cpuset="${cpu1}"/>
+    </cputune>
+  </xsl:template>
+</xsl:stylesheet>

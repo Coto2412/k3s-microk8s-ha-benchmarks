@@ -27,7 +27,16 @@
 - name: Instalar k3s en el primer nodo
   environment:
     INSTALL_K3S_VERSION: "{{ k3s_version }}"
-    INSTALL_K3S_EXEC: "--cluster-init --bind-address {{ ansible_host }} {{ k3s_tls_sans }}"
+    # Sin --bind-address: la API queda en wildcard (0.0.0.0). Es obligatorio
+    # para kube-vip en modo ARP — la VIP resuelve por ARP a la MAC del nodo
+    # líder, pero si la API solo escucha en su IP propia nadie responde en
+    # <VIP>:6443. (Antes se fijaba a la IP propia para coexistir con
+    # HAProxy en 0.0.0.0:6443; HAProxy ya no existe.)
+    # --disable traefik/servicelb: Traefik no es parte del diseño (la app
+    # de referencia es NGINX mínimo) y su Service LoadBalancer automático
+    # rompió kube-vip (ver rol kube_vip). También mantiene simetría con
+    # MicroK8s, que no trae nada de esto por defecto.
+    INSTALL_K3S_EXEC: "--cluster-init --disable traefik --disable servicelb {{ k3s_tls_sans }}"
   command: /tmp/k3s-install.sh
   args:
     creates: /usr/local/bin/k3s
@@ -69,7 +78,7 @@
 - name: Instalar k3s en nodos adicionales
   environment:
     INSTALL_K3S_VERSION: "{{ k3s_version }}"
-    INSTALL_K3S_EXEC: "--server https://{{ hostvars['k3s-node1']['ansible_host'] }}:6443 --token {{ k3s_token }} --bind-address {{ ansible_host }} {{ k3s_tls_sans }}"
+    INSTALL_K3S_EXEC: "--server https://{{ hostvars['k3s-node1']['ansible_host'] }}:6443 --token {{ k3s_token }} --disable traefik --disable servicelb {{ k3s_tls_sans }}"
   command: /tmp/k3s-install.sh
   args:
     creates: /usr/local/bin/k3s

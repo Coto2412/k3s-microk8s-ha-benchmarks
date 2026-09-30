@@ -73,9 +73,9 @@ variable "ssh_private_key" {
   default     = "../keys/key"
 }
 
-# Dirección IP virtual para keepalived
+# Dirección IP virtual del plano de control (kube-vip)
 variable "vip_address" {
-  description = "Dirección IP virtual para keepalived"
+  description = "Dirección IP virtual del plano de control (kube-vip)"
   type        = string
   default     = "192.168.100.100"
 }

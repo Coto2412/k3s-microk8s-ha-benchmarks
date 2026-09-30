@@ -8,9 +8,9 @@
 #   microk8s_extra_sans   -> IPs adicionales en csr.conf.template (certificados del API server)
 #   snap_refresh_timer    -> snap refresh --hold para evitar auto-actualizaciones
 #
-# Diseño de puertos: el API server queda en 16443 (wildcard) y HAProxy escucha en
-# 16444 (el VIP). Un puerto solo admite un listener en Linux, así que los puertos
-# deben ser distintos para que coexistan en el mismo nodo.
+# Diseño de puertos: el API server queda en 16443 (wildcard). kube-vip en
+# modo ARP anuncia la VIP directo a ese mismo puerto — no hay proxy TCP
+# intermedio, así que no hace falta un puerto separado para el VIP.
 
 # Instalar microk8s desde snap con el canal fijado
 - name: Instalar microk8s
@@ -31,18 +31,41 @@
   command: snap refresh --hold={{ snap_refresh_timer }} microk8s
 
 # Esperar la primera inicialización de microk8s (solo en instalación nueva,
-# garantiza que existan los archivos de args y que el API server esté arriba)
+# garantiza que existan los archivos de args y que el API server esté arriba).
+# Chequeo profundo, no solo TCP: ver nota de apiserver-kicker más abajo.
 - name: Esperar primera inicializacion de microk8s
-  wait_for:
-    host: "{{ ansible_host }}"
-    port: 16443
-    timeout: 300
+  command: microk8s status --wait-ready --timeout 900
+  changed_when: false
   when: resultado_install.changed
 
+# Deshabilitar apiserver-kicker recién ACÁ, después del primer arranque
+# completo: apagarlo antes impide que Calico termine de desplegarse.
+# Reinicia todos los daemons ante cualquier IP nueva en cualquier interfaz,
+# incluida la VIP de kube-vip (canonical/microk8s#1943, #3575;
+# kube-vip/kube-vip#741).
+- name: Detener apiserver-kicker
+  systemd:
+    name: snap.microk8s.daemon-apiserver-kicker.service
+    state: stopped
+  failed_when: false
+
+# El unit lo genera snapd como archivo real, no symlink — `masked: true`
+# falla porque no puede pisarlo. Se enmascara a mano igual que systemd.
+- name: Enmascarar apiserver-kicker (incompatible con VIP externa tipo kube-vip)
+  file:
+    src: /dev/null
+    dest: /etc/systemd/system/snap.microk8s.daemon-apiserver-kicker.service
+    state: link
+    force: true
+
+- name: Recargar systemd
+  systemd:
+    daemon_reload: true
+
 # Limpieza del bind-address legacy: versiones anteriores fijaban
-# --bind-address/--advertise-address a la IP del nodo, lo que impedía al API
-# server convivir con haproxy en el mismo puerto y rompía microk8s kubectl local.
-# Con haproxy en 16444 ya no es necesario: el API server queda en wildcard 16443.
+# --bind-address/--advertise-address a la IP del nodo, lo que rompía
+# microk8s kubectl local y no era compatible con kube-vip en modo ARP
+# (necesita wildcard 16443 para responder también en la VIP).
 - name: Eliminar bind-address legacy en kube-apiserver
   lineinfile:
     path: /var/snap/microk8s/current/args/kube-apiserver
@@ -61,11 +84,14 @@
   command: snap restart microk8s
   when: cambio_bind.changed or cambio_advertise.changed
 
+# Chequeo profundo, no solo TCP: mismo motivo que el gate de después de las
+# SANs — apiserver-kicker de MicroK8s puede estar en medio de un ciclo de
+# reinicio (dispara con cualquier IP nueva en cualquier interfaz, incluida
+# la del propio nodo en el primer arranque) y un wait_for de puerto puede
+# dar falso positivo mientras eso pasa.
 - name: Esperar API de microk8s en la IP del nodo
-  wait_for:
-    host: "{{ ansible_host }}"
-    port: 16443
-    timeout: 300
+  command: microk8s status --wait-ready --timeout 900
+  changed_when: false
 
 # Primer nodo: habilitar servicios esenciales (solo nodo principal)
 - name: Habilitar dns y storage en microk8s
@@ -112,21 +138,44 @@
     - inventory_hostname != 'microk8s-node1'
     - resultado_install.changed
 
+# throttle: 1 porque Dqlite no tolera dos joins concurrentes al mismo
+# clúster (se pisan al reiniciar k8s-dqlite entre sí).
 - name: Unir nodo al clúster microk8s
   command: "{{ microk8s_join_command }}{{ ' --worker' if microk8s_worker_flag | bool else '' }}"
   register: resultado_join
-  retries: 5
-  delay: 10
+  retries: 10
+  delay: 30
   until: resultado_join.rc == 0
+  throttle: 1
   when:
     - inventory_hostname != 'microk8s-node1'
     - resultado_install.changed
 
+# El join deja el server.crt del nodo recién unido firmado por su propia
+# CA de arranque en solitario, no por la CA compartida del clúster
+# (issuer real no coincide con ca.crt) — refresh-certs lo corrige.
+- name: Regenerar server.crt tras unirse al clúster
+  command: microk8s refresh-certs -e server.crt
+  register: resultado_refresh_join
+  retries: 3
+  delay: 10
+  until: resultado_refresh_join is succeeded
+  when:
+    - inventory_hostname != 'microk8s-node1'
+    - resultado_install.changed
+
+- name: Reiniciar microk8s tras regenerar server.crt
+  command: snap restart microk8s
+  when:
+    - inventory_hostname != 'microk8s-node1'
+    - resultado_install.changed
+
+# Chequeo profundo, no solo TCP: mismo motivo que las esperas anteriores
+# (apiserver-kicker puede disparar un ciclo de reinicio también acá, al
+# unirse el nodo y aparecer su IP por primera vez en el clúster).
 - name: Esperar API de microk8s en nodos adicionales
-  wait_for:
-    host: "{{ ansible_host }}"
-    port: 16443
-    timeout: 300
+  command: microk8s status --wait-ready --timeout 900
+  changed_when: false
   when: inventory_hostname != 'microk8s-node1'
 
 # SANs adicionales (VIP del LB) en los certificados del API server.
@@ -155,11 +204,16 @@
   command: snap restart microk8s
   when: cambio_sans.changed
 
+# Chequeo profundo, no solo TCP: tras `snap restart microk8s`, kubelite
+# puede quedar varios minutos en crash-loop porque k8s-dqlite recicla su
+# socket (kine.sock) internamente y kubelite a veces intenta conectar justo
+# en la ventana en que no existe, muriendo fatal ("error creating storage
+# factory: context deadline exceeded"). Un wait_for de puerto TCP puede dar
+# falso positivo en medio de ese loop (el puerto respondió un instante).
+# Visto en producción: se estabiliza solo, pero puede tardar ~10-12 min.
 - name: Esperar API de microk8s tras aplicar SANs
-  wait_for:
-    host: "{{ ansible_host }}"
-    port: 16443
-    timeout: 300
+  command: microk8s status --wait-ready --timeout 900
+  changed_when: false
   when: cambio_sans.changed
 
 # Crear directorio de configuración kube para el usuario del clúster
@@ -187,12 +241,12 @@
     mode: '0600'
   when: inventory_hostname == 'microk8s-node1'
 
-# Apuntar el kubeconfig al VIP:16444 para acceder siempre via el Load Balancer
+# Apuntar el kubeconfig al VIP:16443 (puerto real del API server, sin proxy)
 - name: Apuntar kubeconfig al VIP
   lineinfile:
     path: "/home/{{ cluster_user }}/.kube/config"
     regexp: '^\s*server: https://[^:]+:16443'
-    line: "    server: https://{{ vip_address | default('192.168.100.100') }}:16444"
+    line: "    server: https://{{ vip_address }}:16443"
   when: inventory_hostname == 'microk8s-node1'
 
 # Agregar variable de entorno KUBECONFIG al bashrc del usuario
