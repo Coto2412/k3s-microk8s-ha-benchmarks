@@ -58,9 +58,9 @@ resource "libvirt_network" "microk8s_network" {
   autostart = true
 }
 
-# Volumen base de la imagen Ubuntu 22.04
+# Volumen base de la imagen Ubuntu 24.04
 resource "libvirt_volume" "base_image" {
-  name   = "ubuntu-2204-base.qcow2"
+  name   = "ubuntu-2404-base.qcow2"
   source = var.base_image
   pool   = "default"
   format = "qcow2"

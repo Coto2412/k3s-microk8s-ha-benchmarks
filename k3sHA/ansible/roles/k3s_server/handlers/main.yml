@@ -4,7 +4,7 @@
   replace:
     path: "/home/{{ cluster_user }}/.kube/config"
     regexp: 'https://127.0.0.1:6443'
-    replace: 'https://192.168.100.100:6443'
+    replace: "https://{{ vip_address }}:6443"
 
 # Handler para reiniciar el servicio k3s
 - name: Reiniciar k3s

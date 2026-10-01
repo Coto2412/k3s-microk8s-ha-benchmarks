@@ -33,19 +33,19 @@
     state: present
   notify: Reiniciar sshd
 
-# Asegurar que el directorio .ssh existe para jdelpino
-- name: Crear directorio .ssh para jdelpino
+# Asegurar que el directorio .ssh existe para el usuario del clúster
+- name: Crear directorio .ssh para {{ cluster_user }}
   file:
-    path: /home/jdelpino/.ssh
+    path: "/home/{{ cluster_user }}/.ssh"
     state: directory
-    owner: jdelpino
-    group: jdelpino
+    owner: "{{ cluster_user }}"
+    group: "{{ cluster_user }}"
     mode: '0700'
 
-# Configurar llave pública autorizada para jdelpino
-- name: Configurar llave pública autorizada para jdelpino
+# Copiar la llave pública autorizada para el usuario del clúster
+- name: Configurar llave pública autorizada para {{ cluster_user }}
   authorized_key:
-    user: jdelpino
+    user: "{{ cluster_user }}"
     state: present
     key: "{{ lookup('file', playbook_dir + '/../keys/key.pub') }}"
 
