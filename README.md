@@ -241,10 +241,6 @@ El diseño exige playbooks lo más idénticos posible entre distribuciones. Asim
 - Pauta y rúbrica: [`docs/Pauta_y_Rubrica_Trabajo_de_Titulo.pdf`](docs/Pauta_y_Rubrica_Trabajo_de_Titulo.pdf).
 - Diagramas de diseño: [`docs/diagrama_arquitectura.drawio.pdf`](docs/diagrama_arquitectura.drawio.pdf), [`docs/topologia_red.drawio.pdf`](docs/topologia_red.drawio.pdf), [`docs/arquitectura_observabilidad.drawio.pdf`](docs/arquitectura_observabilidad.drawio.pdf).
 
-## 16. Convenciones de commits
-
-Observadas en `git log` (no hay archivo de convención explícito en el repo): mensajes en español, estilo [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `docs:`, `chore:`), en imperativo, describiendo el alcance en el asunto y el detalle en el cuerpo cuando el cambio es amplio. Todo el historial vive en una sola rama (`main`); no se observan ramas de features ni pull requests en el repositorio local.
-
 ---
 
 Documentación específica de cada distribución: [`k3sHA/README.md`](k3sHA/README.md) · [`microk8sHA/README.md`](microk8sHA/README.md).
