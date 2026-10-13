@@ -1,0 +1,9 @@
+---
+scaphandre_repo: https://github.com/hubblo-org/scaphandre.git
+scaphandre_version: v1.0.3
+scaphandre_commit: b64443c447e24f25947111ec8611449f213eb0a5
+scaphandre_clone_dest: /opt/scaphandre-src
+scaphandre_rust_version: "1.98.1"
+
+scaphandre_exporter_bind: 127.0.0.1
+scaphandre_exporter_port: 8080

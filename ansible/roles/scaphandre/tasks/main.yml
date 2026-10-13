@@ -1,0 +1,95 @@
+---
+- name: Instalar dependencias de compilación de Scaphandre
+  apt:
+    name:
+      - git
+      - build-essential
+      - pkg-config
+      - libssl-dev
+      - curl
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Instalar rustup con el toolchain fijado
+  shell: >-
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+    sh -s -- -y --profile minimal --default-toolchain {{ scaphandre_rust_version }}
+  args:
+    creates: /root/.cargo/bin/cargo
+
+- name: Verificar la versión de cargo instalada
+  command: /root/.cargo/bin/cargo --version
+  register: scaphandre_cargo_version
+  changed_when: false
+
+- name: Confirmar versión de cargo
+  assert:
+    that:
+      - scaphandre_rust_version in scaphandre_cargo_version.stdout
+    fail_msg: >-
+      cargo reporta "{{ scaphandre_cargo_version.stdout }}", no coincide
+      con scaphandre_rust_version ({{ scaphandre_rust_version }}).
+
+- name: Clonar Scaphandre en el tag fijado
+  git:
+    repo: "{{ scaphandre_repo }}"
+    dest: "{{ scaphandre_clone_dest }}"
+    version: "{{ scaphandre_version }}"
+
+- name: Verificar que el commit real coincide con el documentado
+  command: git -C {{ scaphandre_clone_dest }} rev-parse HEAD
+  register: scaphandre_head
+  changed_when: false
+
+- name: Confirmar commit de Scaphandre
+  assert:
+    that:
+      - scaphandre_head.stdout == scaphandre_commit
+    fail_msg: >-
+      El commit real ({{ scaphandre_head.stdout }}) no coincide con el
+      documentado en evidencia_T-16.md ({{ scaphandre_commit }}) para el
+      tag {{ scaphandre_version }}.
+
+- name: Compilar Scaphandre (cargo build --release)
+  command: /root/.cargo/bin/cargo build --release
+  args:
+    chdir: "{{ scaphandre_clone_dest }}"
+    creates: "{{ scaphandre_clone_dest }}/target/release/scaphandre"
+
+- name: Instalar binario de Scaphandre en /usr/local/bin
+  copy:
+    src: "{{ scaphandre_clone_dest }}/target/release/scaphandre"
+    dest: /usr/local/bin/scaphandre
+    remote_src: true
+    mode: '0755'
+  notify: Reiniciar scaphandre
+
+- name: Desplegar unidad systemd de Scaphandre
+  template:
+    src: scaphandre.service.j2
+    dest: /etc/systemd/system/scaphandre.service
+    mode: '0644'
+  notify:
+    - Recargar systemd
+    - Reiniciar scaphandre
+
+- name: Habilitar e iniciar el servicio Scaphandre
+  systemd:
+    name: scaphandre
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Esperar a que el exportador responda
+  wait_for:
+    host: "{{ scaphandre_exporter_bind }}"
+    port: "{{ scaphandre_exporter_port }}"
+    timeout: 30
+
+- name: Verificar que expone la métrica de energía del host
+  uri:
+    url: "http://{{ scaphandre_exporter_bind }}:{{ scaphandre_exporter_port }}/metrics"
+    return_content: true
+  register: scaphandre_metrics
+  failed_when: "'scaph_host_energy_microjoules' not in scaphandre_metrics.content"

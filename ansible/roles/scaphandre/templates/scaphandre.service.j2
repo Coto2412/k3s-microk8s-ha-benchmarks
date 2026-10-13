@@ -1,0 +1,11 @@
+[Unit]
+Description=Scaphandre Prometheus exporter (energia del host)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/scaphandre prometheus -a {{ scaphandre_exporter_bind }} -p {{ scaphandre_exporter_port }}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

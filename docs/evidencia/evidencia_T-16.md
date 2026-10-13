@@ -17,12 +17,12 @@ Convención: la sección 2 contiene hechos medidos u observados; la 3, interpret
 | Perfil de energía | balanced |
 | Boost de CPU | activado (1) |
 | Alimentación | con corriente (online = 1), batería en estado Full |
-| Sesión durante las mediciones | gráfica abierta (Google Chrome y terminal alacritty) en las lecturas del 12 de octubre; el 13 de octubre se operó por SSH; **no se registró si la sesión gráfica seguía abierta** (se asume que sí, por confirmar) |
+| Sesión durante las mediciones | gráfica abierta (Google Chrome y terminal alacritty) en las lecturas del 12 de octubre; el 13 de octubre se operó por SSH; **la sesión gráfica estaba abierta** |
 | Acceso remoto | `openssh-server` 1:9.6p1-3ubuntu13.19, habilitado y activo el 13 de octubre; escucha en 0.0.0.0:22 y [::]:22; autenticación por llave ed25519 funcionando; la autenticación por contraseña **sigue habilitada** (decisión del autor) |
 | Firewall | `ufw` inactivo; se agregó la regla para 192.168.1.0/24 hacia el puerto 22, pero sin efecto mientras `ufw` siga inactivo |
 | Red del host | 192.168.1.23 (LAN); las demás direcciones corresponden a puentes de libvirt, Docker e Incus |
 
-Las pruebas definitivas se harán sin sesión gráfica (por confirmar el método: TTY o SSH).
+Las pruebas definitivas se harán sin sesión gráfica (SSH).
 
 ## 2. Hechos medidos u observados
 
@@ -205,7 +205,7 @@ scrape_configs:
 
 ### 6.1 Cierre de T-16.1 a T-16.4
 
-1. Pasar la compilación del tag fijado (`v1.0.3`, commit `b64443c`) y la unidad systemd a un rol de Ansible (queda pendiente de T-16.1).
+1. ~~Pasar la compilación del tag fijado (`v1.0.3`, commit `b64443c`) y la unidad systemd a un rol de Ansible.~~ **Hecho (13 de octubre):** `ansible/roles/scaphandre/`, playbook `ansible/playbook.yml` (host físico, `connection: local`). Ejecutado con `ansible-playbook playbook.yml --ask-become-pass`: `ok=15 changed=4 failed=0`. El rol verifica al final que `/metrics` expone `scaph_host_energy_microjoules` (falla la corrida si no). Hallazgo durante la implementación: `rustc`/`cargo` del repositorio de Ubuntu 24.04 (1.75.0) no compilan Scaphandre v1.0.3 (`feature edition2024 is required`); el build manual original usaba `rustup` con toolchain 1.98.1 (`cargo --version` / `rustc --version` verificados), no el paquete de apt. El rol instala `rustup` con ese toolchain fijado (`scaphandre_rust_version: "1.98.1"`) en vez de los paquetes de apt.
 2. T-16.3: falta la consulta a Prometheus para la misma ventana (depende de T-17.2). La lectura directa en `t_inicio` y `t_fin` ya está.
 3. T-16.4: queda abierta la causa del exceso de +1,2 a +1,6 J en las ventanas 2 a 5. Repetir ventanas con el sistema en estado más controlado (sin sesión gráfica) para ver si se reproduce.
 4. Ingresar las horas reales de T-16.4 en la hoja (no se estiman).
@@ -254,7 +254,7 @@ Todos están en el directorio personal del host (`/home/coto/`), salvo la unidad
 ## 8. Criterio de aceptación
 
 - T-16.2 «Contadores accesibles y dominio energético documentado»: cumplido con las reservas de la sección 5.
-- T-16.1 «Scaphandre ejecuta y expone métricas energéticas»: cumplido en lo funcional; queda el rol de Ansible (6.1).
+- T-16.1 «Scaphandre ejecuta y expone métricas energéticas»: **cumplido**, incluido el rol de Ansible (6.1).
 - T-16.4 «Consistencia comprobada durante una ventana común»: cumplido con el criterio de menos del 2 % (sección 4); queda abierta la causa del exceso de las ventanas 2 a 5.
 - T-16.3: en progreso, falta la consulta a Prometheus.
 

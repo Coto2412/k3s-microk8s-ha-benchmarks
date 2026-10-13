@@ -1,0 +1,7 @@
+---
+- name: Configurar observabilidad del host físico
+  hosts: localhost
+  connection: local
+  become: true
+  roles:
+    - scaphandre
