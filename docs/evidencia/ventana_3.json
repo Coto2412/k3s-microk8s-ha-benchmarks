@@ -1,0 +1,11 @@
+{
+  "t_inicio": 1791928448.8660126,
+  "t_fin": 1791928508.8916674,
+  "dt_s": 60.026,
+  "raw_pkg0_uj": 169867879,
+  "raw_pkg0_W": 2.83,
+  "scaph_host_energy_microjoules_uj": 171408860,
+  "scaph_host_energy_microjoules_W": 2.856,
+  "scaph_socket_energy_microjoules_uj": 171393908,
+  "scaph_socket_energy_microjoules_W": 2.855
+}
