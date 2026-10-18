@@ -1,0 +1,29 @@
+---
+- name: Descargar k6 con checksum fijado
+  get_url:
+    url: "https://github.com/grafana/k6/releases/download/v{{ k6_version }}/k6-v{{ k6_version }}-linux-amd64.tar.gz"
+    dest: /tmp/k6.tar.gz
+    checksum: "sha256:{{ k6_sha256 }}"
+    mode: '0644'
+
+- name: Extraer k6
+  unarchive:
+    src: /tmp/k6.tar.gz
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/k6-v{{ k6_version }}-linux-amd64/k6"
+
+- name: Instalar binario de k6 en /usr/local/bin
+  copy:
+    src: "/tmp/k6-v{{ k6_version }}-linux-amd64/k6"
+    dest: /usr/local/bin/k6
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Verificar la versión instalada de k6
+  command: /usr/local/bin/k6 version
+  register: k6_version_out
+  changed_when: false
+  failed_when: "k6_version ~ '' not in k6_version_out.stdout"

@@ -3,7 +3,7 @@
 Proyecto de título — Ingeniería Civil Informática, Universidad Católica de Temuco.
 Autor: José Ignacio Delpino Muñoz.
 
-Este repositorio contiene la infraestructura como código (Terraform + Ansible) y la documentación técnica del proyecto. La Etapa 1 (problema y requerimientos) y la Etapa 2 (diseño técnico) fueron cerradas y entregadas; este README documenta el estado de implementación al 30 de septiembre de 2026, sus decisiones técnicas y las desviaciones respecto al diseño original.
+Este repositorio contiene la infraestructura como código (Terraform + Ansible) y la documentación técnica del proyecto. La Etapa 1 (problema y requerimientos) y la Etapa 2 (diseño técnico) fueron cerradas y entregadas; este README documenta el estado de implementación al 18 de octubre de 2026, sus decisiones técnicas y las desviaciones respecto al diseño original.
 
 ## 1. Resumen
 
@@ -27,27 +27,27 @@ El proyecto compara dos distribuciones ligeras de Kubernetes — K3s y MicroK8s 
 | Etapa 1 | Problema, requerimientos, estado del arte | Cerrada y entregada (`docs/Entrega_1_Proyecto_de_Título.pdf`) |
 | Etapa 2 | Diseño técnico completo | Cerrada y entregada |
 | Etapa 2 — implementación de infraestructura (EP-04 del backlog) | Clústeres HA de K3s y MicroK8s con IP virtual redundante (kube-vip) | **Implementado y validado de punta a punta** (declarado por mí, ver [AC-03](#9-criterios-de-aceptación-globales)) |
-| Etapa 3 (proyectada) | Observabilidad (Scaphandre, Node Exporter, Prometheus, kube-state-metrics, chrony), aplicación de referencia, generador de carga k6 | **Diseñado, pendiente de implementar.** Ningún componente de observabilidad ni la aplicación de referencia existen en el repo. |
-| Etapa 4 (proyectada) | Campaña experimental, análisis estadístico, contraste con nube pública | **Diseñado, pendiente.** No existen resultados medidos de energía ni de rendimiento a la fecha de este README. |
+| Etapa 3 | Observabilidad (Scaphandre, Node Exporter, Prometheus, kube-state-metrics, chrony), aplicación de referencia, generador de carga k6 | **Implementada, salvo `chrony` (pendiente).** Scaphandre, Node Exporter, Prometheus, kube-state-metrics, NGINX de referencia con Service LoadBalancer en `.150` y los scripts de k6 están desplegados y verificados en ambas distribuciones (ver `docs/evidencia/evidencia_T-16.md`, `evidencia_T-17.md` y `evidencia_T-18.md`). Solo se hicieron pilotos y pruebas de humo, sin calibración de tasas. |
+| Etapa 4 (proyectada) | Campaña experimental, análisis estadístico, contraste con nube pública | **Diseñado, pendiente.** No existen resultados de la campaña: solo pilotos de reposo (T-17.4) y pruebas de humo de k6 (T-18) en cada clúster. |
 
 ## 4. Arquitectura
 
-Diagrama de la arquitectura implementada (líneas continuas) y la pendiente de Etapa 3 (líneas punteadas). Solo una distribución corre a la vez sobre la misma topología de red.
+Diagrama de la arquitectura implementada. `chrony` no aparece porque aún no está implementado. Solo una distribución corre a la vez sobre la misma topología de red.
 
 ```mermaid
 flowchart TB
     subgraph HOST["Host físico (Ubuntu 24.04, QEMU/KVM + libvirt)"]
         direction TB
-        subgraph OBS["Observabilidad del host — diseñado, pendiente"]
-            SCAPH["Scaphandre (RAPL/package)"]:::pending
-            PROM["Prometheus"]:::pending
-            NE_HOST["Node Exporter"]:::pending
-            K6["k6 (generador de carga)"]:::pending
+        subgraph OBS["Observabilidad del host"]
+            SCAPH["Scaphandre (RAPL/package)"]
+            PROM["Prometheus"]
+            NE_HOST["Node Exporter"]
+            K6["k6 (generador de carga)"]
         end
         subgraph NET["Red libvirt NAT 192.168.100.0/24"]
             GW[".1 gateway/host"]
             VIP_CP[".100 VIP plano de control (kube-vip)"]
-            VIP_LB[".150 VIP Service LoadBalancer"]:::pending
+            VIP_LB[".150 VIP Service LoadBalancer"]
             N1["nodo1 .11"]
             N2["nodo2 .12"]
             N3["nodo3 .13"]
@@ -81,7 +81,13 @@ Hardware y software verificados en el código y confirmados por mí (no hay form
 | SO invitado (VMs) | Ubuntu Server 24.04 LTS (imagen cloud "noble") | `variables.tf` de ambos módulos (descripción de `base_image`); la ruta real a la imagen vive en `terraform.tfvars` local, no versionado (ver [§10](#10-reproducibilidad)) |
 | K3s | `v1.36.3+k3s1`, versión fijada | `k3sHA/ansible/group_vars/all.yml:6` |
 | MicroK8s | Canal snap `1.36/stable`, con `snap refresh --hold=forever` tras el primer install | `microk8sHA/ansible/group_vars/all.yml:7,11` — es un canal, no una versión exacta: la revisión real queda fijada recién después del primer `snap install`, no antes |
-| kube-vip | Imagen `ghcr.io/kube-vip/kube-vip:v0.8.9`, versión fijada, idéntica en ambas distros | `k3sHA/ansible/group_vars/all.yml:11`, `microk8sHA/ansible/group_vars/all.yml:25`. El propio comentario del código indica verificar la última estable antes de un despliegue real — no verificado contra el listado de releases de kube-vip. |
+| kube-vip | Imagen `ghcr.io/kube-vip/kube-vip:v1.2.4`, versión fijada, idéntica en ambas distros (actualizada desde `v0.8.9` en T-18; ver `docs/evidencia/evidencia_T-18.md`) | `k3sHA/ansible/group_vars/all.yml`, `microk8sHA/ansible/group_vars/all.yml`. Versión verificada contra los releases de GitHub el 18 de octubre; la `v1.3.0` (16 de octubre) no se adoptó. |
+| Scaphandre | `v1.0.3` (commit `b64443c`), compilado con Rust 1.98.1, exportador Prometheus en `127.0.0.1:8080` | `ansible/group_vars/all.yml`, `docs/evidencia/evidencia_T-16.md` |
+| Node Exporter | `1.12.1`, solo 6 colectores, sha256 fijado; en las VMs, `ufw` restringe el 9100 al host | `ansible/group_vars/all.yml`, `docs/evidencia/evidencia_T-17.md` |
+| Prometheus | `3.15.0` nativo en el host (systemd), sha256 fijado, scrape de 10 s, etiqueta `distribution` por trabajo | `ansible/group_vars/all.yml`, `ansible/roles/prometheus/` |
+| kube-state-metrics | `v2.20.0`, imagen con digest, Service `NodePort` 30080/30081 consultado vía la VIP | `k8s/kube-state-metrics.yaml` |
+| NGINX de referencia | `nginx:1.30.6` con digest, 1 réplica, límite de CPU `500m` (provisional hasta T-20.5), Service LoadBalancer en `.150:80` | `k3sHA/ansible/group_vars/all.yml`, `k8s/nginx-*.yaml.j2`, `docs/evidencia/evidencia_T-18.md` |
+| k6 | `v2.3.0` en el host, sha256 fijado, anclado a las CPU 0 y 1 | `ansible/group_vars/all.yml`, `k6/correr.sh` |
 
 ## 6. Estructura del repositorio
 
@@ -89,13 +95,15 @@ Hardware y software verificados en el código y confirmados por mí (no hay form
 ./
 ├── CLAUDE.md                  # Contexto de proyecto para asistencia con IA (no forma parte del informe)
 ├── LICENSE                    # MIT
-├── docs/                      # Entregables de Etapa 1, backlog, diagramas de diseño
+├── docs/                      # Entregables de Etapa 1, backlog, diagramas de diseño y docs/evidencia/ (T-16, T-17, T-18)
 ├── k3sHA/                     # Infraestructura y configuración del clúster K3s — ver k3sHA/README.md
 ├── microk8sHA/                # Infraestructura y configuración del clúster MicroK8s — ver microk8sHA/README.md
-├── k8s/                       # Manifiestos de la app de referencia — Diseñado, pendiente (solo .gitignore/.gitkeep)
-├── k6/                        # Scripts de carga k6 — Diseñado, pendiente (solo .gitignore/.gitkeep)
-├── data/                      # Snapshots de Prometheus, resultados k6, metadatos — Diseñado, pendiente
-└── analysis/                  # Scripts de análisis estadístico y notebooks — Diseñado, pendiente
+├── ansible/                   # Playbook y roles del host: scaphandre, node_exporter, prometheus, k6
+├── k8s/                       # Plantillas de la app de referencia (NGINX, Service) y manifiesto de kube-state-metrics
+├── k6/                        # Scripts de carga (idle, media, alta), módulo común y lanzador correr.sh
+├── data/                      # Snapshots de Prometheus, resultados de k6 y metadatos (versionado; ver data/README.md)
+├── analysis/verificacion/     # Scripts de verificación (consulta_prometheus.py, continuidad.py, ventana_energia.py)
+└── analysis/                  # Análisis estadístico y notebooks — Diseñado, pendiente (solo existe analysis/verificacion/)
 ```
 
 `k3sHA/` y `microk8sHA/` mantienen la misma estructura interna entre sí (`ansible/`, `terraform/`, scripts de NAT y limpieza); el detalle de cada una está en su propio README.
@@ -108,7 +116,7 @@ Hardware y software verificados en el código y confirmados por mí (no hay form
 | D-02 | SO invitado Ubuntu Server 24.04 LTS (imagen cloud) | Alpine (OpenRC; snap exige systemd); Debian 12 (MicroK8s solo declara soporte oficial Ubuntu/snapd) | Requisito técnico de MicroK8s (snapd) | RF-05, RNF-03 | `variables.tf` de ambos módulos (descripción `base_image`) | Implementado y verificable en la definición de variable; la imagen real en disco es declarada por mí (ver [§13](#13-limitaciones-y-amenazas-a-la-validez)) |
 | D-03 | Dimensionamiento por nodo: 2 vCPU, 4 GB RAM, 50 GB disco. Host reserva 2 vCPU / 4 GB para sí | Mínimo de K3s (2 núcleos, 2 GB) por insuficiente para MicroK8s; recomendación completa de Canonical (más de 4 GB) por exceder el presupuesto del host | Base en el mínimo documentado de cada distribución; valor preliminar sujeto a calibración piloto | RF-05, RNF-03, REX-07 | `k3sHA/terraform/variables.tf:9-27`, `microk8sHA/terraform/variables.tf:9-27` | Implementado y verificable |
 | D-04 | CPU pinning real: cada VM fijada a un núcleo físico completo (2 hilos SMT) mediante XSLT inyectado en el XML de libvirt; un núcleo queda reservado para el host | Sin pinning (estado original); subir vCPU por nodo (se descartó para no romper la comparación en igualdad de condiciones ni el principio de recursos limitados) | El proveedor de Terraform no expone `cputune`/`vcpupin` nativo. Sin pinning, las VMs competían por CPU con la sesión gráfica del host de forma no determinista, causando timeouts intermitentes en operaciones sensibles a tiempo (join de nodos MicroK8s) | REX-07 | `k3sHA/terraform/config/vcpupin.xsl.tftpl`, `microk8sHA/terraform/config/vcpupin.xsl.tftpl`, `main.tf` de ambos módulos (`local.vm_cpusets`, bloque `xml { xslt = ... }`) | Implementado y verificable — **no estaba en el diseño original de Etapa 2** |
-| D-05 | kube-vip en modo ARP (DaemonSet) reemplaza a Keepalived/VRRP + HAProxy. Dos funciones: VIP del plano de control y Service LoadBalancer de la app de referencia (esta segunda función deshabilitada por ahora) | Keepalived/VRRP + HAProxy (implementación original) | Decisión de diseño de Etapa 2. La función de Service LoadBalancer se deshabilita porque, sin un pool de IP explícito, kube-vip cae a un fallback que asigna la IP del propio nodo al Service — ver hallazgo en [`k3sHA/README.md`](k3sHA/README.md) | RF-03, RR-01 | Roles `kube_vip` en ambos módulos; commit `8cd4c3d` | Implementado y validado (ver AC-03) |
+| D-05 | kube-vip en modo ARP (DaemonSet) reemplaza a Keepalived/VRRP + HAProxy. Dos funciones: VIP del plano de control y Service LoadBalancer de la app de referencia (habilitada en T-18 con la IP fijada por anotación) | Keepalived/VRRP + HAProxy (implementación original) | Decisión de diseño de Etapa 2. La función de Service LoadBalancer estuvo deshabilitada porque, sin una IP explícita, kube-vip asignó la IP del propio nodo a un Service (hallazgo en [`k3sHA/README.md`](k3sHA/README.md)). Desde T-18 se habilita con la anotación `kube-vip.io/loadbalancerIPs` en el Service de la aplicación y, con `servicelb` y Traefik deshabilitados, el incidente no se repitió (ver `docs/evidencia/evidencia_T-18.md`) | RF-03, RR-01 | Roles `kube_vip` en ambos módulos; commit `8cd4c3d` | Implementado y validado (ver AC-03) |
 | D-06 | Puerto de API server distinto por distribución: K3s `6443`, MicroK8s `16443`. kube-vip apunta al puerto correcto según la distribución activa | Puerto único compartido (requeriría proxy TCP adicional) | Cada distribución expone su API en su puerto nativo; kube-vip en ARP no necesita proxy, solo anunciar la VIP sobre el puerto real | RF-03 | `k3sHA/ansible/group_vars/all.yml:13` (`kube_vip_port: 6443`), `microk8sHA/ansible/group_vars/all.yml:27` (`kube_vip_port: 16443`) | Implementado y verificable |
 | D-07 | Versionado fijado de todos los componentes variables: K3s exacto, canal MicroK8s + hold, imagen kube-vip exacta, provider Terraform exacto | Versiones flotantes/`latest` | Reproducibilidad entre corridas de medición de una campaña de meses | RNF-04 | Ver tabla de [§5](#5-laboratorio) | Implementado y verificable, con la salvedad del canal de MicroK8s (ver [§13](#13-limitaciones-y-amenazas-a-la-validez)) |
 | D-08 | cloud-init deshabilita `motd-news`, `apt-news`, `ua-timer` en ambas distros, y agrega `manage_etc_hosts: true` | Dejar el comportamiento por defecto de Ubuntu | `motd-news`/`apt-news`/`ua-timer` agregaban más de 12 s al login SSH por una llamada de red no determinista (ruido para mediciones futuras) y rompían el timeout de escalado de privilegios de Ansible. Sin `manage_etc_hosts`, cada `sudo` esperaba ~15 s por resolución DNS del hostname propio, causa raíz de gran parte de la inestabilidad observada en el arranque de MicroK8s | RNF-03, REX-07 | `k3sHA/terraform/config/cloud-init.cfg`, `microk8sHA/terraform/config/cloud-init.cfg` | Implementado y verificable |
@@ -172,6 +180,16 @@ cd ansible
 ansible-playbook playbook.yml                        # aprovisiona los 3 nodos, instala K3s/kube-vip
 ```
 
+### Observabilidad, aplicación de referencia y k6 (derivado del código)
+```bash
+cd ansible
+ansible-playbook playbook.yml --ask-become-pass -e active_distribution=k3s   # host: scaphandre, node_exporter, prometheus, k6
+```
+El playbook de cada distribución (`k3sHA/ansible/`, `microk8sHA/ansible/`) instala además `node_exporter` en las VMs, `kube_state_metrics` y la aplicación de referencia (`nginx_referencia`). Antes de cambiar de distribución hay que volver a correr el playbook del host con el valor correspondiente de `active_distribution`. Prueba de humo de k6, no una calibración:
+```bash
+DISTRIBUCION=k3s REPETICION=0 TASA=20 RAMPA_S=5 ESTABLE_S=20 DESCENSO_S=5 k6/correr.sh media
+```
+
 ### Cambiar de distribución
 El diseño exige que K3s y MicroK8s nunca corran a la vez. Para pasar de una a otra: destruir por completo la infraestructura de la distribución activa (ver abajo) antes de aplicar la otra. No existe automatización de alternancia en el repo — es un paso manual entre los directorios `k3sHA/` y `microk8sHA/`.
 
@@ -193,7 +211,7 @@ El diseño exige playbooks lo más idénticos posible entre distribuciones. Asim
 
 ## 12. Resumen del protocolo experimental (diseño)
 
-**Diseñado, pendiente de implementar.** No ejecutado; documentado aquí solo como contexto del objetivo experimental, sin manifiestos ni scripts propios en el repo (carpetas `k8s/`, `k6/`, `data/`, `analysis/` existen pero están vacías).
+**Diseñado; la campaña no se ha ejecutado.** La aplicación de referencia y los scripts de k6 existen (`k8s/`, `k6/`); `k6/fallo-controlado.sh`, el orquestador de repeticiones y el análisis estadístico (`analysis/estadistica.py`) no existen aún.
 
 - Aplicación de referencia: NGINX con contenido estático mínimo, límite de CPU `500m`, expuesta vía el `Service` LoadBalancer de kube-vip en `.150:80`.
 - Carga: k6 en el host, ejecutor `ramping-arrival-rate` (modelo abierto). Tres escenarios (idle, media, alta), cada uno con fases de 30 s de ascenso, 3 min estables (única ventana válida de medición) y 30 s de descenso.
@@ -208,6 +226,7 @@ El diseño exige playbooks lo más idénticos posible entre distribuciones. Asim
 - **Host con entorno de escritorio**: el diseño exige ejecuciones definitivas desde consola de texto con sesión gráfica cerrada; esto no está automatizado ni verificado en el código, depende de mi disciplina operativa en cada corrida.
 - **Canal de MicroK8s no es una versión exacta**: `1.36/stable` selecciona la última revisión disponible en ese canal al momento de instalar, no un número de versión fijo de antemano; queda congelada recién después, vía `snap refresh --hold`. Dos corridas en fechas distintas podrían partir de una revisión de MicroK8s distinta si se recreó el entorno entre medio.
 - **Imagen base no versionada**: la ruta real a la imagen de Ubuntu 24.04 vive en `terraform.tfvars`, que está en `.gitignore` por diseño (evita rutas locales); no hay checksum de la imagen registrado en el repo.
+- **Camino de red de la `.150` no controlado**: con `svc_election: "false"` el nodo que sostiene la `.100` y la `.150` lo decide qué pod de kube-vip toma el *lease* primero (nodo 1 en K3s y nodo 3 en MicroK8s en las pruebas de T-18). Si no coincide con el nodo del pod, el tráfico hace un salto adicional por VXLAN. No medí su efecto; los metadatos de cada repetición lo registrarán (ver `data/README.md`).
 - **Costo de NAT/conntrack**: se asume simétrico entre K3s y MicroK8s (D-01); no hay medición en el repo que lo confirme, es un supuesto de diseño.
 - **Esfuerzo de implementación de MicroK8s vs K3s**: declaro que la tarea T-14.2 del backlog se estimó en 4 h y tomó 8 h reales, sin equivalente de sobrecosto en K3s. Dato no verificable en el repo (no hay registro de tiempos en el código ni en el historial de commits con esa granularidad).
 
@@ -218,15 +237,15 @@ El diseño exige playbooks lo más idénticos posible entre distribuciones. Asim
 | RF-01 | K3s HA, 3 nodos, etcd embebido | `k3sHA/ansible/roles/k3s_server/tasks/main.yml` (`--cluster-init`) — Implementado |
 | RF-02 | MicroK8s HA, 3 nodos, Dqlite | `microk8sHA/ansible/roles/microk8s_server/tasks/main.yml` (unión por token, Dqlite activa automáticamente desde 3 nodos) — Implementado |
 | RF-03 | Acceso redundante al plano de control (IP virtual) | Roles `kube_vip` en ambos módulos — Implementado, validado (AC-03) |
-| RF-04 | Aplicación de referencia común | Carpeta `k8s/` vacía — Diseñado, pendiente |
+| RF-04 | Aplicación de referencia común | `k8s/nginx-*.yaml.j2` y roles `nginx_referencia` — Implementado y verificado en ambas distribuciones (`evidencia_T-18.md`) |
 | RF-05 | Homogeneidad de virtualización | `main.tf` de ambos módulos, mismo esquema y specs (D-02, D-03) — Implementado |
 | RNF-01 | Reproducibilidad (Terraform) | `terraform/` de ambos módulos, sin pasos manuales salvo `tfvars` — Implementado |
 | RNF-02 | Estandarización de configuración (Ansible) | `ansible/roles/` de ambos módulos — Implementado |
 | RNF-03 | Homogeneidad experimental | Ver tabla de asimetrías (§11) — Parcial, con asimetrías de implementación documentadas |
 | RNF-04 | Versionado | `group_vars/all.yml`, `terraform.tf` de ambos módulos (D-07) — Implementado, con salvedad del canal de MicroK8s |
-| RE-01 a RE-04 | Medición energética del host (Scaphandre, RAPL/powercap) | Sin implementar — Diseñado, pendiente |
-| RO-01 a RO-08 | Observabilidad de recursos y rendimiento | Sin implementar — Diseñado, pendiente |
-| REX-01 a REX-06 | Evaluación experimental (protocolo, escenarios, repeticiones) | Sin implementar — Diseñado, pendiente |
+| RE-01 a RE-04 | Medición energética del host (Scaphandre, RAPL/powercap) | Scaphandre y consulta a Prometheus verificados en una ventana (`evidencia_T-16.md`); sin campaña de medición — Parcial |
+| RO-01 a RO-08 | Observabilidad de recursos y rendimiento | Node Exporter, Prometheus, kube-state-metrics y continuidad verificados en reposo (`evidencia_T-17.md`); `chrony` pendiente — Parcial |
+| REX-01 a REX-06 | Evaluación experimental (protocolo, escenarios, repeticiones) | Scripts de k6 (`k6/`) listos y probados con carga de humo; sin calibración, orquestador ni campaña — Parcial |
 | REX-07 | Control de condiciones energéticas (CPU, política de energía) | CPU pinning implementado (D-04); resto (política de energía del host, sesión gráfica cerrada) sin automatizar — Parcial |
 | RR-01 | Tolerancia a fallo de 1 nodo de 3 | Diseño de quórum (etcd/Dqlite); no ejercitado formalmente fuera del failover de VIP | Parcial |
 | RR-02 | Failover de VIP | Ver AC-04 — Cumplido en ambas distribuciones |

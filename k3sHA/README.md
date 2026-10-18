@@ -44,7 +44,10 @@ k3sHA/
 │       ├── common/                # swap off, módulos de kernel, sysctl
 │       ├── ssh_config/            # hardening SSH
 │       ├── k3s_server/            # instalación y unión de nodos K3s
-│       └── kube_vip/              # manifiesto RBAC + DaemonSet de kube-vip
+│       ├── kube_vip/              # manifiesto RBAC + DaemonSet de kube-vip
+│       ├── node_exporter/         # Node Exporter en cada VM, 9100 restringido al host con ufw
+│       ├── kube_state_metrics/    # despliega k8s/kube-state-metrics.yaml
+│       └── nginx_referencia/      # NGINX de referencia y Service LoadBalancer (.150)
 ├── terraform/
 │   ├── main.tf                    # red, volúmenes, cloud-init, dominios libvirt, pinning de CPU
 │   ├── variables.tf
@@ -85,7 +88,8 @@ Prerrequisitos: ver [README raíz, §10](../README.md#10-reproducibilidad).
 | Variable | Valor | Descripción |
 |---|---|---|
 | `k3s_version` | `v1.36.3+k3s1` | Versión de K3s, fijada |
-| `kube_vip_version` | `v0.8.9` | Tag de imagen de kube-vip, fijado |
+| `kube_vip_version` | `v1.2.4` | Tag de imagen de kube-vip, fijado |
+| `kube_vip_svc_election` | `"false"` | Elección de líder por Service en kube-vip; `"true"` probado en T-18; queda `"false"` como valor definitivo |
 | `kube_vip_interface` | `ens3` | Interfaz donde kube-vip anuncia la VIP |
 | `kube_vip_port` | `6443` | Puerto de la API de K3s |
 
@@ -134,7 +138,7 @@ ssh -i keys/key <usuario_admin>@192.168.100.100 kubectl get nodes -o wide
 | `--bind-address` | **Ausente** (API en wildcard `0.0.0.0`) | Obligatorio para kube-vip en modo ARP: si la API solo escuchara en la IP propia del nodo, nadie respondería en `<VIP>:6443` cuando ese nodo es el líder |
 | `--disable traefik --disable servicelb` | Deshabilitados explícitamente | Ver hallazgo en [§8](#8-hallazgos-e-incidentes) |
 | kube-vip | Manifiesto dejado en `/var/lib/rancher/k3s/server/manifests/kube-vip.yaml`, aplicado automáticamente por el controlador de manifiestos integrado de K3s | K3s no requiere `kubectl apply` manual (`k3sHA/ansible/roles/kube_vip/tasks/main.yml:10-15`) |
-| kube-vip — modo | ARP, `cp_enable=true`, `svc_enable=false` | Ver [D-05 del README raíz](../README.md#7-registro-de-decisiones-técnicas); función de servicio deshabilitada, ver [§8](#8-hallazgos-e-incidentes) |
+| kube-vip — modo | ARP, `cp_enable=true`, `svc_enable=true` (desde T-18; la IP del Service se fija por anotación) | Ver [D-05 del README raíz](../README.md#7-registro-de-decisiones-técnicas) y [§8](#8-hallazgos-e-incidentes) |
 
 ## 7. Decisiones propias de la distribución
 
@@ -150,7 +154,7 @@ ssh -i keys/key <usuario_admin>@192.168.100.100 kubectl get nodes -o wide
 
 Durante la migración de Keepalived+HAProxy a kube-vip se encontró y corrigió lo siguiente (commit `8cd4c3d`):
 
-- **Traefik + ServiceLB rompían kube-vip.** K3s instala Traefik por defecto, que crea automáticamente un `Service` tipo `LoadBalancer`. Con la función de servicio de kube-vip habilitada (`svc_enable=true`), sin un *pool* de IP configurado, kube-vip le asignó por error la IP del propio nodo a ese `Service`, pisando la IP real asignada por DHCP y dejando al nodo sin conectividad. **Solución:** se agregó `--disable traefik --disable servicelb` a la instalación (Traefik tampoco es parte del diseño: la aplicación de referencia es NGINX mínimo) y se deshabilitó `svc_enable` en el manifiesto de kube-vip hasta implementar la aplicación de referencia con un *pool* de IP explícito. Código: `k3sHA/ansible/roles/k3s_server/tasks/main.yml:35-39`, `k3sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2:95-105`.
+- **Traefik + ServiceLB rompían kube-vip.** K3s instala Traefik por defecto, que crea automáticamente un `Service` tipo `LoadBalancer`. Con la función de servicio de kube-vip habilitada (`svc_enable=true`), sin un *pool* de IP configurado, kube-vip le asignó por error la IP del propio nodo a ese `Service`, pisando la IP real asignada por DHCP y dejando al nodo sin conectividad. **Solución:** se agregó `--disable traefik --disable servicelb` a la instalación (Traefik tampoco es parte del diseño: la aplicación de referencia es NGINX mínimo) y se deshabilitó `svc_enable` en el manifiesto de kube-vip hasta implementar la aplicación de referencia. **Actualización (T-18):** `svc_enable` se volvió a habilitar con la IP del Service fijada por la anotación `kube-vip.io/loadbalancerIPs`; con `servicelb` y Traefik deshabilitados, los nodos siguieron `Ready` y conservaron su IP (ver [`evidencia_T-18.md`](../docs/evidencia/evidencia_T-18.md)). Código: `k3sHA/ansible/roles/k3s_server/tasks/main.yml:35-39`, `k3sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2:95-105`.
 - **`--bind-address` incompatible con kube-vip ARP.** La configuración original fijaba `--bind-address` a la IP propia del nodo (para convivir con HAProxy, que ya no existe). Con kube-vip en modo ARP, la VIP resuelve por ARP a la MAC del nodo líder; si la API solo escucha en su IP propia, nadie responde en `<VIP>:6443`. **Solución:** se quitó el flag, la API queda en wildcard. Código: `k3sHA/ansible/roles/k3s_server/tasks/main.yml:30-39`.
 
 ## 9. Criterios de aceptación propios
@@ -173,10 +177,10 @@ Ver tabla completa de asimetrías en el [README raíz, §11](../README.md#11-asi
 
 ## 12. Limitaciones y trabajo pendiente
 
-- Sin observabilidad (Scaphandre, Node Exporter, Prometheus, kube-state-metrics, chrony): no implementada en este módulo.
-- Sin aplicación de referencia ni pruebas de carga.
+- Observabilidad: este módulo instala Node Exporter en las VMs (`node_exporter`) y kube-state-metrics (`kube_state_metrics`); Scaphandre y Prometheus corren en el host (`ansible/` de la raíz). Ver [`evidencia_T-17.md`](../docs/evidencia/evidencia_T-17.md).
+- Aplicación de referencia (`nginx_referencia`) con Service LoadBalancer en la IP `.150`, verificada en este clúster; ver [`evidencia_T-18.md`](../docs/evidencia/evidencia_T-18.md). Solo se hicieron pruebas de humo de k6, sin calibración ni campaña.
+- `chrony` no está implementado (las VMs usan el servicio de hora predeterminado de Ubuntu).
 - `AC-K3S-02` (verificación de salud de etcd) no está automatizada; requiere inspección manual.
-- La función de `Service` LoadBalancer de kube-vip (VIP `.150`) queda deshabilitada hasta la implementación de la aplicación de referencia.
 
 ## 13. Solución de problemas
 
@@ -184,5 +188,5 @@ Incidentes reales encontrados y su resolución, ambos ya incorporados al código
 
 | Síntoma | Causa | Solución aplicada |
 |---|---|---|
-| El nodo pierde conectividad de red poco después de que kube-vip queda `Running` | Traefik + ServiceLB de K3s crean un `Service LoadBalancer`; kube-vip le asigna la IP del propio nodo | `--disable traefik --disable servicelb` + `svc_enable=false` en kube-vip (ver §8) |
+| El nodo pierde conectividad de red poco después de que kube-vip queda `Running` | Traefik + ServiceLB de K3s crean un `Service LoadBalancer`; kube-vip le asigna la IP del propio nodo | `--disable traefik --disable servicelb`; `svc_enable` estuvo en `false` hasta T-18 y ahora se habilita con la IP del Service por anotación (ver §8) |
 | La API no responde en la VIP aunque el pod de kube-vip esté `Running` | `--bind-address` fijado a la IP propia del nodo, incompatible con ARP | Se quitó `--bind-address` de la instalación (ver §8) |

@@ -44,3 +44,12 @@
     - kube_vip
     # Rol de Node Exporter con ufw restringido al host físico
     - node_exporter
+
+# Play 3: aplicación de referencia, una vez unidos todos los nodos
+- name: Desplegar la aplicación de referencia en el clúster microk8s
+  hosts: microk8s-node1
+  become: true
+  force_handlers: true
+  roles:
+    # Rol de NGINX de referencia y Service LoadBalancer (kube-vip)
+    - nginx_referencia

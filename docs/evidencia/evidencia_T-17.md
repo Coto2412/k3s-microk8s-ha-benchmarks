@@ -151,7 +151,7 @@ En ninguna segunda pasada cambió una tarea de `node_exporter` o `prometheus`.
 | K3s | 15:26:27 a 15:46:27 | 7 | 120/120 | 10,0 s | 0 |
 | MicroK8s | 15:57:51 a 16:17:51 | 7 | 120/120 | 10,0 s | 0 |
 
-**Separación por distribución (T-17.3).** En la ventana de MicroK8s, `node_load1` promedió 0,154 (`.11`), 0,133 (`.12`) y 0,111 (`.13`); la misma consulta con `distribution="k3s"` devolvió 0 series. La ventana, el escenario y la repetición no son etiquetas (decisión de diseño); van en un JSON de metadatos por repetición, con la estructura de los archivos `data/metadatos/piloto_T-17.4_<distribución>.json` (`data/` está en `.gitignore`, por eso copio aquí el contenido):
+**Separación por distribución (T-17.3).** En la ventana de MicroK8s, `node_load1` promedió 0,154 (`.11`), 0,133 (`.12`) y 0,111 (`.13`); la misma consulta con `distribution="k3s"` devolvió 0 series. La ventana, el escenario y la repetición no son etiquetas (decisión de diseño); van en un JSON de metadatos por repetición, con la estructura de los archivos `data/metadatos/piloto_T-17.4_<distribución>.json` (`data/` no se versionaba cuando los generé; copio aquí el contenido):
 
 ```json
 {"distribution": "k3s", "escenario": "reposo", "repeticion": 1, "tarea": "T-17.4",
@@ -166,9 +166,18 @@ En ninguna segunda pasada cambió una tarea de `node_exporter` o `prometheus`.
  "node_exporter": "1.12.1", "prometheus": "3.15.0"}
 ```
 
-**Snapshot de la TSDB (T-17.4).** Con `POST /api/v1/admin/tsdb/snapshot` se generó el snapshot del piloto de K3s (`20261018T184657Z-4b8400683efd4f67`) y lo copié fuera del directorio de datos de Prometheus con `sudo` (el directorio pertenece al usuario `prometheus`, modo 0750), a `data/prometheus-snapshots/`. Lo revisé con `promtool tsdb list` y `promtool tsdb analyze`: 2 bloques, 2,1 MB, con la etiqueta `distribution` en las series. Al terminar el piloto de MicroK8s se generó un segundo snapshot (`20261018T191826Z-3bd5b8e4fd423564`) que quedó en `/var/lib/prometheus/data/snapshots/` sin copiar.
+**Snapshot de la TSDB (T-17.4).** Con `POST /api/v1/admin/tsdb/snapshot` se generó el snapshot del piloto de K3s (`20261018T184657Z-4b8400683efd4f67`) y lo copié fuera del directorio de datos de Prometheus con `sudo` (el directorio pertenece al usuario `prometheus`, modo 0750), a `data/prometheus-snapshots/`. Lo revisé con `promtool tsdb list` y `promtool tsdb analyze`: 2 bloques, 2,1 MB, con la etiqueta `distribution` en las series. Al terminar el piloto de MicroK8s se generó un segundo snapshot (`20261018T191826Z-3bd5b8e4fd423564`), que copié después del mismo modo a `data/prometheus-snapshots/` (2,7 MB). `promtool tsdb list` muestra 2 bloques: uno del 13 de octubre (651 series, sin la etiqueta `distribution`) y otro que cubre del 13 al 18 de octubre hasta las 16:18 (7030 series, 1 145 437 muestras); `promtool tsdb analyze` lista `distribution=k3s` y `distribution=microk8s` entre las etiquetas de ese bloque (no interpreté los conteos individuales).
 
 **Series y memoria.** El clúster K3s mostró 625 series de `kube_state_metrics` (95 nombres de métrica) y el de MicroK8s 781 (105). Comparé por nombre de métrica en el último minuto de cada ventana y la diferencia se explica por los objetos que cada distribución crea, no por una configuración distinta de kube-state-metrics: MicroK8s tiene 10 pods (K3s, 7) por `calico-node` ×3, `calico-kube-controllers` y `hostpath-provisioner`, además de un DaemonSet y un PodDisruptionBudget extra y *init containers* de Calico (`kube_pod_init_container_*`); K3s aporta 4 Secrets (`k3s-serving` y 3 `node-password`), `kube_node_role` y `kube_node_spec_pod_cidrs`, que MicroK8s no expone. El RSS de Prometheus difiere entre ambas ventanas, pero hubo reinicios entre medias, así que no lo uso para comparar.
+
+**Condición de los nodos (cierre de HU-17, 18 de octubre).** Consulta: `kube_node_status_condition{status="true"} == 1`, ejecutada en Prometheus con cada clúster levantado (detalle de la aplicación de referencia en `evidencia_T-18.md`):
+
+| Clúster | Series devueltas |
+|---|---|
+| K3s | 6: `Ready` y `EtcdIsVoter` en `k3s-node1`, `k3s-node2` y `k3s-node3` |
+| MicroK8s | 3: `Ready` en `microk8s-node1`, `microk8s-node2` y `microk8s-node3` |
+
+Todas con la etiqueta `distribution` de su clúster.
 
 ## 3. Interpretación (no verificada)
 
@@ -215,13 +224,13 @@ Esto afecta a T-17.3 (etiquetas) y deja la distribución dentro de cada snapshot
 - **Versión fijada v2.20.0 con digest**: se usan los manifiestos `examples/standard` de la versión, con el Service cambiado de *headless* a `NodePort`. La misma imagen corre en las dos distribuciones.
 - **Criterio de continuidad fijado antes de medir** (2.7), para no ajustarlo a los resultados.
 - **Convención de metadatos**: la distribución va como etiqueta estática (4.3); escenario, repetición y ventana van en un JSON por repetición. El escritor definitivo de ese JSON queda para T-32.1; `continuidad.py` solo verifica.
+- **Sin almacenamiento externo al host**: el respaldo de snapshots y resultados es el repositorio (`data/` versionado); no habrá copia fuera del equipo.
 - **Prueba de continuidad con la VIP**: el target `kube_state_metrics` depende de la VIP; durante una conmutación de la VIP tendrá un hueco breve. Lo acepto: es parte de lo que mide el protocolo de fallo controlado.
 
 ## 5. Limitaciones
 
 - Los pilotos de T-17.4 son solo en reposo (sin k6): no demuestran continuidad bajo carga media o alta.
 - Hay una sola corrida de 20 minutos por clúster; no hay repeticiones.
-- El segundo snapshot (MicroK8s) no se copió fuera del host.
 - `continuidad.py` es una verificación, no el orquestador de repeticiones (T-32.1).
 - Durante una conmutación de la VIP, el target `kube_state_metrics` tendrá un hueco que no medí.
 - El reinicio se probó en una sola VM por clúster (`node3`), no en las otras.
@@ -257,7 +266,7 @@ T-16.3 (consulta a Prometheus de la misma ventana) se cerró el 18 de octubre; v
 | `k3sHA/ansible/roles/kube_state_metrics/`, `microk8sHA/ansible/roles/kube_state_metrics/` | Despliegue del manifiesto en cada distribución |
 | `analysis/verificacion/continuidad.py` | Verificación de continuidad por ventana de metadatos |
 | `analysis/verificacion/consulta_prometheus.py` | Comparación de T-16.3 (ver `evidencia_T-16.md`) |
-| `data/metadatos/`, `data/prometheus-snapshots/` | Metadatos y snapshot de los pilotos (git-ignorados; contenido de los metadatos en 2.7) |
+| `data/metadatos/`, `data/prometheus-snapshots/` | Metadatos y snapshots de los pilotos (versionados; ver `data/README.md`) |
 | este documento | Resumen de hechos, interpretaciones, decisiones y pendientes |
 
 ## 8. Criterio de aceptación
@@ -266,5 +275,5 @@ T-16.3 (consulta a Prometheus de la misma ventana) se cerró el 18 de octubre; v
 - T-17.2 «Prometheus en el host»: cumplido (servicio activo, 6 targets `up` con MicroK8s, `promtool` validado, TSDB persistente, etiqueta `distribution` en las series). La versión 3.15.0 y la etiqueta quedaron decididas el 18 de octubre (4.2 y 4.3).
 
 - T-17.3 «Etiquetas y separación de datos»: cumplido con etiqueta estática `distribution` y convención de metadatos; la consulta por distribución, nodo y ventana separa los datos (2.7). El escritor de metadatos queda para T-32.1.
-- T-17.4 «Continuidad, frecuencia y snapshot»: cumplido en reposo en ambos clústeres (7 targets × 120/120 muestras, hueco máximo 10 s, `up=0` nulo) y snapshot creado, copiado e inspeccionado para K3s. Reservas: sección 5.
+- T-17.4 «Continuidad, frecuencia y snapshot»: cumplido en reposo en ambos clústeres (7 targets × 120/120 muestras, hueco máximo 10 s, `up=0` nulo) y snapshots creados, copiados e inspeccionados (K3s y MicroK8s). Reservas: sección 5.
 - T-17.5 «kube-state-metrics»: cumplido en K3s y MicroK8s con la misma imagen y el mismo mecanismo de acceso (4.4).

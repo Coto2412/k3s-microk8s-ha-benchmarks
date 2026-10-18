@@ -92,15 +92,9 @@ spec:
               value: "true"
             - name: cp_namespace
               value: "kube-system"
-            # Función 2 (Service LoadBalancer de la app de referencia):
-            # DESHABILITADA por ahora. Se activa en EP-05 junto con un pool
-            # de IPs explícito. Habilitarla sin pool configurado hace que
-            # kube-vip caiga a un fallback que toma la IP propia del nodo
-            # como si fuera la VIP del Service, pisando la IP real de DHCP
-            # y tumbando la conectividad del nodo (visto en producción con
-            # el ServiceLB de Traefik en k3s: "Re-applying the VIP
-            # configuration [<ip-del-nodo>]").
+            # Función 2 (Service LoadBalancer de la app de referencia), T-18.
+            # La IP se fija por anotación kube-vip.io/loadbalancerIPs en el Service.
             - name: svc_enable
-              value: "false"
+              value: "true"
             - name: svc_election
-              value: "false"
+              value: "{{ kube_vip_svc_election }}"

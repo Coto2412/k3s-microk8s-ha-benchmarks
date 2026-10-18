@@ -1,0 +1,14 @@
+{
+  "distribution": "k3s",
+  "escenario": "reposo",
+  "repeticion": 1,
+  "tarea": "T-17.4",
+  "t_inicio": 1792347987.566,
+  "t_fin": 1792349187.566,
+  "inicio": "2026-10-18T15:26:27-0300",
+  "fin": "2026-10-18T15:46:27-0300",
+  "k3s_version": "v1.36.3+k3s1",
+  "kube_state_metrics": "v2.20.0",
+  "node_exporter": "1.12.1",
+  "prometheus": "3.15.0"
+}

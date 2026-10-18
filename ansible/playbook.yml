@@ -7,3 +7,4 @@
     - scaphandre
     - node_exporter
     - prometheus
+    - k6

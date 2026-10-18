@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-referencia
+  namespace: default
+data:
+  default.conf: |
+    server {
+        listen 80 default_server;
+        access_log off;
+        location = /healthz {
+            default_type text/plain;
+            return 200 "ok\n";
+        }
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+    }
+  index.html: |
+    <!doctype html><title>referencia</title><p>ok</p>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-referencia
+  namespace: default
+  labels:
+    app: nginx-referencia
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-referencia
+  template:
+    metadata:
+      labels:
+        app: nginx-referencia
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ app_node }}
+      containers:
+        - name: nginx
+          image: {{ nginx_image }}
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: {{ nginx_cpu_request }}
+              memory: {{ nginx_memory }}
+            limits:
+              cpu: {{ nginx_cpu_limit }}
+              memory: {{ nginx_memory }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+            - name: config
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+      volumes:
+        - name: config
+          configMap:
+            name: nginx-referencia

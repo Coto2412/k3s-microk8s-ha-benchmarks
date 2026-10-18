@@ -1,0 +1,14 @@
+{
+  "distribution": "microk8s",
+  "escenario": "reposo",
+  "repeticion": 1,
+  "tarea": "T-17.4",
+  "t_inicio": 1792349871.716,
+  "t_fin": 1792351071.716,
+  "inicio": "2026-10-18T15:57:51-0300",
+  "fin": "2026-10-18T16:17:51-0300",
+  "microk8s_version": "v1.36.2",
+  "kube_state_metrics": "v2.20.0",
+  "node_exporter": "1.12.1",
+  "prometheus": "3.15.0"
+}

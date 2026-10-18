@@ -1,0 +1,28 @@
+---
+- name: Renderizar manifiestos de la aplicación de referencia
+  template:
+    src: "{{ playbook_dir }}/../../k8s/{{ item }}.yaml.j2"
+    dest: "/tmp/{{ item }}.yaml"
+    mode: '0644'
+  loop:
+    - nginx-deployment
+    - nginx-service
+
+- name: Aplicar manifiestos de la aplicación de referencia
+  command: "microk8s kubectl apply -f /tmp/{{ item }}.yaml"
+  register: nginx_apply
+  changed_when: "'unchanged' not in nginx_apply.stdout"
+  retries: 5
+  delay: 10
+  until: nginx_apply is succeeded
+  loop:
+    - nginx-deployment
+    - nginx-service
+
+- name: Esperar a que NGINX de referencia esté listo
+  command: microk8s kubectl -n default rollout status deploy/nginx-referencia --timeout=180s
+  changed_when: false
+  register: nginx_rollout
+  retries: 3
+  delay: 10
+  until: nginx_rollout.rc == 0

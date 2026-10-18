@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-referencia
+  namespace: default
+  annotations:
+    kube-vip.io/loadbalancerIPs: "{{ lb_ip }}"
+spec:
+  type: LoadBalancer
+  allocateLoadBalancerNodePorts: false
+  selector:
+    app: nginx-referencia
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

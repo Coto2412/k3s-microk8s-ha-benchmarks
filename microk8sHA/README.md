@@ -44,7 +44,10 @@ microk8sHA/
 │       ├── common/                # swap off, módulos de kernel, sysctl
 │       ├── ssh_config/            # hardening SSH
 │       ├── microk8s_server/       # instalación, join, hallazgos de estabilización (§8)
-│       └── kube_vip/              # manifiesto RBAC + DaemonSet de kube-vip
+│       ├── kube_vip/              # manifiesto RBAC + DaemonSet de kube-vip
+│       ├── node_exporter/         # Node Exporter en cada VM, 9100 restringido al host con ufw
+│       ├── kube_state_metrics/    # despliega k8s/kube-state-metrics.yaml
+│       └── nginx_referencia/      # NGINX de referencia y Service LoadBalancer (.150)
 ├── terraform/
 │   ├── main.tf                    # red, volúmenes, cloud-init, dominios libvirt, pinning de CPU
 │   ├── variables.tf
@@ -88,7 +91,8 @@ Prerrequisitos: ver [README raíz, §10](../README.md#10-reproducibilidad).
 | `snap_refresh_timer` | `forever` | `snap refresh --hold=forever`, congela la revisión tras el primer install |
 | `microk8s_worker_flag` | `false` | Los 3 nodos son plano de control, sin *workers* dedicados |
 | `microk8s_extra_sans` | `["{{ vip_address }}"]` | SAN adicional en los certificados del API server |
-| `kube_vip_version` | `v0.8.9` | Tag de imagen de kube-vip, fijado (idéntico a K3s) |
+| `kube_vip_version` | `v1.2.4` | Tag de imagen de kube-vip, fijado (idéntico a K3s) |
+| `kube_vip_svc_election` | `"false"` | Elección de líder por Service en kube-vip; `"true"` probado en T-18; queda `"false"` como valor definitivo |
 | `kube_vip_interface` | `ens3` | Interfaz donde kube-vip anuncia la VIP |
 | `kube_vip_port` | `16443` | Puerto de la API de MicroK8s |
 
@@ -134,7 +138,7 @@ ssh -i keys/key <usuario_admin>@192.168.100.100 microk8s kubectl get nodes -o wi
 | *Join* de nodos | Token de un solo uso generado en `microk8s-node1` vía `microk8s add-node --token-ttl 3600`, consumido con `microk8s join` | Mecanismo propio de MicroK8s; se delega siempre al primer nodo |
 | `--bind-address`/`--advertise-address` | Removidos del `kube-apiserver` si existían de una instalación previa | La API debe quedar en wildcard (`16443`) para que kube-vip en ARP pueda responder en la VIP — mismo motivo que en K3s |
 | kube-vip | Manifiesto aplicado explícito con `microk8s kubectl apply`, no hay directorio de auto-aplicado como en K3s | Particularidad de MicroK8s (`microk8sHA/ansible/roles/kube_vip/tasks/main.yml:13-27`) |
-| kube-vip — modo | ARP, `cp_enable=true`, `svc_enable=false` | Igual que K3s — ver [D-05 del README raíz](../README.md#7-registro-de-decisiones-técnicas) |
+| kube-vip — modo | ARP, `cp_enable=true`, `svc_enable=true` (desde T-18; la IP del Service se fija por anotación) | Igual que K3s — ver [D-05 del README raíz](../README.md#7-registro-de-decisiones-técnicas) |
 | `apiserver-kicker` | Enmascarado (`systemctl mask`) después del primer arranque completo del nodo | Ver hallazgo 1 en [§8](#8-hallazgos-e-incidentes) |
 
 ## 7. Decisiones propias de la distribución
@@ -182,10 +186,10 @@ Ver tabla completa de asimetrías en el [README raíz, §11](../README.md#11-asi
 
 ## 12. Limitaciones y trabajo pendiente
 
-- Sin observabilidad (Scaphandre, Node Exporter, Prometheus, kube-state-metrics, chrony): no implementada en este módulo.
-- Sin aplicación de referencia ni pruebas de carga.
+- Observabilidad: este módulo instala Node Exporter en las VMs (`node_exporter`) y kube-state-metrics (`kube_state_metrics`); Scaphandre y Prometheus corren en el host (`ansible/` de la raíz). Ver [`evidencia_T-17.md`](../docs/evidencia/evidencia_T-17.md).
+- Aplicación de referencia (`nginx_referencia`) con Service LoadBalancer en la IP `.150`, verificada en este clúster; ver [`evidencia_T-18.md`](../docs/evidencia/evidencia_T-18.md). Solo se hicieron pruebas de humo de k6, sin calibración ni campaña.
+- `chrony` no está implementado (las VMs usan el servicio de hora predeterminado de Ubuntu).
 - `AC-MK8S-02` (verificación de salud de Dqlite) no está automatizada; requiere inspección manual.
-- La función de `Service` LoadBalancer de kube-vip (VIP `.150`) queda deshabilitada hasta la implementación de la aplicación de referencia.
 - El canal `1.36/stable` no fija una revisión exacta de antemano (ver [README raíz, §13](../README.md#13-limitaciones-y-amenazas-a-la-validez)).
 
 ## 13. Solución de problemas
