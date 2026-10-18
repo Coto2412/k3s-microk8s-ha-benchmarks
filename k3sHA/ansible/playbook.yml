@@ -17,6 +17,8 @@
     - kube_vip
     # Rol de Node Exporter con ufw restringido al host físico
     - node_exporter
+    # Rol de kube-state-metrics (NodePort 30080/30081) para métricas de estado
+    - kube_state_metrics
   tasks:
     # Esperar a que la API de k3s responda en el VIP
     - name: Esperar API de k3s en el VIP

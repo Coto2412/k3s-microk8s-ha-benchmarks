@@ -1,0 +1,22 @@
+---
+- name: Copiar manifest de kube-state-metrics al nodo principal
+  copy:
+    src: "{{ playbook_dir }}/../../k8s/kube-state-metrics.yaml"
+    dest: /tmp/kube-state-metrics.yaml
+    mode: '0644'
+
+- name: Aplicar manifest de kube-state-metrics
+  command: microk8s kubectl apply -f /tmp/kube-state-metrics.yaml
+  register: ksm_apply
+  changed_when: "'unchanged' not in ksm_apply.stdout"
+  retries: 5
+  delay: 10
+  until: ksm_apply is succeeded
+
+- name: Esperar a que kube-state-metrics esté listo
+  command: microk8s kubectl -n kube-system rollout status deploy/kube-state-metrics --timeout=180s
+  changed_when: false
+  register: ksm_rollout
+  retries: 3
+  delay: 10
+  until: ksm_rollout.rc == 0

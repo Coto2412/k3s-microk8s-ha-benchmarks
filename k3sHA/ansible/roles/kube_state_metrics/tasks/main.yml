@@ -1,0 +1,14 @@
+---
+- name: Desplegar manifest de kube-state-metrics
+  copy:
+    src: "{{ playbook_dir }}/../../k8s/kube-state-metrics.yaml"
+    dest: /var/lib/rancher/k3s/server/manifests/kube-state-metrics.yaml
+    mode: '0644'
+
+- name: Esperar a que kube-state-metrics esté listo
+  command: kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml -n kube-system rollout status deploy/kube-state-metrics --timeout=180s
+  changed_when: false
+  register: ksm_rollout
+  retries: 3
+  delay: 10
+  until: ksm_rollout.rc == 0

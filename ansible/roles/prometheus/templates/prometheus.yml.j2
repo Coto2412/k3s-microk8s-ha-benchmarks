@@ -32,6 +32,12 @@ scrape_configs:
         regex: 'scaph_(host|socket|self)_.*'
         action: keep
 
+  - job_name: kube_state_metrics
+    static_configs:
+      - targets: ["{{ cluster_vip }}:{{ kube_state_metrics_nodeport }}"]
+        labels:
+          distribution: {{ active_distribution }}
+
   - job_name: prometheus
     static_configs:
       - targets: ["{{ prometheus_bind }}:{{ prometheus_port }}"]

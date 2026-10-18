@@ -1,4 +1,4 @@
-# Evidencia de HU-17 (T-17.1 y T-17.2): Node Exporter en el host y las VMs, y Prometheus en el host
+# Evidencia de HU-17 (T-17.1 a T-17.5): Node Exporter, Prometheus, etiquetas, continuidad y kube-state-metrics
 
 Fechas: 2026-10-13 (host y clúster K3s) y 2026-10-18 (clúster MicroK8s y cierre). Las salidas provienen de mi terminal en el host (ThinkPad). Los playbooks del host se ejecutaron con `--ask-become-pass` (el sudo del host pide contraseña); los de las VMs, por SSH con la llave del proyecto. No hay mediciones experimentales: solo verificaciones de despliegue.
 
@@ -8,8 +8,8 @@ Convención: la sección 2 contiene hechos medidos u observados; la 3, interpret
 
 | Parámetro | Valor |
 |---|---|
-| Tareas cubiertas | T-17.1 (Node Exporter en el host y en las 3 VMs) y T-17.2 (Prometheus en el host) |
-| Fuera de alcance | T-17.3 a T-17.5, kube-state-metrics, k6 |
+| Tareas cubiertas | T-17.1 (Node Exporter en el host y en las 3 VMs), T-17.2 (Prometheus en el host), T-17.3 (etiquetas y separación de datos), T-17.4 (continuidad, frecuencia y snapshot) y T-17.5 (kube-state-metrics) |
+| Fuera de alcance | k6, aplicación de referencia, `chrony`, escritor definitivo de metadatos (T-32.1) |
 | Host | Lenovo ThinkPad T14 Gen 2A, Ubuntu 24.04 (ver `evidencia_T-16.md`, sección 1) |
 | Sesión durante las verificaciones | no registrada; no es una medición energética |
 | Clústeres probados | K3s (13 y 18 de octubre) y MicroK8s (18 de octubre), uno a la vez; ambos destruidos entre pruebas |
@@ -138,8 +138,41 @@ En ninguna segunda pasada cambió una tarea de `node_exporter` o `prometheus`.
 - `chronyc` no existe en el host ni en ninguna de las VMs (K3s y MicroK8s).
 - En las VMs de MicroK8s, `timedatectl` indica `NTPSynchronized=yes`; el servicio de hora es el predeterminado de Ubuntu, no `chrony`. Su configuración de servidores no se revisó.
 
+### 2.7 kube-state-metrics, continuidad y snapshot (T-17.3 a T-17.5)
+
+**kube-state-metrics (T-17.5).** Versión v2.20.0, imagen `registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.20.0` con digest `sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b`, idéntica en K3s y MicroK8s. Se despliega con `k8s/kube-state-metrics.yaml` (ServiceAccount, ClusterRole, ClusterRoleBinding, Deployment y Service `NodePort` 30080 métricas / 30081 telemetría; contenedor en 8080/8081). Prometheus lo consulta en `192.168.100.100:30080` (VIP del plano de control). El despliegue es parte del *play* del nodo 1 en ambos playbooks (rol `kube_state_metrics`) y terminó sin fallos en los dos clústeres; en K3s la espera del *rollout* necesitó 2 reintentos.
+
+**Criterio de continuidad (T-17.4), fijado antes de medir.** Por target: ≥ 99 % de las muestras esperadas (una cada 10 s), ningún hueco mayor a 30 s y `up=0` en ≤ 1 % de las muestras. Los 7 targets esperados por clúster son el host, las 3 VMs, `scaphandre`, `kube_state_metrics` y el propio Prometheus.
+
+**Piloto en reposo de 20 minutos por clúster** (`analysis/verificacion/continuidad.py`, código de salida 0 en ambos):
+
+| Clúster | Ventana (UTC-3, 18 de octubre) | Targets | Muestras por target | Hueco máximo | `up=0` |
+|---|---|---|---|---|---|
+| K3s | 15:26:27 a 15:46:27 | 7 | 120/120 | 10,0 s | 0 |
+| MicroK8s | 15:57:51 a 16:17:51 | 7 | 120/120 | 10,0 s | 0 |
+
+**Separación por distribución (T-17.3).** En la ventana de MicroK8s, `node_load1` promedió 0,154 (`.11`), 0,133 (`.12`) y 0,111 (`.13`); la misma consulta con `distribution="k3s"` devolvió 0 series. La ventana, el escenario y la repetición no son etiquetas (decisión de diseño); van en un JSON de metadatos por repetición, con la estructura de los archivos `data/metadatos/piloto_T-17.4_<distribución>.json` (`data/` está en `.gitignore`, por eso copio aquí el contenido):
+
+```json
+{"distribution": "k3s", "escenario": "reposo", "repeticion": 1, "tarea": "T-17.4",
+ "t_inicio": 1792347987.566, "t_fin": 1792349187.566,
+ "inicio": "2026-10-18T15:26:27-0300", "fin": "2026-10-18T15:46:27-0300",
+ "k3s_version": "v1.36.3+k3s1", "kube_state_metrics": "v2.20.0",
+ "node_exporter": "1.12.1", "prometheus": "3.15.0"}
+{"distribution": "microk8s", "escenario": "reposo", "repeticion": 1, "tarea": "T-17.4",
+ "t_inicio": 1792349871.716, "t_fin": 1792351071.716,
+ "inicio": "2026-10-18T15:57:51-0300", "fin": "2026-10-18T16:17:51-0300",
+ "microk8s_version": "v1.36.2", "kube_state_metrics": "v2.20.0",
+ "node_exporter": "1.12.1", "prometheus": "3.15.0"}
+```
+
+**Snapshot de la TSDB (T-17.4).** Con `POST /api/v1/admin/tsdb/snapshot` se generó el snapshot del piloto de K3s (`20261018T184657Z-4b8400683efd4f67`) y lo copié fuera del directorio de datos de Prometheus con `sudo` (el directorio pertenece al usuario `prometheus`, modo 0750), a `data/prometheus-snapshots/`. Lo revisé con `promtool tsdb list` y `promtool tsdb analyze`: 2 bloques, 2,1 MB, con la etiqueta `distribution` en las series. Al terminar el piloto de MicroK8s se generó un segundo snapshot (`20261018T191826Z-3bd5b8e4fd423564`) que quedó en `/var/lib/prometheus/data/snapshots/` sin copiar.
+
+**Series y memoria.** El clúster K3s mostró 625 series de `kube_state_metrics` (95 nombres de métrica) y el de MicroK8s 781 (105). Comparé por nombre de métrica en el último minuto de cada ventana y la diferencia se explica por los objetos que cada distribución crea, no por una configuración distinta de kube-state-metrics: MicroK8s tiene 10 pods (K3s, 7) por `calico-node` ×3, `calico-kube-controllers` y `hostpath-provisioner`, además de un DaemonSet y un PodDisruptionBudget extra y *init containers* de Calico (`kube_pod_init_container_*`); K3s aporta 4 Secrets (`k3s-serving` y 3 `node-password`), `kube_node_role` y `kube_node_spec_pod_cidrs`, que MicroK8s no expone. El RSS de Prometheus difiere entre ambas ventanas, pero hubo reinicios entre medias, así que no lo uso para comparar.
+
 ## 3. Interpretación (no verificada)
 
+- La diferencia de series de `kube_state_metrics` es una diferencia de carga de trabajo del sistema (CNI Calico en MicroK8s, Secrets propios en K3s), no de configuración (2.7). Que esa diferencia afecte el consumo de CPU o energía de cada clúster no está medido.
 - El nodo 1 de K3s expone más líneas `node_*` que los otros dos; podría deberse a más interfaces o sistemas de archivos montados en ese nodo, pero no se comprobó.
 - `external_labels` no aparece en las series almacenadas (ver 4.3). La documentación de Prometheus lo describe como un mecanismo para sistemas externos (federación, escritura remota, alertas); se verificó en este host que no queda en las series locales.
 - El RSS de Prometheus pasó de unos 97 MB a unos 130 MB al crecer las series de 651 a 1689, pero son dos muestras puntuales; no se determinó cómo escala.
@@ -176,9 +209,21 @@ Verificado después de aplicar el playbook (`ok=33 changed=2 failed=0`):
 
 Esto afecta a T-17.3 (etiquetas) y deja la distribución dentro de cada snapshot de la TSDB.
 
+### 4.4 Decisiones de T-17.3 a T-17.5
+
+- **kube-state-metrics por `NodePort` a través de la VIP `.100`**: el diseño exige leer la API estándar de Kubernetes sin acoplarse a etcd/Dqlite. Elegí `NodePort` porque Prometheus (en el host, fuera del clúster) no necesita token ni CA, y el mecanismo es idéntico en K3s y MicroK8s (comparación simétrica). El Service `LoadBalancer` de kube-vip se deja para la aplicación de referencia (T-18): `svc_enable` sigue en `"false"` a propósito.
+- **Versión fijada v2.20.0 con digest**: se usan los manifiestos `examples/standard` de la versión, con el Service cambiado de *headless* a `NodePort`. La misma imagen corre en las dos distribuciones.
+- **Criterio de continuidad fijado antes de medir** (2.7), para no ajustarlo a los resultados.
+- **Convención de metadatos**: la distribución va como etiqueta estática (4.3); escenario, repetición y ventana van en un JSON por repetición. El escritor definitivo de ese JSON queda para T-32.1; `continuidad.py` solo verifica.
+- **Prueba de continuidad con la VIP**: el target `kube_state_metrics` depende de la VIP; durante una conmutación de la VIP tendrá un hueco breve. Lo acepto: es parte de lo que mide el protocolo de fallo controlado.
+
 ## 5. Limitaciones
 
-- La API de snapshot (`/api/v1/admin/tsdb/snapshot`) no se ejecutó; solo se verificó que la bandera existe.
+- Los pilotos de T-17.4 son solo en reposo (sin k6): no demuestran continuidad bajo carga media o alta.
+- Hay una sola corrida de 20 minutos por clúster; no hay repeticiones.
+- El segundo snapshot (MicroK8s) no se copió fuera del host.
+- `continuidad.py` es una verificación, no el orquestador de repeticiones (T-32.1).
+- Durante una conmutación de la VIP, el target `kube_state_metrics` tendrá un hueco que no medí.
 - El reinicio se probó en una sola VM por clúster (`node3`), no en las otras.
 - En K3s no medí la interrupción del reinicio en Prometheus (ver 2.3).
 - Comparé K3s y MicroK8s con una sola corrida cada uno; no hay repeticiones.
@@ -191,9 +236,8 @@ Esto afecta a T-17.3 (etiquetas) y deja la distribución dentro de cada snapshot
 ## 6. Pendiente
 
 1. `chrony` como tarea separada (el diseño lo exige: host como fuente de referencia NTP, VMs como clientes solo de `192.168.100.1`; hoy no está implementado en ningún lado). Propuesta: roles `chrony` para el host y las VMs, fuera de T-17. Pendiente decidir cuándo hacerlo.
-2. Ejecutar una vez el snapshot de la TSDB y copiarlo fuera del host (T-17.4).
-3. Ingresar las horas reales de T-17.1 y T-17.2 en la hoja (no se estiman).
-4. Hacer commit con esta evidencia (sección 7).
+2. Ingresar las horas reales de T-17.1 a T-17.5 en la hoja (no se estiman).
+3. Hacer commit con esta evidencia (sección 7).
 
 T-16.3 (consulta a Prometheus de la misma ventana) se cerró el 18 de octubre; ver `evidencia_T-16.md`, sección 2.6a.
 
@@ -208,6 +252,12 @@ T-16.3 (consulta a Prometheus de la misma ventana) se cerró el 18 de octubre; v
 | `k3sHA/ansible/roles/node_exporter/`, `microk8sHA/ansible/roles/node_exporter/` | Rol de las VMs, incluida la tarea `ufw` |
 | `k3sHA/ansible/group_vars/all.yml`, `microk8sHA/ansible/group_vars/all.yml` | Variables del rol de las VMs |
 | `k3sHA/ansible/playbook.yml`, `microk8sHA/ansible/playbook.yml` | Añaden `node_exporter` después de `kube_vip` en ambos *plays* |
+| `ansible/roles/prometheus/templates/prometheus.yml.j2` | Trabajos y etiqueta `distribution`, incluido `kube_state_metrics` |
+| `k8s/kube-state-metrics.yaml` | Manifiesto de kube-state-metrics v2.20.0 (Service `NodePort`) |
+| `k3sHA/ansible/roles/kube_state_metrics/`, `microk8sHA/ansible/roles/kube_state_metrics/` | Despliegue del manifiesto en cada distribución |
+| `analysis/verificacion/continuidad.py` | Verificación de continuidad por ventana de metadatos |
+| `analysis/verificacion/consulta_prometheus.py` | Comparación de T-16.3 (ver `evidencia_T-16.md`) |
+| `data/metadatos/`, `data/prometheus-snapshots/` | Metadatos y snapshot de los pilotos (git-ignorados; contenido de los metadatos en 2.7) |
 | este documento | Resumen de hechos, interpretaciones, decisiones y pendientes |
 
 ## 8. Criterio de aceptación
@@ -215,6 +265,6 @@ T-16.3 (consulta a Prometheus de la misma ventana) se cerró el 18 de octubre; v
 - T-17.1 «Node Exporter en el host y en las VMs»: cumplido en el host, K3s y MicroK8s, con solo los seis colectores y acceso restringido a `192.168.100.1` en las VMs. Reservas: sección 5.
 - T-17.2 «Prometheus en el host»: cumplido (servicio activo, 6 targets `up` con MicroK8s, `promtool` validado, TSDB persistente, etiqueta `distribution` en las series). La versión 3.15.0 y la etiqueta quedaron decididas el 18 de octubre (4.2 y 4.3).
 
-Commits sugeridos (uno por tarea):
-- `T-17.1: rol node_exporter en host y VMs (K3s y MicroK8s) con colectores reducidos y ufw restringido a 192.168.100.1`
-- `T-17.2: rol prometheus en el host, targets de host/VMs/scaphandre y evidencia_T-17`
+- T-17.3 «Etiquetas y separación de datos»: cumplido con etiqueta estática `distribution` y convención de metadatos; la consulta por distribución, nodo y ventana separa los datos (2.7). El escritor de metadatos queda para T-32.1.
+- T-17.4 «Continuidad, frecuencia y snapshot»: cumplido en reposo en ambos clústeres (7 targets × 120/120 muestras, hueco máximo 10 s, `up=0` nulo) y snapshot creado, copiado e inspeccionado para K3s. Reservas: sección 5.
+- T-17.5 «kube-state-metrics»: cumplido en K3s y MicroK8s con la misma imagen y el mismo mecanismo de acceso (4.4).
