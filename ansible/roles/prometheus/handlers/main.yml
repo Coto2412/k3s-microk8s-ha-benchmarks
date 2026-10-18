@@ -1,0 +1,9 @@
+---
+- name: Recargar systemd
+  systemd:
+    daemon_reload: true
+
+- name: Reiniciar prometheus
+  systemd:
+    name: prometheus
+    state: restarted

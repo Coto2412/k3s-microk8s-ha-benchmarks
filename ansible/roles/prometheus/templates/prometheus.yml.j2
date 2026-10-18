@@ -1,0 +1,43 @@
+global:
+  scrape_interval: {{ prometheus_scrape_interval }}
+  external_labels:
+    distribution: {{ active_distribution }}
+
+scrape_configs:
+  - job_name: node_exporter_host
+    static_configs:
+      - targets: ["{{ node_exporter_bind }}:{{ node_exporter_port }}"]
+        labels:
+          role: host
+          distribution: {{ active_distribution }}
+
+  - job_name: node_exporter_vms
+    static_configs:
+      - targets:
+{% for ip in vm_ips %}
+          - "{{ ip }}:{{ node_exporter_port }}"
+{% endfor %}
+        labels:
+          role: node
+          distribution: {{ active_distribution }}
+
+  - job_name: scaphandre
+    fallback_scrape_protocol: PrometheusText0.0.4
+    static_configs:
+      - targets: ["{{ scaphandre_exporter_bind }}:{{ scaphandre_exporter_port }}"]
+        labels:
+          distribution: {{ active_distribution }}
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'scaph_(host|socket|self)_.*'
+        action: keep
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["{{ prometheus_bind }}:{{ prometheus_port }}"]
+        labels:
+          distribution: {{ active_distribution }}
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'process_resident_memory_bytes|process_cpu_seconds_total|prometheus_tsdb_head_series'
+        action: keep

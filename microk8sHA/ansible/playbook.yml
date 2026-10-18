@@ -15,6 +15,8 @@
     - microk8s_server
     # Rol de kube-vip para IP virtual del plano de control (ARP)
     - kube_vip
+    # Rol de Node Exporter con ufw restringido al host físico
+    - node_exporter
   tasks:
     # Esperar a que la API de microk8s responda a través del VIP (kube-vip
     # anuncia por ARP directo al puerto real del API server, sin proxy TCP)
@@ -38,3 +40,5 @@
     - microk8s_server
     # Rol de kube-vip para IP virtual del plano de control (ARP)
     - kube_vip
+    # Rol de Node Exporter con ufw restringido al host físico
+    - node_exporter

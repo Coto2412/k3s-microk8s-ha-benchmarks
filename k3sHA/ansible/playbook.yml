@@ -15,6 +15,8 @@
     - k3s_server
     # Rol de kube-vip para IP virtual del plano de control (ARP)
     - kube_vip
+    # Rol de Node Exporter con ufw restringido al host físico
+    - node_exporter
   tasks:
     # Esperar a que la API de k3s responda en el VIP
     - name: Esperar API de k3s en el VIP
@@ -37,3 +39,5 @@
     - k3s_server
     # Rol de kube-vip para IP virtual del plano de control (ARP)
     - kube_vip
+    # Rol de Node Exporter con ufw restringido al host físico
+    - node_exporter

@@ -7,3 +7,30 @@ scaphandre_rust_version: "1.98.1"
 
 scaphandre_exporter_bind: 127.0.0.1
 scaphandre_exporter_port: 8080
+
+node_exporter_version: "1.12.1"
+node_exporter_sha256: b51d8a76aa2a9156a55d501aca6276fae09e262259a5e4e831d2c2222f084e63
+node_exporter_bind: 127.0.0.1
+node_exporter_port: 9100
+node_exporter_collectors:
+  - cpu
+  - meminfo
+  - diskstats
+  - filesystem
+  - netdev
+  - loadavg
+
+prometheus_version: "3.15.0"
+prometheus_sha256: 2a542df32eac02ee17b9d844fb2aa1de00dafa5476579ba8a3ba862e9d572ea0
+prometheus_bind: 127.0.0.1
+prometheus_port: 9090
+prometheus_scrape_interval: 10s
+prometheus_retention: 90d
+prometheus_data_dir: /var/lib/prometheus/data
+
+active_distribution: k3s
+
+vm_ips:
+  - 192.168.100.11
+  - 192.168.100.12
+  - 192.168.100.13

@@ -1,0 +1,86 @@
+---
+- name: Crear usuario de sistema prometheus
+  user:
+    name: prometheus
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Crear directorios de Prometheus
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0750'
+  loop:
+    - /etc/prometheus
+    - "{{ prometheus_data_dir }}"
+
+- name: Descargar Prometheus con checksum fijado
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+    checksum: "sha256:{{ prometheus_sha256 }}"
+    mode: '0644'
+
+- name: Extraer Prometheus
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+
+- name: Instalar binarios de Prometheus en /usr/local/bin
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - prometheus
+    - promtool
+  notify: Reiniciar prometheus
+
+- name: Verificar que --web.enable-admin-api existe en esta versión
+  command: /usr/local/bin/prometheus --help
+  register: prometheus_help
+  changed_when: false
+  failed_when: "'web.enable-admin-api' not in (prometheus_help.stdout + prometheus_help.stderr)"
+
+- name: Desplegar configuración de Prometheus
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0640'
+  notify: Reiniciar prometheus
+
+- name: Validar la configuración con promtool antes de aplicar
+  command: /usr/local/bin/promtool check config /etc/prometheus/prometheus.yml
+  changed_when: false
+
+- name: Desplegar unidad systemd de Prometheus
+  template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    mode: '0644'
+  notify:
+    - Recargar systemd
+    - Reiniciar prometheus
+
+- name: Habilitar e iniciar Prometheus
+  systemd:
+    name: prometheus
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Esperar a que Prometheus responda
+  wait_for:
+    host: "{{ prometheus_bind }}"
+    port: "{{ prometheus_port }}"
+    timeout: 30

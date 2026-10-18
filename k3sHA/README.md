@@ -157,15 +157,15 @@ Durante la migración de Keepalived+HAProxy a kube-vip se encontró y corrigió 
 
 | ID | Criterio | Verificación | Estado |
 |---|---|---|---|
-| AC-K3S-01 | 3 nodos en estado `Ready` con rol `control-plane,etcd` | `kubectl get nodes -o wide` | Declarado por el autor |
-| AC-K3S-02 | etcd embebido saludable, 3 miembros | `k3s etcd-snapshot save` o listado de miembros vía `kubectl -n kube-system get pods -l component=etcd` (no hay tarea automatizada de esta verificación en el repo) | Pendiente de automatizar — verificación manual declarada por el autor |
+| AC-K3S-01 | 3 nodos en estado `Ready` con rol `control-plane,etcd` | `kubectl get nodes -o wide` | Declarado por mí |
+| AC-K3S-02 | etcd embebido saludable, 3 miembros | `k3s etcd-snapshot save` o listado de miembros vía `kubectl -n kube-system get pods -l component=etcd` (no hay tarea automatizada de esta verificación en el repo) | Pendiente de automatizar — verificación manual declarada por mí |
 | AC-K3S-03 | La API responde directo en la VIP, puerto 6443, sin proxy intermedio | `ssh <VIP> kubectl get nodes` (task `Esperar API de k3s en el VIP`, `k3sHA/ansible/playbook.yml:19-24`) | Cumplido con evidencia (tarea de espera pasa en el playbook) |
-| AC-K3S-04 | Pod de kube-vip `Running` en los 3 nodos | `kubectl -n kube-system get pods -l name=kube-vip-ds -o wide` | Declarado por el autor |
-| AC-K3S-05 | Failover real de la VIP al matar el nodo líder | `systemctl kill -s SIGKILL k3s` en el nodo con la VIP, confirmar migración | **Cumplido con evidencia** (declarado por el autor; único de las dos distribuciones donde esto se validó) |
+| AC-K3S-04 | Pod de kube-vip `Running` en los 3 nodos | `kubectl -n kube-system get pods -l name=kube-vip-ds -o wide` | Declarado por mí |
+| AC-K3S-05 | Failover real de la VIP al matar el nodo líder | `systemctl kill -s SIGKILL k3s` en el nodo con la VIP, confirmar migración | **Cumplido con evidencia** (declarado por mí; único de las dos distribuciones donde esto se validó) |
 
 ## 10. Validación de Alta Disponibilidad
 
-Procedimiento (protocolo de fallo controlado del diseño de Etapa 2): identificar el nodo que actualmente sostiene la VIP, ejecutar `systemctl kill -s SIGKILL k3s` en ese nodo, y confirmar que kube-vip migra la VIP a otro de los 3 nodos sin pérdida prolongada de acceso. **Estado: validado según el autor.** No hay en el repo un script ni un registro (log, captura) de esta prueba — es una afirmación del autor, no evidencia versionada.
+Procedimiento (protocolo de fallo controlado del diseño de Etapa 2): identificar el nodo que actualmente sostiene la VIP, ejecutar `systemctl kill -s SIGKILL k3s` en ese nodo, y confirmar que kube-vip migra la VIP a otro de los 3 nodos sin pérdida prolongada de acceso. **Estado: validado por mí.** No hay en el repo un script ni un registro (log, captura) de esta prueba — es una afirmación mía, no evidencia versionada.
 
 ## 11. Diferencias con MicroK8s
 

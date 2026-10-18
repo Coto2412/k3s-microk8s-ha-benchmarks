@@ -1,0 +1,13 @@
+[Unit]
+Description=Prometheus
+After=network.target
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecStart=/usr/local/bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path={{ prometheus_data_dir }} --storage.tsdb.retention.time={{ prometheus_retention }} --web.listen-address={{ prometheus_bind }}:{{ prometheus_port }} --web.enable-admin-api
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

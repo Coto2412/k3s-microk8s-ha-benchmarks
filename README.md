@@ -26,7 +26,7 @@ El proyecto compara dos distribuciones ligeras de Kubernetes — K3s y MicroK8s 
 |---|---|---|
 | Etapa 1 | Problema, requerimientos, estado del arte | Cerrada y entregada (`docs/Entrega_1_Proyecto_de_Título.pdf`) |
 | Etapa 2 | Diseño técnico completo | Cerrada y entregada |
-| Etapa 2 — implementación de infraestructura (EP-04 del backlog) | Clústeres HA de K3s y MicroK8s con IP virtual redundante (kube-vip) | **Implementado y validado de punta a punta** (declarado por el autor, ver [AC-03](#9-criterios-de-aceptación-globales)) |
+| Etapa 2 — implementación de infraestructura (EP-04 del backlog) | Clústeres HA de K3s y MicroK8s con IP virtual redundante (kube-vip) | **Implementado y validado de punta a punta** (declarado por mí, ver [AC-03](#9-criterios-de-aceptación-globales)) |
 | Etapa 3 (proyectada) | Observabilidad (Scaphandre, Node Exporter, Prometheus, kube-state-metrics, chrony), aplicación de referencia, generador de carga k6 | **Diseñado, pendiente de implementar.** Ningún componente de observabilidad ni la aplicación de referencia existen en el repo. |
 | Etapa 4 (proyectada) | Campaña experimental, análisis estadístico, contraste con nube pública | **Diseñado, pendiente.** No existen resultados medidos de energía ni de rendimiento a la fecha de este README. |
 
@@ -67,14 +67,14 @@ Cada nodo corre kube-vip como DaemonSet en modo ARP: el pod que gana la elecció
 
 ## 5. Laboratorio
 
-Hardware y software verificados en el código y confirmados por el autor (no hay forma de verificar hardware físico desde el repo; se declara aquí como parte del diseño experimental).
+Hardware y software verificados en el código y confirmados por mí (no hay forma de verificar hardware físico desde el repo; se declara aquí como parte del diseño experimental).
 
 | Componente | Valor | Evidencia |
 |---|---|---|
-| CPU host | AMD Ryzen 7 PRO 5850U, 8 núcleos / 16 hilos (SMT) | Declarado por el autor; el mapeo de pinning en el código (`vm_cpusets`) asume 8 núcleos físicos disponibles, ver [D-04](#7-registro-de-decisiones-técnicas) |
-| RAM host | 16 GB DDR4 | Declarado por el autor |
-| Disco host | NVMe 512 GB | Declarado por el autor |
-| SO host | Ubuntu 24.04 | Declarado por el autor |
+| CPU host | AMD Ryzen 7 PRO 5850U, 8 núcleos / 16 hilos (SMT) | Declarado por mí; el mapeo de pinning en el código (`vm_cpusets`) asume 8 núcleos físicos disponibles, ver [D-04](#7-registro-de-decisiones-técnicas) |
+| RAM host | 16 GB DDR4 | Declarado por mí |
+| Disco host | NVMe 512 GB | Declarado por mí |
+| SO host | Ubuntu 24.04 | Declarado por mí |
 | Virtualización | QEMU/KVM + libvirt | `k3sHA/terraform/provider.tf`, `microk8sHA/terraform/provider.tf` (`uri = "qemu:///system"`) |
 | Terraform provider libvirt | `dmacvicar/libvirt`, versión fijada `= 0.7.6` | `k3sHA/terraform/terraform.tf:8`, `microk8sHA/terraform/terraform.tf:8` |
 | Terraform provider local | `hashicorp/local`, `~> 2.0` | `terraform.tf` de ambos módulos |
@@ -105,7 +105,7 @@ Hardware y software verificados en el código y confirmados por el autor (no hay
 | ID | Decisión | Alternativas descartadas | Justificación | Requisitos relacionados | Evidencia | Estado |
 |---|---|---|---|---|---|---|
 | D-01 | Red libvirt en modo `nat`, `192.168.100.0/24`, IP estática por reserva DHCP/MAC (nodos `.11/.12/.13`, gateway `.1`, VIP plano de control `.100`, `.150` reservada para el Service LoadBalancer de la app de referencia) | `route` (depende de una ruta estática en el router físico, rompe RNF-01); `isolated` (sin salida a internet) | Reproducibilidad en cualquier red física; el costo de CPU de NAT/conntrack es simétrico entre K3s y MicroK8s | RNF-01, RNF-03, RF-03 | `k3sHA/terraform/main.tf:37-58`, `microk8sHA/terraform/main.tf` (mismo patrón) | Implementado y verificable |
-| D-02 | SO invitado Ubuntu Server 24.04 LTS (imagen cloud) | Alpine (OpenRC; snap exige systemd); Debian 12 (MicroK8s solo declara soporte oficial Ubuntu/snapd) | Requisito técnico de MicroK8s (snapd) | RF-05, RNF-03 | `variables.tf` de ambos módulos (descripción `base_image`) | Implementado y verificable en la definición de variable; la imagen real en disco es declarada por el autor (ver [§13](#13-limitaciones-y-amenazas-a-la-validez)) |
+| D-02 | SO invitado Ubuntu Server 24.04 LTS (imagen cloud) | Alpine (OpenRC; snap exige systemd); Debian 12 (MicroK8s solo declara soporte oficial Ubuntu/snapd) | Requisito técnico de MicroK8s (snapd) | RF-05, RNF-03 | `variables.tf` de ambos módulos (descripción `base_image`) | Implementado y verificable en la definición de variable; la imagen real en disco es declarada por mí (ver [§13](#13-limitaciones-y-amenazas-a-la-validez)) |
 | D-03 | Dimensionamiento por nodo: 2 vCPU, 4 GB RAM, 50 GB disco. Host reserva 2 vCPU / 4 GB para sí | Mínimo de K3s (2 núcleos, 2 GB) por insuficiente para MicroK8s; recomendación completa de Canonical (más de 4 GB) por exceder el presupuesto del host | Base en el mínimo documentado de cada distribución; valor preliminar sujeto a calibración piloto | RF-05, RNF-03, REX-07 | `k3sHA/terraform/variables.tf:9-27`, `microk8sHA/terraform/variables.tf:9-27` | Implementado y verificable |
 | D-04 | CPU pinning real: cada VM fijada a un núcleo físico completo (2 hilos SMT) mediante XSLT inyectado en el XML de libvirt; un núcleo queda reservado para el host | Sin pinning (estado original); subir vCPU por nodo (se descartó para no romper la comparación en igualdad de condiciones ni el principio de recursos limitados) | El proveedor de Terraform no expone `cputune`/`vcpupin` nativo. Sin pinning, las VMs competían por CPU con la sesión gráfica del host de forma no determinista, causando timeouts intermitentes en operaciones sensibles a tiempo (join de nodos MicroK8s) | REX-07 | `k3sHA/terraform/config/vcpupin.xsl.tftpl`, `microk8sHA/terraform/config/vcpupin.xsl.tftpl`, `main.tf` de ambos módulos (`local.vm_cpusets`, bloque `xml { xslt = ... }`) | Implementado y verificable — **no estaba en el diseño original de Etapa 2** |
 | D-05 | kube-vip en modo ARP (DaemonSet) reemplaza a Keepalived/VRRP + HAProxy. Dos funciones: VIP del plano de control y Service LoadBalancer de la app de referencia (esta segunda función deshabilitada por ahora) | Keepalived/VRRP + HAProxy (implementación original) | Decisión de diseño de Etapa 2. La función de Service LoadBalancer se deshabilita porque, sin un pool de IP explícito, kube-vip cae a un fallback que asigna la IP del propio nodo al Service — ver hallazgo en [`k3sHA/README.md`](k3sHA/README.md) | RF-03, RR-01 | Roles `kube_vip` en ambos módulos; commit `8cd4c3d` | Implementado y validado (ver AC-03) |
@@ -136,9 +136,9 @@ Nota: la implementación original no tiene commits propios en este repositorio (
 | ID | Criterio | Cómo se verifica | Estado | Requisito |
 |---|---|---|---|---|
 | AC-01 | `terraform apply` crea la infraestructura completa sin pasos manuales más allá de definir `terraform.tfvars` | `cd k3sHA/terraform && terraform validate && terraform apply` (análogo en `microk8sHA/`) | Cumplido con evidencia (`terraform validate` exitoso en ambos módulos) | RNF-01 |
-| AC-02 | El playbook de Ansible completa sin tareas fallidas en un despliegue de 3 nodos | `ansible-playbook playbook.yml`, revisar `PLAY RECAP` con `failed=0` en los 3 nodos | Declarado por el autor (corrida completa el 29-30/09/2026, sin evidencia de log adjunta al repo) | RNF-02, RF-01, RF-02 |
-| AC-03 | La VIP del plano de control responde en el puerto correcto de cada distribución, con los 3 nodos unidos al clúster | `ssh <VIP> kubectl get nodes` (K3s, puerto 6443) o `microk8s kubectl get nodes` vía VIP (MicroK8s, puerto 16443) | Declarado por el autor: 3 nodos `Ready` y VIP respondiendo, ambas distribuciones | RF-03, RR-01 |
-| AC-04 | Failover real de la VIP validado al fallar el nodo líder | `systemctl kill -s SIGKILL k3s` (K3s) o `systemctl kill -s SIGKILL snap.microk8s.daemon-kubelite` (MicroK8s) en el nodo líder, verificar migración de VIP | Cumplido con evidencia en ambas distribuciones (declarado por el autor) | RR-01, RR-02 |
+| AC-02 | El playbook de Ansible completa sin tareas fallidas en un despliegue de 3 nodos | `ansible-playbook playbook.yml`, revisar `PLAY RECAP` con `failed=0` en los 3 nodos | Declarado por mí (corrida completa el 29-30/09/2026, sin evidencia de log adjunta al repo) | RNF-02, RF-01, RF-02 |
+| AC-03 | La VIP del plano de control responde en el puerto correcto de cada distribución, con los 3 nodos unidos al clúster | `ssh <VIP> kubectl get nodes` (K3s, puerto 6443) o `microk8s kubectl get nodes` vía VIP (MicroK8s, puerto 16443) | Declarado por mí: 3 nodos `Ready` y VIP respondiendo, ambas distribuciones | RF-03, RR-01 |
+| AC-04 | Failover real de la VIP validado al fallar el nodo líder | `systemctl kill -s SIGKILL k3s` (K3s) o `systemctl kill -s SIGKILL snap.microk8s.daemon-kubelite` (MicroK8s) en el nodo líder, verificar migración de VIP | Cumplido con evidencia en ambas distribuciones (declarado por mí) | RR-01, RR-02 |
 | AC-05 | Ningún archivo con secretos, llaves o estado de Terraform queda versionado | `git ls-files` sobre `keys/`, `*.tfvars`, `*.tfstate*`, `inventory.ini` no debe devolver resultados | Cumplido con evidencia — `.gitignore` de cada módulo los excluye explícitamente | RNF-01 |
 | AC-06 | Componentes de versión variable quedan fijados en código, no en `latest` | Inspección de `group_vars/all.yml` y `terraform.tf` de ambos módulos | Cumplido con evidencia, con la salvedad del canal de MicroK8s (§13) | RNF-04 |
 
@@ -205,11 +205,11 @@ El diseño exige playbooks lo más idénticos posible entre distribuciones. Asim
 
 - **Un único host físico**: todas las mediciones (cuando existan) provienen de una sola máquina; no hay réplica de hardware para aislar efectos específicos del equipo.
 - **SMT/hyperthreading**: el pinning de CPU (D-04) fija cada VM a un núcleo físico completo, pero los 16 hilos lógicos comparten recursos de ejecución a nivel de núcleo (caché, unidades funcionales) con su hilo hermano; el aislamiento no es completo a nivel de hardware.
-- **Host con entorno de escritorio**: el diseño exige ejecuciones definitivas desde consola de texto con sesión gráfica cerrada; esto no está automatizado ni verificado en el código, depende de la disciplina operativa del autor en cada corrida.
+- **Host con entorno de escritorio**: el diseño exige ejecuciones definitivas desde consola de texto con sesión gráfica cerrada; esto no está automatizado ni verificado en el código, depende de mi disciplina operativa en cada corrida.
 - **Canal de MicroK8s no es una versión exacta**: `1.36/stable` selecciona la última revisión disponible en ese canal al momento de instalar, no un número de versión fijo de antemano; queda congelada recién después, vía `snap refresh --hold`. Dos corridas en fechas distintas podrían partir de una revisión de MicroK8s distinta si se recreó el entorno entre medio.
 - **Imagen base no versionada**: la ruta real a la imagen de Ubuntu 24.04 vive en `terraform.tfvars`, que está en `.gitignore` por diseño (evita rutas locales); no hay checksum de la imagen registrado en el repo.
 - **Costo de NAT/conntrack**: se asume simétrico entre K3s y MicroK8s (D-01); no hay medición en el repo que lo confirme, es un supuesto de diseño.
-- **Esfuerzo de implementación de MicroK8s vs K3s**: el autor declara que la tarea T-14.2 del backlog se estimó en 4 h y tomó 8 h reales, sin equivalente de sobrecosto en K3s. Dato no verificable en el repo (no hay registro de tiempos en el código ni en el historial de commits con esa granularidad).
+- **Esfuerzo de implementación de MicroK8s vs K3s**: declaro que la tarea T-14.2 del backlog se estimó en 4 h y tomó 8 h reales, sin equivalente de sobrecosto en K3s. Dato no verificable en el repo (no hay registro de tiempos en el código ni en el historial de commits con esa granularidad).
 
 ## 14. Trazabilidad requisito → implementación
 

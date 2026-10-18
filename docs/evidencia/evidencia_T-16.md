@@ -1,6 +1,6 @@
 # Evidencia de HU-16 (T-16.1 a T-16.4): medición energética con RAPL/powercap y Scaphandre
 
-Fechas: 2026-10-12 (noche) y 2026-10-13 (tarde-noche). Todas las salidas provienen de la terminal del autor en el host (ThinkPad), operando por SSH desde otro equipo a partir del 13 de octubre. Hasta ahora solo se han ejecutado comandos de verificación y ventanas de prueba de 60 s; no hay mediciones experimentales ni ejecuciones de clústeres.
+Fechas: 2026-10-12 (noche) y 2026-10-13 (tarde-noche). Todas las salidas provienen de mi terminal en el host (ThinkPad), operando por SSH desde otro equipo a partir del 13 de octubre. Hasta ahora solo se han ejecutado comandos de verificación y ventanas de prueba de 60 s; no hay mediciones experimentales ni ejecuciones de clústeres.
 
 Convención: la sección 2 contiene hechos medidos u observados; la 3, interpretaciones no verificadas; la 4, decisiones y criterios; la 5, limitaciones; la 6, lo pendiente; la 7, los archivos asociados a esta evidencia.
 
@@ -18,7 +18,7 @@ Convención: la sección 2 contiene hechos medidos u observados; la 3, interpret
 | Boost de CPU | activado (1) |
 | Alimentación | con corriente (online = 1), batería en estado Full |
 | Sesión durante las mediciones | gráfica abierta (Google Chrome y terminal alacritty) en las lecturas del 12 de octubre; el 13 de octubre se operó por SSH; **la sesión gráfica estaba abierta** |
-| Acceso remoto | `openssh-server` 1:9.6p1-3ubuntu13.19, habilitado y activo el 13 de octubre; escucha en 0.0.0.0:22 y [::]:22; autenticación por llave ed25519 funcionando; la autenticación por contraseña **sigue habilitada** (decisión del autor) |
+| Acceso remoto | `openssh-server` 1:9.6p1-3ubuntu13.19, habilitado y activo el 13 de octubre; escucha en 0.0.0.0:22 y [::]:22; autenticación por llave ed25519 funcionando; la autenticación por contraseña **sigue habilitada** (decisión mía) |
 | Firewall | `ufw` inactivo; se agregó la regla para 192.168.1.0/24 hacia el puerto 22, pero sin efecto mientras `ufw` siga inactivo |
 | Red del host | 192.168.1.23 (LAN); las demás direcciones corresponden a puentes de libvirt, Docker e Incus |
 
@@ -59,7 +59,7 @@ Descriptivos de package-0 en estas seis lecturas (cálculo propio): mediana 3,48
 ### 2.2 T-16.1: Scaphandre
 
 - Binario: `/usr/local/bin/scaphandre`, 11 931 032 bytes, SHA-256 `980b8124c75fa4b1411a4a172842d1c6a71593ab872c490d163d6decdba738a7`. Es idéntico al compilado en `~/scaphandre/target/release/scaphandre` (18:18 del 3 de septiembre).
-- Origen: clon de https://github.com/hubblo-org/scaphandre.git compilado con Rust (confirmado por el reflog del clon; el autor no lo recordaba).
+- Origen: clon de https://github.com/hubblo-org/scaphandre.git compilado con Rust (confirmado por el reflog del clon; no lo recordaba).
 - Clon en el tag `v1.0.3`, commit `b64443c447e24f25947111ec8611449f213eb0a5` (clon 18:16:27, checkout 18:16:37, zona -0400).
 - `scaphandre --version` imprime 1.0.2 porque el `Cargo.toml` de ese commit dice `version = "1.0.2"`. La versión real es el tag/commit indicado.
 - `git -C ~/scaphandre status --short` no imprimió nada (13 de octubre): sin cambios locales ni archivos sin seguir.
@@ -145,6 +145,25 @@ Salida original (`i, a, s, b`):
 19 5202680758 5202745101 5203161614
 ```
 
+### 2.6a T-16.3: comparación con Prometheus (ventana 6, 18 de octubre)
+
+Prometheus 3.15.0 del host (T-17.2) scrapea Scaphandre cada 10 s. Se midió una ventana de 60 s con `ventana_energia.py` (`ventana_6.json`; no se registró si la sesión gráfica estaba abierta ni la carga del equipo durante la ventana) y se comparó con lo almacenado en Prometheus para el mismo intervalo con `consulta_prometheus.py`.
+
+| Dato | Valor |
+|---|---|
+| Δt (s) | 60,057 |
+| Crudo pkg-0 | 226 829 044 µJ (3,777 W) |
+| Scaphandre host (lectura directa) | 226 315 384 µJ (3,768 W); −0,226 % respecto del crudo |
+| Muestras de Prometheus dentro de la ventana | 6 (scrape de 10 s) |
+| Prometheus, interpolación lineal entre las muestras que rodean `t_inicio` y `t_fin` | 225 881 081 µJ (3,761 W); −0,418 % respecto del crudo, −0,192 % respecto de Scaphandre directo |
+| Prometheus, `increase(...[60s])` evaluado en `t_fin` | 230 622 961 µJ (3,840 W); +1,673 % respecto del crudo, +1,903 % respecto de Scaphandre directo |
+
+La interpolación se recalculó a mano con las muestras reales y dio el mismo valor (225 881 081 µJ). Los incrementos entre muestras consecutivas equivalen a 2,98–4,97 W, es decir, la potencia varió dentro de la ventana.
+
+El primer intento del script devolvió +1,7 % y 61 muestras porque `query_range` repite el último valor en cada paso; se corrigió leyendo las muestras crudas con su `timestamp` real. Ese resultado no se usa.
+
+Interpretación (no verificada): la diferencia de `increase()` coincide con la extrapolación que hace esa función hacia los bordes de la ventana; no se comprobó con otras ventanas. La interpolación supone potencia lineal entre muestras y no se cuantificó su error. Una sola ventana.
+
 ### 2.6 Servicios activos en el host (listas de systemctl, 12 de octubre)
 
 - Contenedores y virtualización: `docker` (con socket), `containerd`, `incus` (servicio, sockets y lxcfs), servicios `vbox*` habilitados.
@@ -168,7 +187,7 @@ Salida original (`i, a, s, b`):
 
 - `core` no se usa como medida.
 - **Medida principal de energía:** lectura directa del contador crudo de `package-0` en `t_inicio` y `t_fin`, con corrección de la vuelta (suma de `max_energy_range_uj` si el delta es negativo). Scaphandre y Prometheus se usan como contraste. No se usa `increase()` para la energía de los experimentos. Fórmulas de REX-05: E_exp = E_final − E_inicial; EE = E_exp / N_válidas; P_media = E_exp / Δt.
-- **Criterio de consistencia de T-16.4 (aceptado por el autor el 13 de octubre):** la diferencia de energía entre Scaphandre y el contador crudo debe ser menor al 2 % del crudo por ventana. Las seis ventanas lo cumplen (máximo 0,907 %). La pregunta de la sección 3 sobre el exceso de las ventanas 2 a 5 queda registrada como abierta.
+- **Criterio de consistencia de T-16.4 (aceptado el 13 de octubre):** la diferencia de energía entre Scaphandre y el contador crudo debe ser menor al 2 % del crudo por ventana. Las seis ventanas lo cumplen (máximo 0,907 %). La pregunta de la sección 3 sobre el exceso de las ventanas 2 a 5 queda registrada como abierta.
 - Prometheus descartará la alta cardinalidad con `metric_relabel_configs` (configuración propuesta, aún no aplicada):
 
 ```yaml
@@ -183,7 +202,7 @@ scrape_configs:
         action: keep
 ```
 
-- Servicios: el autor prefiere dejarlos activos por realismo (un host con Kubernetes suele tener otros servicios). Propuesta pendiente de su aceptación:
+- Servicios: prefiero dejarlos activos por realismo (un host con Kubernetes suele tener otros servicios). Propuesta pendiente de mi decisión:
   - Controlar siempre actualizaciones, timers, `snap refresh --hold` y la sesión gráfica.
   - Decidir sobre Docker, Incus, PostgreSQL, MAAS y VirtualBox con una medición A/B de reposo (seis ventanas de 60 s o más por condición, criterio fijado antes de medir).
   - Revisar `docker ps` e `incus list` para descartar cargas reales.
@@ -206,7 +225,7 @@ scrape_configs:
 ### 6.1 Cierre de T-16.1 a T-16.4
 
 1. ~~Pasar la compilación del tag fijado (`v1.0.3`, commit `b64443c`) y la unidad systemd a un rol de Ansible.~~ **Hecho (13 de octubre):** `ansible/roles/scaphandre/`, playbook `ansible/playbook.yml` (host físico, `connection: local`). Ejecutado con `ansible-playbook playbook.yml --ask-become-pass`: `ok=15 changed=4 failed=0`. El rol verifica al final que `/metrics` expone `scaph_host_energy_microjoules` (falla la corrida si no). Hallazgo durante la implementación: `rustc`/`cargo` del repositorio de Ubuntu 24.04 (1.75.0) no compilan Scaphandre v1.0.3 (`feature edition2024 is required`); el build manual original usaba `rustup` con toolchain 1.98.1 (`cargo --version` / `rustc --version` verificados), no el paquete de apt. El rol instala `rustup` con ese toolchain fijado (`scaphandre_rust_version: "1.98.1"`) en vez de los paquetes de apt.
-2. T-16.3: falta la consulta a Prometheus para la misma ventana (depende de T-17.2). La lectura directa en `t_inicio` y `t_fin` ya está.
+2. ~~T-16.3: falta la consulta a Prometheus para la misma ventana (depende de T-17.2).~~ **Hecho (18 de octubre, una ventana):** sección 2.6a. Queda repetir con más ventanas si se quiere caracterizar la diferencia.
 3. T-16.4: queda abierta la causa del exceso de +1,2 a +1,6 J en las ventanas 2 a 5. Repetir ventanas con el sistema en estado más controlado (sin sesión gráfica) para ver si se reproduce.
 4. Ingresar las horas reales de T-16.4 en la hoja (no se estiman).
 5. Hacer commit con esta evidencia (sección 7).
@@ -248,6 +267,8 @@ Todos están en el directorio personal del host (`/home/coto/`), salvo la unidad
 | `ventana_energia.py` | Mide una ventana de energía (crudo y Scaphandre) y emite JSON. Uso: `sudo python3 ventana_energia.py 60`. |
 | `bracket.py` | Prueba de intercalado crudo – Scaphandre – crudo, 20 muestras. Uso: `sudo python3 bracket.py`. |
 | `ventana_1.json` a `ventana_5.json` | Salidas de las ventanas 1 a 5 (sección 2.4). |
+| `ventana_6.json` | Salida de la ventana 6, comparada con Prometheus (sección 2.6a). |
+| `consulta_prometheus.py` | Compara una ventana JSON con las muestras de Prometheus. Uso: `python3 analysis/verificacion/consulta_prometheus.py docs/evidencia/ventana_6.json`. |
 | `/etc/systemd/system/scaphandre.service` | Unidad del exportador (sección 2.2). |
 | este documento | Resumen de hechos, interpretaciones, decisiones y pendientes. |
 
@@ -256,6 +277,6 @@ Todos están en el directorio personal del host (`/home/coto/`), salvo la unidad
 - T-16.2 «Contadores accesibles y dominio energético documentado»: cumplido con las reservas de la sección 5.
 - T-16.1 «Scaphandre ejecuta y expone métricas energéticas»: **cumplido**, incluido el rol de Ansible (6.1).
 - T-16.4 «Consistencia comprobada durante una ventana común»: cumplido con el criterio de menos del 2 % (sección 4); queda abierta la causa del exceso de las ventanas 2 a 5.
-- T-16.3: en progreso, falta la consulta a Prometheus.
+- T-16.3: cumplido con una ventana (sección 2.6a): la energía de la misma ventana se obtiene de Prometheus; con interpolación entre muestras la diferencia fue −0,418 % respecto del crudo, y con `increase()` +1,673 %. Reserva: una sola ventana.
 
 Commit sugerido: `T-16.1 a T-16.4: verifica RAPL/powercap y Scaphandre v1.0.3; scripts de ventana y prueba de intercalado; evidencia en Ryzen 7 PRO 5850U`
