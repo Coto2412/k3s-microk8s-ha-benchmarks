@@ -243,9 +243,9 @@ scrape_configs:
 
 1. ~~T-17.1 a T-17.5~~ (Node Exporter, Prometheus, etiquetas, continuidad y kube-state-metrics): **hecho (18 de octubre)**; ver `evidencia_T-17.md`.
 2. ~~T-18.1 a T-18.5~~ (aplicación de referencia, scripts de k6 y LoadBalancer de kube-vip en 192.168.100.150): **hecho (18 de octubre)**; ver `evidencia_T-18.md`.
-3. `chrony`: host como fuente NTP y VMs como clientes solo de 192.168.100.1; no está implementado (HU-34).
+3. `chrony`: host como fuente NTP y VMs como clientes solo de 192.168.100.1; quedó implementado después (HU-34, `evidencia_T-34.md`).
 4. T-19.x: pruebas de resiliencia.
-5. T-32.1: orquestador de ejecuciones y escritor de metadatos.
+5. T-32.1: orquestador de ejecuciones y escritor de metadatos; quedó implementado después (`evidencia_T-34.md`).
 6. T-20.x a T-22.x: pilotos, calibración de tasas y de CPU (T-20.5), mejoras y validación integral.
 
 ### 6.4 Encuesta y documentación (EP-06)

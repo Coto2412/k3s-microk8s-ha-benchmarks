@@ -1,0 +1,45 @@
+---
+- name: Instalar chrony (apt retira systemd-timesyncd por conflicto)
+  apt:
+    name: chrony
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configurar chrony como fuente NTP local para la red de las VMs
+  template:
+    src: tesis.conf.j2
+    dest: /etc/chrony/conf.d/tesis.conf
+    mode: '0644'
+  notify: Reiniciar chrony
+
+- name: Consultar el estado de ufw
+  command: ufw status
+  environment:
+    LC_ALL: C
+  register: chrony_ufw
+  changed_when: false
+
+- name: Permitir NTP (123/udp) solo desde la red de las VMs hacia el host
+  community.general.ufw:
+    rule: allow
+    proto: udp
+    from_ip: "{{ chrony_red_vms }}"
+    to_ip: "{{ chrony_ip_host }}"
+    to_port: "123"
+    comment: chrony para las VMs
+  when: "'Status: active' in chrony_ufw.stdout"
+
+- name: Habilitar e iniciar chrony
+  systemd:
+    name: chrony
+    enabled: true
+    state: started
+
+- name: Esperar a que chronyd responda
+  command: chronyc tracking
+  register: chrony_tracking
+  changed_when: false
+  retries: 10
+  delay: 3
+  until: chrony_tracking.rc == 0

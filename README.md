@@ -27,12 +27,12 @@ El proyecto compara dos distribuciones ligeras de Kubernetes — K3s y MicroK8s 
 | Etapa 1 | Problema, requerimientos, estado del arte | Cerrada y entregada (`docs/Entrega_1_Proyecto_de_Título.pdf`) |
 | Etapa 2 | Diseño técnico completo | Cerrada y entregada |
 | Etapa 2 — implementación de infraestructura (EP-04 del backlog) | Clústeres HA de K3s y MicroK8s con IP virtual redundante (kube-vip) | **Implementado y validado de punta a punta** (declarado por mí, ver [AC-03](#9-criterios-de-aceptación-globales)) |
-| Etapa 3 | Observabilidad (Scaphandre, Node Exporter, Prometheus, kube-state-metrics, chrony), aplicación de referencia, generador de carga k6 | **Implementada, salvo `chrony` (pendiente).** Scaphandre, Node Exporter, Prometheus, kube-state-metrics, NGINX de referencia con Service LoadBalancer en `.150` y los scripts de k6 están desplegados y verificados en ambas distribuciones (ver `docs/evidencia/evidencia_T-16.md`, `evidencia_T-17.md` y `evidencia_T-18.md`). Solo se hicieron pilotos y pruebas de humo, sin calibración de tasas. |
+| Etapa 3 | Observabilidad (Scaphandre, Node Exporter, Prometheus, kube-state-metrics, chrony), aplicación de referencia, generador de carga k6 | **Implementada.** Scaphandre, Node Exporter, Prometheus, kube-state-metrics, NGINX de referencia con Service LoadBalancer en `.150`, los scripts de k6, `chrony` (host como servidor NTP y VMs como clientes solo de `192.168.100.1`) y el orquestador de una repetición (`k6/orquestador.py`) están desplegados y verificados en ambas distribuciones (ver `docs/evidencia/evidencia_T-16.md`, `evidencia_T-17.md`, `evidencia_T-18.md` y `evidencia_T-34.md`). Solo se hicieron pilotos, pruebas de humo y verificaciones de 20 s del orquestador, sin calibración de tasas. El desfase medido entre relojes fue menor a unos 2 ms en MicroK8s y de hasta 7,4 ms en K3s con el host recién sincronizado (cota del método de 1,7 a 2,0 ms; detalle y límites en `evidencia_T-34.md`). |
 | Etapa 4 (proyectada) | Campaña experimental, análisis estadístico, contraste con nube pública | **Diseñado, pendiente.** No existen resultados de la campaña: solo pilotos de reposo (T-17.4) y pruebas de humo de k6 (T-18) en cada clúster. |
 
 ## 4. Arquitectura
 
-Diagrama de la arquitectura implementada. `chrony` no aparece porque aún no está implementado. Solo una distribución corre a la vez sobre la misma topología de red.
+Diagrama de la arquitectura implementada. No dibuja `chrony` (servicio de hora del host hacia las VMs por UDP 123). Solo una distribución corre a la vez sobre la misma topología de red.
 
 ```mermaid
 flowchart TB
@@ -88,6 +88,7 @@ Hardware y software verificados en el código y confirmados por mí (no hay form
 | kube-state-metrics | `v2.20.0`, imagen con digest, Service `NodePort` 30080/30081 consultado vía la VIP | `k8s/kube-state-metrics.yaml` |
 | NGINX de referencia | `nginx:1.30.6` con digest, 1 réplica, límite de CPU `500m` (provisional hasta T-20.5), Service LoadBalancer en `.150:80` | `k3sHA/ansible/group_vars/all.yml`, `k8s/nginx-*.yaml.j2`, `docs/evidencia/evidencia_T-18.md` |
 | k6 | `v2.3.0` en el host, sha256 fijado, anclado a las CPU 0 y 1 | `ansible/group_vars/all.yml`, `k6/correr.sh` |
+| chrony | `4.5-1ubuntu4.2` (paquete de apt de Ubuntu 24.04, sin posibilidad de fijar otra versión); host con `allow 192.168.100.0/24` y `local stratum 10`, VMs solo con `server 192.168.100.1 iburst`; `systemd-timesyncd` retirado | `ansible/roles/chrony/`, `k3sHA/ansible/roles/chrony/`, `microk8sHA/ansible/roles/chrony/`, `docs/evidencia/evidencia_T-34.md` |
 
 ## 6. Estructura del repositorio
 
@@ -98,11 +99,11 @@ Hardware y software verificados en el código y confirmados por mí (no hay form
 ├── docs/                      # Entregables de Etapa 1, backlog, diagramas de diseño y docs/evidencia/ (T-16, T-17, T-18)
 ├── k3sHA/                     # Infraestructura y configuración del clúster K3s — ver k3sHA/README.md
 ├── microk8sHA/                # Infraestructura y configuración del clúster MicroK8s — ver microk8sHA/README.md
-├── ansible/                   # Playbook y roles del host: scaphandre, node_exporter, prometheus, k6
+├── ansible/                   # Playbook y roles del host: scaphandre, node_exporter, prometheus, k6, chrony, operador_host
 ├── k8s/                       # Plantillas de la app de referencia (NGINX, Service) y manifiesto de kube-state-metrics
-├── k6/                        # Scripts de carga (idle, media, alta), módulo común y lanzador correr.sh
+├── k6/                        # Scripts de carga (idle, media, alta), módulo común, lanzador correr.sh y orquestador.py
 ├── data/                      # Snapshots de Prometheus, resultados de k6 y metadatos (versionado; ver data/README.md)
-├── analysis/verificacion/     # Scripts de verificación (consulta_prometheus.py, continuidad.py, ventana_energia.py)
+├── analysis/verificacion/     # Scripts de verificación (consulta_prometheus.py, continuidad.py, desfase_relojes.py, ventana_energia.py)
 └── analysis/                  # Análisis estadístico y notebooks — Diseñado, pendiente (solo existe analysis/verificacion/)
 ```
 
@@ -183,9 +184,9 @@ ansible-playbook playbook.yml                        # aprovisiona los 3 nodos, 
 ### Observabilidad, aplicación de referencia y k6 (derivado del código)
 ```bash
 cd ansible
-ansible-playbook playbook.yml --ask-become-pass -e active_distribution=k3s   # host: scaphandre, node_exporter, prometheus, k6
+ansible-playbook playbook.yml --ask-become-pass -e active_distribution=k3s   # host: scaphandre, node_exporter, prometheus, k6, chrony, operador_host
 ```
-El playbook de cada distribución (`k3sHA/ansible/`, `microk8sHA/ansible/`) instala además `node_exporter` en las VMs, `kube_state_metrics` y la aplicación de referencia (`nginx_referencia`). Antes de cambiar de distribución hay que volver a correr el playbook del host con el valor correspondiente de `active_distribution`. Prueba de humo de k6, no una calibración:
+El playbook de cada distribución (`k3sHA/ansible/`, `microk8sHA/ansible/`) instala además `node_exporter` en las VMs, `kube_state_metrics` y la aplicación de referencia (`nginx_referencia`). El playbook de cada distribución también instala `chrony` como cliente de `192.168.100.1`, por lo que el host debe haberse aprovisionado antes (es quien sirve la hora). Antes de cambiar de distribución hay que volver a correr el playbook del host con el valor correspondiente de `active_distribution`. Prueba de humo de k6, no una calibración:
 ```bash
 DISTRIBUCION=k3s REPETICION=0 TASA=20 RAMPA_S=5 ESTABLE_S=20 DESCENSO_S=5 k6/correr.sh media
 ```
@@ -211,7 +212,7 @@ El diseño exige playbooks lo más idénticos posible entre distribuciones. Asim
 
 ## 12. Resumen del protocolo experimental (diseño)
 
-**Diseñado; la campaña no se ha ejecutado.** La aplicación de referencia y los scripts de k6 existen (`k8s/`, `k6/`); `k6/fallo-controlado.sh`, el orquestador de repeticiones y el análisis estadístico (`analysis/estadistica.py`) no existen aún.
+**Diseñado; la campaña no se ha ejecutado.** La aplicación de referencia, los scripts de k6 y el orquestador de una repetición existen (`k8s/`, `k6/`; el orquestador solo se probó con verificaciones de 20 s, ver `docs/evidencia/evidencia_T-34.md`); `k6/fallo-controlado.sh` y el análisis estadístico (`analysis/estadistica.py`) no existen aún.
 
 - Aplicación de referencia: NGINX con contenido estático mínimo, límite de CPU `500m`, expuesta vía el `Service` LoadBalancer de kube-vip en `.150:80`.
 - Carga: k6 en el host, ejecutor `ramping-arrival-rate` (modelo abierto). Tres escenarios (idle, media, alta), cada uno con fases de 30 s de ascenso, 3 min estables (única ventana válida de medición) y 30 s de descenso.
@@ -226,7 +227,9 @@ El diseño exige playbooks lo más idénticos posible entre distribuciones. Asim
 - **Host con entorno de escritorio**: el diseño exige ejecuciones definitivas desde consola de texto con sesión gráfica cerrada; esto no está automatizado ni verificado en el código, depende de mi disciplina operativa en cada corrida.
 - **Canal de MicroK8s no es una versión exacta**: `1.36/stable` selecciona la última revisión disponible en ese canal al momento de instalar, no un número de versión fijo de antemano; queda congelada recién después, vía `snap refresh --hold`. Dos corridas en fechas distintas podrían partir de una revisión de MicroK8s distinta si se recreó el entorno entre medio.
 - **Imagen base no versionada**: la ruta real a la imagen de Ubuntu 24.04 vive en `terraform.tfvars`, que está en `.gitignore` por diseño (evita rutas locales); no hay checksum de la imagen registrado en el repo.
-- **Camino de red de la `.150` no controlado**: con `svc_election: "false"` el nodo que sostiene la `.100` y la `.150` lo decide qué pod de kube-vip toma el *lease* primero (nodo 1 en K3s y nodo 3 en MicroK8s en las pruebas de T-18). Si no coincide con el nodo del pod, el tráfico hace un salto adicional por VXLAN. No medí su efecto; los metadatos de cada repetición lo registrarán (ver `data/README.md`).
+- **Camino de red de la `.150` no controlado**: con `svc_election: "false"` el nodo que sostiene la `.100` y la `.150` lo decide qué pod de kube-vip toma el *lease* primero (en MicroK8s fue el nodo 1 y luego el nodo 3 entre dos corridas de T-18; en K3s fue el nodo 1 en esas dos corridas; ver `docs/evidencia/evidencia_T-18.md`, secciones 2.4 y 2.7). En MicroK8s el titular **cambió entre corridas**, no solo entre distribuciones (nodo 1 con kube-vip `v0.8.9`, nodo 3 con `v1.2.4`, y de nuevo nodo 3 en el ciclo de `evidencia_T-34.md`); en K3s fue el nodo 1 en los tres ciclos. No tengo base para decir que sea determinista. Si no coincide con el nodo del pod, el tráfico hace un salto adicional por VXLAN. No medí su efecto; el orquestador registra el titular y el nodo del pod al inicio y al fin de cada repetición (ver `data/README.md`), pero no lo controla: queda pendiente T-19.5.
+- **Sincronización de relojes**: `chrony` está activo y las VMs sincronizan solo con `192.168.100.1` (medido). Tras reconstruir las VMs el reloj tarda en converger (hasta unos 41 ms de desfase medidos con el host recién arrancado) y la espera de estabilización del orquestador (60 s, provisional) no lo comprueba; queda abierto para T-20.7. No medí la deriva a lo largo de una repetición completa.
+- **Tamaño de los resultados**: el JSON de k6 pesa unos 144 B por solicitud en el peor caso medido; sobre unos 3300 solicitudes por segundo en la fase estable un archivo supera los 100 MB que GitHub admite. La tasa de saturación aún no está calibrada (T-20.5). El orquestador avisa al acercarse al 80 % del límite.
 - **Costo de NAT/conntrack**: se asume simétrico entre K3s y MicroK8s (D-01); no hay medición en el repo que lo confirme, es un supuesto de diseño.
 - **Esfuerzo de implementación de MicroK8s vs K3s**: declaro que la tarea T-14.2 del backlog se estimó en 4 h y tomó 8 h reales, sin equivalente de sobrecosto en K3s. Dato no verificable en el repo (no hay registro de tiempos en el código ni en el historial de commits con esa granularidad).
 
@@ -244,8 +247,8 @@ El diseño exige playbooks lo más idénticos posible entre distribuciones. Asim
 | RNF-03 | Homogeneidad experimental | Ver tabla de asimetrías (§11) — Parcial, con asimetrías de implementación documentadas |
 | RNF-04 | Versionado | `group_vars/all.yml`, `terraform.tf` de ambos módulos (D-07) — Implementado, con salvedad del canal de MicroK8s |
 | RE-01 a RE-04 | Medición energética del host (Scaphandre, RAPL/powercap) | Scaphandre y consulta a Prometheus verificados en una ventana (`evidencia_T-16.md`); sin campaña de medición — Parcial |
-| RO-01 a RO-08 | Observabilidad de recursos y rendimiento | Node Exporter, Prometheus, kube-state-metrics y continuidad verificados en reposo (`evidencia_T-17.md`); `chrony` pendiente — Parcial |
-| REX-01 a REX-06 | Evaluación experimental (protocolo, escenarios, repeticiones) | Scripts de k6 (`k6/`) listos y probados con carga de humo; sin calibración, orquestador ni campaña — Parcial |
+| RO-01 a RO-08 | Observabilidad de recursos y rendimiento | Node Exporter, Prometheus, kube-state-metrics y continuidad verificados en reposo (`evidencia_T-17.md`); `chrony` verificado en ambas distribuciones (`evidencia_T-34.md`) — Parcial |
+| REX-01 a REX-06 | Evaluación experimental (protocolo, escenarios, repeticiones) | Scripts de k6 (`k6/`) y orquestador de una repetición (`k6/orquestador.py`) listos y probados con carga de humo y verificaciones de 20 s; sin calibración ni campaña — Parcial |
 | REX-07 | Control de condiciones energéticas (CPU, política de energía) | CPU pinning implementado (D-04); resto (política de energía del host, sesión gráfica cerrada) sin automatizar — Parcial |
 | RR-01 | Tolerancia a fallo de 1 nodo de 3 | Diseño de quórum (etcd/Dqlite); no ejercitado formalmente fuera del failover de VIP | Parcial |
 | RR-02 | Failover de VIP | Ver AC-04 — Cumplido en ambas distribuciones |

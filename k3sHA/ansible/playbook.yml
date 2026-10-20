@@ -11,6 +11,8 @@
     - common
     # Rol de configuración segura de SSH
     - ssh_config
+    # Rol de chrony: el host es la única fuente de tiempo
+    - chrony
     # Rol de instalación y configuración de k3s
     - k3s_server
     # Rol de kube-vip para IP virtual del plano de control (ARP)
@@ -37,6 +39,8 @@
     - common
     # Rol de configuración segura de SSH
     - ssh_config
+    # Rol de chrony: el host es la única fuente de tiempo
+    - chrony
     # Rol de instalación y configuración de k3s
     - k3s_server
     # Rol de kube-vip para IP virtual del plano de control (ARP)

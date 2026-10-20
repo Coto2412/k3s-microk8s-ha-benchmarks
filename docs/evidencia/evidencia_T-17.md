@@ -133,7 +133,7 @@ Medidas del 13 de octubre (host solo, sin VMs): 626 y 651 series; RSS 96 988 kB 
 
 En ninguna segunda pasada cambió una tarea de `node_exporter` o `prometheus`.
 
-### 2.6 Chrony (solo reporte, sin acción)
+### 2.6 Chrony (solo reporte, sin acción; estado de entonces, implementado después en `evidencia_T-34.md`)
 
 - `chronyc` no existe en el host ni en ninguna de las VMs (K3s y MicroK8s).
 - En las VMs de MicroK8s, `timedatectl` indica `NTPSynchronized=yes`; el servicio de hora es el predeterminado de Ubuntu, no `chrony`. Su configuración de servidores no se revisó.
@@ -223,7 +223,7 @@ Esto afecta a T-17.3 (etiquetas) y deja la distribución dentro de cada snapshot
 - **kube-state-metrics por `NodePort` a través de la VIP `.100`**: el diseño exige leer la API estándar de Kubernetes sin acoplarse a etcd/Dqlite. Elegí `NodePort` porque Prometheus (en el host, fuera del clúster) no necesita token ni CA, y el mecanismo es idéntico en K3s y MicroK8s (comparación simétrica). El Service `LoadBalancer` de kube-vip se deja para la aplicación de referencia (T-18): `svc_enable` sigue en `"false"` a propósito.
 - **Versión fijada v2.20.0 con digest**: se usan los manifiestos `examples/standard` de la versión, con el Service cambiado de *headless* a `NodePort`. La misma imagen corre en las dos distribuciones.
 - **Criterio de continuidad fijado antes de medir** (2.7), para no ajustarlo a los resultados.
-- **Convención de metadatos**: la distribución va como etiqueta estática (4.3); escenario, repetición y ventana van en un JSON por repetición. El escritor definitivo de ese JSON queda para T-32.1; `continuidad.py` solo verifica.
+- **Convención de metadatos**: la distribución va como etiqueta estática (4.3); escenario, repetición y ventana van en un JSON por repetición. El escritor definitivo de ese JSON quedó hecho después en `k6/orquestador.py` (T-32.1, `evidencia_T-34.md`); `continuidad.py` solo verifica.
 - **Sin almacenamiento externo al host**: el respaldo de snapshots y resultados es el repositorio (`data/` versionado); no habrá copia fuera del equipo.
 - **Prueba de continuidad con la VIP**: el target `kube_state_metrics` depende de la VIP; durante una conmutación de la VIP tendrá un hueco breve. Lo acepto: es parte de lo que mide el protocolo de fallo controlado.
 
@@ -244,7 +244,7 @@ Esto afecta a T-17.3 (etiquetas) y deja la distribución dentro de cada snapshot
 
 ## 6. Pendiente
 
-1. `chrony` como tarea separada (el diseño lo exige: host como fuente de referencia NTP, VMs como clientes solo de `192.168.100.1`; hoy no está implementado en ningún lado). Propuesta: roles `chrony` para el host y las VMs, fuera de T-17. Pendiente decidir cuándo hacerlo.
+1. `chrony` como tarea separada (el diseño lo exige: host como fuente de referencia NTP, VMs como clientes solo de `192.168.100.1`; al momento de T-17 no estaba implementado). Quedó hecho después en `evidencia_T-34.md`.
 2. Ingresar las horas reales de T-17.1 a T-17.5 en la hoja (no se estiman).
 3. Hacer commit con esta evidencia (sección 7).
 

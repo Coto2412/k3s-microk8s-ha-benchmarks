@@ -8,3 +8,5 @@
     - node_exporter
     - prometheus
     - k6
+    - chrony
+    - operador_host

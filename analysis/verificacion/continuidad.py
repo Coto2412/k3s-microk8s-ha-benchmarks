@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Continuidad de la recoleccion en una ventana de metadatos (JSON con distribution, t_inicio, t_fin)."""
-import sys, json, urllib.parse, urllib.request
+import sys, json, math, urllib.parse, urllib.request
 
 PROM = "http://127.0.0.1:9090/api/v1/query"
 INTERVALO_S = 10
@@ -10,7 +10,7 @@ meta = json.load(open(sys.argv[1]))
 n_targets = int(sys.argv[2]) if len(sys.argv) > 2 else 7
 t0, t1 = meta["t_inicio"], meta["t_fin"]
 dt = t1 - t0
-q = urllib.parse.urlencode({"query": f"up[{int(dt)}s]", "time": t1})
+q = urllib.parse.urlencode({"query": f"up[{math.ceil(dt)}s]", "time": t1})
 d = json.load(urllib.request.urlopen(f"{PROM}?{q}", timeout=15))
 assert d["status"] == "success", d
 
@@ -22,7 +22,7 @@ print(f"ventana {dt:.0f} s, distribuciones en la ventana: {distros}, targets de 
 
 esperadas = dt / INTERVALO_S
 for s in sorted(propias, key=lambda s: (s["metric"]["job"], s["metric"]["instance"])):
-    v = [(float(t), x) for t, x in s["values"]]
+    v = [(float(t), x) for t, x in s["values"] if t0 <= float(t) <= t1]
     ts = [t for t, _ in v]
     hueco = max([b - a for a, b in zip(ts, ts[1:])] or [0])
     down = sum(1 for _, x in v if x == "0")

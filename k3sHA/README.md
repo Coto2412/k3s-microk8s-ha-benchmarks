@@ -45,6 +45,7 @@ k3sHA/
 │       ├── ssh_config/            # hardening SSH
 │       ├── k3s_server/            # instalación y unión de nodos K3s
 │       ├── kube_vip/              # manifiesto RBAC + DaemonSet de kube-vip
+│       ├── chrony/                # cliente NTP: única fuente 192.168.100.1; retira systemd-timesyncd
 │       ├── node_exporter/         # Node Exporter en cada VM, 9100 restringido al host con ufw
 │       ├── kube_state_metrics/    # despliega k8s/kube-state-metrics.yaml
 │       └── nginx_referencia/      # NGINX de referencia y Service LoadBalancer (.150)
@@ -92,6 +93,7 @@ Prerrequisitos: ver [README raíz, §10](../README.md#10-reproducibilidad).
 | `kube_vip_svc_election` | `"false"` | Elección de líder por Service en kube-vip; `"true"` probado en T-18; queda `"false"` como valor definitivo |
 | `kube_vip_interface` | `ens3` | Interfaz donde kube-vip anuncia la VIP |
 | `kube_vip_port` | `6443` | Puerto de la API de K3s |
+| `chrony_servidor` | `192.168.100.1` | Única fuente NTP de las VMs (el host) |
 
 ## 5. Despliegue paso a paso
 
@@ -179,7 +181,7 @@ Ver tabla completa de asimetrías en el [README raíz, §11](../README.md#11-asi
 
 - Observabilidad: este módulo instala Node Exporter en las VMs (`node_exporter`) y kube-state-metrics (`kube_state_metrics`); Scaphandre y Prometheus corren en el host (`ansible/` de la raíz). Ver [`evidencia_T-17.md`](../docs/evidencia/evidencia_T-17.md).
 - Aplicación de referencia (`nginx_referencia`) con Service LoadBalancer en la IP `.150`, verificada en este clúster; ver [`evidencia_T-18.md`](../docs/evidencia/evidencia_T-18.md). Solo se hicieron pruebas de humo de k6, sin calibración ni campaña.
-- `chrony` no está implementado (las VMs usan el servicio de hora predeterminado de Ubuntu).
+- `chrony` (rol `chrony`, variable `chrony_servidor`) deja a las VMs como clientes solo de `192.168.100.1`; el servidor está en el playbook del host (`ansible/roles/chrony/`). Verificado en este clúster; ver [`evidencia_T-34.md`](../docs/evidencia/evidencia_T-34.md). El rol es idéntico al de la otra distribución.
 - `AC-K3S-02` (verificación de salud de etcd) no está automatizada; requiere inspección manual.
 
 ## 13. Solución de problemas

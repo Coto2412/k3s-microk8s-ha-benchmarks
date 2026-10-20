@@ -1,0 +1,65 @@
+{
+  "esquema": 1,
+  "verificacion": true,
+  "distribution": "microk8s",
+  "escenario": "idle",
+  "repeticion": 0,
+  "t_inicio": 1792362006.777,
+  "t_fin": 1792362026.778,
+  "t_ejecucion_inicio": 1792362001.769,
+  "t_ejecucion_fin": 1792362032.307,
+  "parametros": {
+    "tasa": null,
+    "rampa_s": 5,
+    "estable_s": 20,
+    "descenso_s": 5,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 10,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 60222402189,
+    "energy_uj_fin": 60322729382,
+    "lectura_inicio_s": [
+      1792362006.769,
+      1792362006.785
+    ],
+    "lectura_fin_s": [
+      1792362026.769,
+      1792362026.786
+    ],
+    "desbordamiento": false,
+    "delta_uj": 100327193,
+    "potencia_media_W": 5.016
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "cambiaron": false,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-resultados/verif_microk8s_idle_r00.json.gz",
+    "resumen": "data/k6-resultados/verif_microk8s_idle_r00.resumen.json",
+    "primer_punto_json": "2026-10-18T19:20:02.798058424-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "snapshot": {
+    "nombre": "20261018T222032Z-48d7639c281ba8aa",
+    "copiado": true,
+    "destino": "data/prometheus-snapshots/20261018T222032Z-48d7639c281ba8aa"
+  }
+}

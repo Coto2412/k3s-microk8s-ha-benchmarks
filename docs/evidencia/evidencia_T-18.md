@@ -10,7 +10,7 @@ Convención: la sección 2 contiene hechos medidos u observados; la 3, interpret
 |---|---|
 | Tareas cubiertas | T-18.1 (NGINX de referencia), T-18.2 (acceso y endpoints), T-18.3 (scripts de k6), T-18.4 (organización de resultados) y T-18.5 (Service LoadBalancer con kube-vip en `.150`) |
 | Cierres de HU-17 incluidos | consulta `kube_node_status_condition` en ambos clústeres y copia del snapshot de MicroK8s (detalle en `evidencia_T-17.md`, sección 2.7) |
-| Fuera de alcance | calibración de tasas y de CPU (T-20.5), resiliencia (HU-19), orquestador y escritor de metadatos (T-32.1), `chrony` |
+| Fuera de alcance | calibración de tasas y de CPU (T-20.5), resiliencia (HU-19), orquestador y escritor de metadatos (T-32.1, hecho después: `evidencia_T-34.md`), `chrony` (HU-34, hecho después: `evidencia_T-34.md`) |
 | Host | Lenovo ThinkPad T14 Gen 2A, Ubuntu 24.04 (ver `evidencia_T-16.md`, sección 1) |
 | Clústeres probados | K3s `v1.36.3+k3s1` y MicroK8s `v1.36.2`, uno a la vez, ambos destruidos al terminar |
 | Red | VMs `192.168.100.11` a `.13`, VIP del plano de control `.100`, VIP del Service `.150`, host `.1` |
@@ -105,7 +105,7 @@ En ambos clústeres, `up{job="kube_state_metrics"}` vale 1 y llegan con la etiqu
 | K3s | `k3s-node1` | `k3s-node1` | `52:54:00:10:00:01` ambas |
 | MicroK8s | `microk8s-node3` | `microk8s-node3` | `52:54:00:20:00:03` ambas |
 
-El líder no coincidió entre distribuciones (nodo 1 en K3s y nodo 3 en MicroK8s) y no lo controlé.
+El líder no es siempre el mismo: en MicroK8s fue el nodo 1 en la corrida con `v0.8.9` (2.4) y el nodo 3 en la corrida con `v1.2.4`, y en K3s fue el nodo 1 en ambas. No lo controlé.
 
 **`svc_election: "true"`.** Se crea un *lease* por Service (`default/kubevip-nginx-referencia`) y `plndr-svcs-lock` queda sin titular.
 
@@ -136,7 +136,7 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 
 ## 3. Interpretación (no verificada)
 
-- Que el líder cambie entre distribuciones (nodo 1 en K3s, nodo 3 en MicroK8s) parece depender de qué pod de kube-vip toma el *lease* primero al arrancar; no lo investigué.
+- Que el líder cambie entre corridas de MicroK8s (nodo 1 y luego nodo 3) parece depender de qué pod de kube-vip toma el *lease* primero al arrancar; no lo investigué.
 - La memoria máxima observada (7 MB a unas 875 solicitudes por segundo reales, `nr_throttled` 0) no representa el uso a la tasa de saturación; los 128 MiB siguen siendo un margen conservador. La saturación real se determina en T-20.5.
 - Que el salto adicional por VXLAN cambie el consumo o la latencia no lo medí; las latencias de K3s y MicroK8s en 2.7 salen de una sola corrida cada una y no las comparo.
 - Las latencias de la prueba de humo (K3s 837 µs, MicroK8s 723 µs) provienen de una corrida de 30 s a baja tasa; no son comparables entre distribuciones.
@@ -175,7 +175,7 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 - Una sola corrida de humo por clúster; sin repeticiones ni carga cercana a la saturación.
 - El uso de memoria de NGINX se midió una vez por clúster, a unas 875 solicitudes por segundo.
 - Probé `svc_election: "true"` solo con el borrado de un pod de kube-vip y una vez por clúster; no probé la caída del proceso de la distribución ni de un nodo completo (HU-19).
-- El titular de la `.100` y de la `.150` no está controlado: difiere entre corridas y distribuciones, y con él cambia si el tráfico hace un salto por VXLAN.
+- El titular de la `.100` y de la `.150` no está controlado: difiere entre corridas (en MicroK8s: nodo 1 y luego nodo 3), y con él cambia si el tráfico hace un salto por VXLAN.
 - Amenaza a la validez: el camino de red de la `.150` depende de qué nodo toma el *lease* de kube-vip al arrancar, que no está controlado; si ese nodo no es el del pod, hay un salto adicional por VXLAN. No medí su efecto; los metadatos de T-32.1 registrarán el dato.
 - Los servicios del host (Prometheus, Scaphandre, Node Exporter) no están anclados a CPU: comparten el núcleo 0 con k6 y también pueden ejecutarse en otros núcleos. Los hilos del emulador de QEMU tampoco están anclados (`vcpupin` fija solo los vCPU). Por lo tanto el aislamiento de k6 no es completo.
 - Un cambio en el `ConfigMap` no reinicia el pod (los archivos se montan con `subPath`); hay que ejecutar `rollout restart`.
@@ -185,7 +185,7 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 ## 6. Pendiente
 
 1. Calibración de tasas (media y alta) y del límite de CPU en T-20.5.
-2. `chrony` (HU-34), orquestador y escritor de metadatos (T-32.1), resiliencia (HU-19). El escritor de T-32.1 debe incluir `nodo_vip_plano_control`, `nodo_vip_servicio` y `nodo_pod` (esquema en `data/README.md`).
+2. Resiliencia (HU-19). `chrony` (HU-34), el orquestador y el escritor de metadatos (T-32.1) quedaron hechos después; ver `evidencia_T-34.md`. El escritor de T-32.1 debe incluir `nodo_vip_plano_control`, `nodo_vip_servicio` y `nodo_pod` (esquema en `data/README.md`).
 3. Ingresar las horas reales de T-18.1 a T-18.5 en la hoja (no se estiman).
 4. Hacer commit con esta evidencia (sección 7).
 
@@ -209,7 +209,7 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 - T-18.1 «NGINX de referencia»: cumplido en K3s y MicroK8s (imagen con tag y digest, 1 réplica, límites explícitos, QoS `Guaranteed`, mismo manifiesto).
 - T-18.2 «Acceso y endpoints»: cumplido; `/` y `/healthz` responden `200` desde el host por `192.168.100.150:80` en ambos clústeres.
 - T-18.3 «Scripts de k6»: cumplido para los tres escenarios; probados `media` e `idle` en ambos clústeres; `alta.js` comparte código con `media.js` y no se ejecutó por separado.
-- T-18.4 «Organización de resultados»: cumplido con el esquema de nombres de la sección 4.2; falta el escritor de metadatos (T-32.1).
+- T-18.4 «Organización de resultados»: cumplido con el esquema de nombres de la sección 4.2; el escritor de metadatos (T-32.1) quedó hecho después en `k6/orquestador.py` (`evidencia_T-34.md`).
 - T-18.5 «Service LoadBalancer con kube-vip»: cumplido en `192.168.100.150`, con la VIP `.100` respondiendo (`401` sin credenciales) en ambos clústeres.
 
 Commits previstos: (1) cierres de HU-17, (2) T-18.1, T-18.2 y T-18.5, (3) T-18.3 y T-18.4, (4) documentación y README.

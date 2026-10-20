@@ -1,0 +1,18 @@
+{
+	"ulid": "01M58HK372PHAQQ1BPKEGATNNV",
+	"minTime": 1792353600000,
+	"maxTime": 1792361990679,
+	"stats": {
+		"numSamples": 1040870,
+		"numFloatSamples": 1040870,
+		"numSeries": 8606,
+		"numChunks": 17239
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M58HK372PHAQQ1BPKEGATNNV"
+		]
+	},
+	"version": 1
+}

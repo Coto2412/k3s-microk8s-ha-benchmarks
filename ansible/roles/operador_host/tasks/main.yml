@@ -1,0 +1,54 @@
+---
+- name: Instalar acl
+  apt:
+    name: acl
+    state: present
+    cache_valid_time: 3600
+
+- name: Permitir recorrer /var/lib/prometheus al operador
+  ansible.posix.acl:
+    path: /var/lib/prometheus
+    entity: "{{ operador_host }}"
+    etype: user
+    permissions: x
+    state: present
+
+- name: Comprobar si algún archivo de los datos de Prometheus carece del permiso del operador
+  shell: |
+    salida=$(getfacl -R -p "{{ prometheus_data_dir }}" 2>/dev/null)
+    total=$(printf '%s\n' "$salida" | grep -c '^# file:')
+    con=$(printf '%s\n' "$salida" | grep -c '^user:{{ operador_host }}:r')
+    [ "$total" = "$con" ] && echo completo || echo falta
+  args:
+    executable: /bin/bash
+  register: operador_acl
+  changed_when: false
+
+- name: Permitir leer los datos y snapshots de Prometheus al operador
+  ansible.posix.acl:
+    path: "{{ prometheus_data_dir }}"
+    entity: "{{ operador_host }}"
+    etype: user
+    permissions: rX
+    recursive: true
+    state: present
+  when: operador_acl.stdout == 'falta'
+
+- name: Heredar el permiso de lectura en lo que Prometheus cree después
+  ansible.posix.acl:
+    path: "{{ prometheus_data_dir }}"
+    entity: "{{ operador_host }}"
+    etype: user
+    permissions: rX
+    default: true
+    recursive: true
+    state: present
+
+- name: Permitir leer el contador RAPL con sudo sin contraseña (solo esa lectura)
+  copy:
+    dest: /etc/sudoers.d/tesis-rapl
+    content: "{{ operador_host }} ALL=(root) NOPASSWD: /usr/bin/cat /sys/class/powercap/intel-rapl\\:0/energy_uj\n"
+    owner: root
+    group: root
+    mode: '0440'
+    validate: /usr/sbin/visudo -cf %s

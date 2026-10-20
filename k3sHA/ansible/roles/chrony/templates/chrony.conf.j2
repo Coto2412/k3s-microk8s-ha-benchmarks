@@ -1,0 +1,6 @@
+server {{ chrony_servidor }} iburst
+driftfile /var/lib/chrony/chrony.drift
+makestep 1 3
+rtcsync
+keyfile /etc/chrony/chrony.keys
+logdir /var/log/chrony

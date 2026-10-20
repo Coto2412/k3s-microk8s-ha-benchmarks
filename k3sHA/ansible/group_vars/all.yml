@@ -31,3 +31,5 @@ nginx_cpu_request: "{{ nginx_cpu_limit }}"
 nginx_memory: 128Mi
 app_node: k3s-node2
 lb_ip: 192.168.100.150
+
+chrony_servidor: 192.168.100.1

@@ -40,3 +40,8 @@ kube_state_metrics_nodeport: 30080
 
 k6_version: "2.3.0"
 k6_sha256: 39c3117b6af817592dcd0ce4242105c0a7af10948c2a425306f0be8f7a8a8ab1
+
+chrony_red_vms: 192.168.100.0/24
+chrony_ip_host: 192.168.100.1
+
+operador_host: "{{ lookup('env', 'USER') }}"
