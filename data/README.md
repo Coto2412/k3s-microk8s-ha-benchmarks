@@ -6,7 +6,7 @@ Salida experimental, versionada como respaldo para revisión.
 |---|---|---|
 | `prometheus-snapshots/` | Snapshots de la TSDB (`/api/v1/admin/tsdb/snapshot`), copiados fuera del directorio de datos de Prometheus | carpeta `<timestamp>-<id>` que genera Prometheus |
 | `k6-resultados/` | `--out json` (comprimido) y resumen de cada ejecución de k6 | `<distribución>_<escenario>_r<NN>.json.gz` y `.resumen.json`; `r00` = prueba de humo |
-| `metadatos/` | Ventana de la fase estable de cada repetición (distribución, escenario, repetición, `t_inicio`, `t_fin`) | `<distribución>_<escenario>_r<NN>.json`, escrito por `k6/orquestador.py` (T-32.1); las verificaciones del orquestador llevan el prefijo `verif_` y los pilotos de T-17.4 usan `piloto_T-17.4_<distribución>.json` |
+| `metadatos/` | Ventana de la fase estable de cada repetición (distribución, escenario, repetición, `t_inicio`, `t_fin`) | `<distribución>_<escenario>_r<NN>.json`, escrito por `k6/orquestador.py` (T-32.1); con fallo controlado el escenario se nombra `media-fallo` (`<distribución>_media-fallo_r<NN>.json`) y se agrega `<...>.observador.json.gz` con las muestras del host; las verificaciones del orquestador llevan el prefijo `verif_` y los pilotos de T-17.4 usan `piloto_T-17.4_<distribución>.json` |
 
 Campos de los metadatos de cada repetición (los escribe `k6/orquestador.py`; esquema `1`), además de los de `piloto_T-17.4_*.json`. `t_inicio` y `t_fin` delimitan la fase estable (puntos medios de las dos lecturas de RAPL); `t_ejecucion_inicio` y `t_ejecucion_fin`, la ejecución completa de k6:
 
@@ -19,6 +19,8 @@ Campos de los metadatos de cada repetición (los escribe `k6/orquestador.py`; es
 | `rapl` | `energy_uj` crudo al inicio y al fin de la fase estable, `max_energy_range_uj`, `desbordamiento`, `delta_uj` y `potencia_media_W` (dominio `package-0`) |
 | `parametros`, `verificacion` | tasa, fases, `pre_vus`, `max_vus`, espera de estabilización y si la ejecución es una verificación |
 | `k6` | código de salida, CPU, rutas de los archivos, `tamano_json_bytes`, hora del primer punto del JSON y versión |
+| `reloj_antes` | `chronyc tracking` del host y de cada VM justo antes de lanzar k6 (`Stratum`, `System time`, `Last offset`) |
+| `fallo` | solo con `--fallo`: nodo fallado, `pod_movido`, `reinicios_kube_vip`, `parametros_efectivos` (argumentos explícitos de detección y tolerancias del pod), `eventos` (marcas de inyección, restauración y estado final) y `analisis` (caídas de la API por la `.100` y de la app por la `.150`, cambios de titular de cada VIP, `NotReady` visto por `kubectl` y por `kube-state-metrics`, leases y solicitudes fallidas de k6 antes y después del fallo) |
 | `snapshot` | nombre del snapshot de Prometheus y si se copió a `prometheus-snapshots/` |
 
 Motivo: con `svc_election: "false"` el titular de las VIP lo decide qué pod de kube-vip toma el *lease* primero, y cambió entre corridas de MicroK8s (nodo 1 en la primera, con kube-vip `v0.8.9`, y nodo 3 en la segunda, con `v1.2.4`); en K3s fue el nodo 1 en esas dos corridas (`docs/evidencia/evidencia_T-18.md`, secciones 2.4 y 2.7). Si el titular no es el nodo del pod, el tráfico hace un salto adicional por VXLAN; estos campos permiten revisarlo si una repetición se desvía.

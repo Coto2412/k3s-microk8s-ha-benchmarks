@@ -134,6 +134,8 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 | `nr_throttled` (`cpu.stat`) | 0 | 0 |
 | Procesos `nginx: worker process` | 2 | 2 |
 
+**Actualización (20 de octubre de 2026):** las plantillas de kube-vip ahora llevan `KUBERNETES_SERVICE_HOST=127.0.0.1` y `KUBERNETES_SERVICE_PORT` (el puerto de la API de cada distribución) para que la elección de líder dependa del apiserver del propio nodo y la VIP migre al fallar su proceso; con la configuración original la VIP no migró en K3s. Las pruebas de esta evidencia (humo de k6, `svc_election`) se hicieron con la configuración original y no se repitieron; ver `evidencia_T-19.md`.
+
 ## 3. Interpretación (no verificada)
 
 - Que el líder cambie entre corridas de MicroK8s (nodo 1 y luego nodo 3) parece depender de qué pod de kube-vip toma el *lease* primero al arrancar; no lo investigué.

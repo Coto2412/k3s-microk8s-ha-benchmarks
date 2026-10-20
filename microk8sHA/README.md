@@ -176,11 +176,11 @@ Durante la implementación de kube-vip sobre MicroK8s se encontraron cinco probl
 | AC-MK8S-02 | Dqlite en Alta Disponibilidad con 3 miembros | `microk8s status` → `high-availability: yes`, `datastore master nodes: 3` (no hay tarea automatizada de esta verificación en el repo) | Pendiente de automatizar — verificación manual declarada por mí |
 | AC-MK8S-03 | La API responde directo en la VIP, puerto 16443, sin proxy intermedio | `ssh <VIP> microk8s kubectl get nodes` (task `Esperar API de microk8s en el VIP`, `microk8sHA/ansible/playbook.yml:21-25`) | Cumplido con evidencia (tarea de espera pasa en el playbook) |
 | AC-MK8S-04 | Pod de kube-vip `Running` en los 3 nodos | `microk8s kubectl -n kube-system get pods -l name=kube-vip-ds -o wide` | Declarado por mí |
-| AC-MK8S-05 | Failover real de la VIP al matar el nodo líder | `systemctl kill -s SIGKILL snap.microk8s.daemon-kubelite` en el nodo con la VIP, confirmar migración | **Cumplido con evidencia** (declarado por mí) |
+| AC-MK8S-05 | Failover real de la VIP al matar el nodo líder | `systemctl kill -s SIGKILL snap.microk8s.daemon-kubelite` en el nodo con la VIP, confirmar migración | **Cumplido con evidencia versionada**, con kube-vip contra el apiserver local: migración de la `.150` a los 17,7 s y de la `.100` a los 20,7 s en `verif_microk8s_media-fallo_r02` y `r03`. Ver [`evidencia_T-19.md`](../docs/evidencia/evidencia_T-19.md) |
 
 ## 10. Validación de Alta Disponibilidad
 
-Procedimiento (protocolo de fallo controlado de Etapa 2): identificar el nodo que sostiene la VIP, ejecutar `systemctl kill -s SIGKILL snap.microk8s.daemon-kubelite` en ese nodo, confirmar migración de la VIP. **Estado: validado por mí.** No hay en el repo un script ni un registro (log, captura) de esta prueba — es una afirmación mía, no evidencia versionada.
+Procedimiento (protocolo de fallo controlado de Etapa 2): identificar el nodo que sostiene la VIP, ejecutar `systemctl kill -s SIGKILL snap.microk8s.daemon-kubelite` en ese nodo, `k6/orquestador.py --fallo` hace lo mismo que en K3s sobre `snap.microk8s.daemon-kubelite` (que `systemd` reinicia a los 100 ms salvo que se desactive durante la retención). **Estado: verificado con datos versionados** ([`evidencia_T-19.md`](../docs/evidencia/evidencia_T-19.md)). No probé en MicroK8s la configuración original de kube-vip; las plantillas ahora hacen la elección de líder contra el apiserver local (`KUBERNETES_SERVICE_HOST=127.0.0.1`, puerto 16443).
 
 ## 11. Diferencias con K3s
 

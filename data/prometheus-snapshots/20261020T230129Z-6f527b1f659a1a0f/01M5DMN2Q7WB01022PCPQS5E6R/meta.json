@@ -1,0 +1,18 @@
+{
+	"ulid": "01M5DMN2Q7WB01022PCPQS5E6R",
+	"minTime": 1792457526060,
+	"maxTime": 1792461600000,
+	"stats": {
+		"numSamples": 654320,
+		"numFloatSamples": 654320,
+		"numSeries": 4217,
+		"numChunks": 6295
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M5DMN2Q7WB01022PCPQS5E6R"
+		]
+	},
+	"version": 1
+}

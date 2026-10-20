@@ -98,3 +98,8 @@ spec:
               value: "true"
             - name: svc_election
               value: "{{ kube_vip_svc_election }}"
+            # Elección de líder contra el apiserver local: si cae el proceso de orquestación del nodo, pierde el lease y la VIP migra.
+            - name: KUBERNETES_SERVICE_HOST
+              value: "127.0.0.1"
+            - name: KUBERNETES_SERVICE_PORT
+              value: "{{ kube_vip_port }}"

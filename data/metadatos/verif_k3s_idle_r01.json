@@ -1,0 +1,95 @@
+{
+  "esquema": 1,
+  "verificacion": true,
+  "distribution": "k3s",
+  "escenario": "idle",
+  "repeticion": 1,
+  "t_inicio": 1792460774.998,
+  "t_fin": 1792460954.998,
+  "t_ejecucion_inicio": 1792460744.993,
+  "t_ejecucion_fin": 1792460985.623,
+  "parametros": {
+    "tasa": null,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 60,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 24688747368,
+    "energy_uj_fin": 25588338328,
+    "lectura_inicio_s": [
+      1792460774.993,
+      1792460775.002
+    ],
+    "lectura_fin_s": [
+      1792460954.993,
+      1792460955.003
+    ],
+    "desbordamiento": false,
+    "delta_uj": 899590960,
+    "potencia_media_W": 4.998
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "k3s-node2",
+      "nodo_vip_servicio": "k3s-node2",
+      "nodo_pod": "k3s-node1"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "k3s-node2",
+      "nodo_vip_servicio": "k3s-node2",
+      "nodo_pod": "k3s-node1"
+    },
+    "cambiaron": false,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-resultados/verif_k3s_idle_r01.json.gz",
+    "resumen": "data/k6-resultados/verif_k3s_idle_r01.resumen.json",
+    "tamano_json_bytes": 11366,
+    "primer_punto_json": "2026-10-19T22:45:46.00670503-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "snapshot": {
+    "nombre": "20261020T014945Z-760ce2362d095add",
+    "copiado": true,
+    "destino": "data/prometheus-snapshots/20261020T014945Z-760ce2362d095add"
+  },
+  "reloj_antes": {
+    "host": {
+      "Stratum": "3",
+      "System time": "0.000604539 seconds slow of NTP time",
+      "Last offset": "+0.000344898 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Stratum": "4",
+        "System time": "0.000006682 seconds fast of NTP time",
+        "Last offset": "+0.000017341 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Stratum": "4",
+        "System time": "0.000000102 seconds fast of NTP time",
+        "Last offset": "-0.000096920 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Stratum": "4",
+        "System time": "0.000002290 seconds fast of NTP time",
+        "Last offset": "+0.000003175 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "fallo": null
+}

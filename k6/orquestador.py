@@ -6,7 +6,10 @@ Ejemplo (verificación corta, no es una repetición válida):
       --rampa 5 --estable 20 --descenso 5 --estabilizacion 10 --verificacion
 """
 import argparse, gzip, json, os, re, shutil, subprocess, sys, time
+import threading
 import urllib.parse, urllib.request
+
+import fallo
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAPL = "/sys/class/powercap/intel-rapl:0/"
@@ -38,11 +41,22 @@ def prom(url, consulta, t=None):
     return d["data"]["result"]
 
 
+def prom_rango(url, consulta, t0, t1):
+    q = urllib.parse.urlencode({"query": consulta, "start": t0, "end": t1, "step": 5})
+    d = json.load(urllib.request.urlopen(f"{url}/api/v1/query_range?" + q, timeout=30))
+    assert d["status"] == "success", d
+    return [(float(t), v == "1") for t, v in d["data"]["result"][0]["values"]] if d["data"]["result"] else []
+
+
+def nombres_nodos(url, distribucion):
+    return {x["metric"]["internal_ip"]: x["metric"]["node"]
+            for x in prom(url, f'kube_node_info{{distribution="{distribucion}"}}')}
+
+
 def titulares(url, distribucion):
     """Nodo de cada VIP por la MAC que el host ve en ARP; el pod, por kube-state-metrics."""
     macs = {ip: mac_de(ip) for ip in IPS_NODOS}
-    nombre_de_ip = {x["metric"]["internal_ip"]: x["metric"]["node"]
-                    for x in prom(url, f'kube_node_info{{distribution="{distribucion}"}}')}
+    nombre_de_ip = nombres_nodos(url, distribucion)
 
     def nodo(vip):
         m = mac_de(vip)
@@ -92,6 +106,37 @@ def snapshot(url, datos_prom, destino):
         return {"nombre": nombre, "copiado": False, "error": str(e)}
 
 
+def preparar_fallo(a, acc, tit):
+    """Nodo a fallar = titular de la .100 y la .150 a la vez; el pod de NGINX no puede estar en él (se mueve si coincide).
+    Cada VIP tiene su lease: si los titulares difieren, se reinicia kube-vip (hasta 3 veces) para que se vuelvan a elegir."""
+    ip_de = {n: ip for ip, n in nombres_nodos(a.prometheus, a.distribucion).items()}
+    reinicios = 0
+    while "no determinado" in tit.values() or tit["nodo_vip_plano_control"] != tit["nodo_vip_servicio"]:
+        if reinicios == 3:
+            sys.exit(f"Las VIP siguen en nodos distintos tras 3 reinicios de kube-vip: {tit}")
+        rc, out = fallo.reiniciar_kube_vip(a.distribucion, acc, next(iter(ip_de.values())))
+        if rc:
+            sys.exit(f"No pude reiniciar kube-vip: {out}")
+        reinicios += 1
+        time.sleep(30)
+        tit = titulares(a.prometheus, a.distribucion)
+    nodo = tit["nodo_vip_plano_control"]
+    otros = sorted(n for n in ip_de if n != nodo)
+    movido = None
+    if tit["nodo_pod"] == nodo:
+        rc, out = fallo.mover_pod(a.distribucion, acc, ip_de[otros[0]], otros[0])
+        if rc:
+            sys.exit(f"No pude mover el pod a {otros[0]}: {out}")
+        movido = {"desde": nodo, "hacia": otros[0]}
+        for _ in range(18):
+            time.sleep(5)
+            if titulares(a.prometheus, a.distribucion)["nodo_pod"] == otros[0]:
+                break
+        else:
+            sys.exit("kube-state-metrics no refleja el pod en el nodo nuevo")
+    return nodo, ip_de[nodo], ip_de[otros[0]], movido, reinicios
+
+
 def autotest():
     assert delta_rapl(10, 25, 100) == 15
     assert delta_rapl(95, 5, 100) == 10
@@ -116,13 +161,18 @@ def main():
     ap.add_argument("--prometheus", default="http://127.0.0.1:9090")
     ap.add_argument("--datos-prometheus", default="/var/lib/prometheus/data")
     ap.add_argument("--cpus", default="0,1")
+    ap.add_argument("--fallo", action="store_true", help="inyecta el fallo controlado (solo escenario media)")
+    ap.add_argument("--fallo-en", type=int, default=30, help="s desde el inicio de la fase estable (provisional)")
+    ap.add_argument("--fallo-retener", type=int, default=120, help="s con el proceso caído antes de restaurarlo (provisional)")
     ap.add_argument("--verificacion", action="store_true", help="marca la ejecución como prueba del orquestador")
     ap.add_argument("--sin-snapshot", action="store_true")
     a = ap.parse_args()
     if a.escenario != "idle" and a.tasa is None:
         ap.error("--tasa es obligatoria en media y alta")
+    if a.fallo and a.escenario != "media":
+        ap.error("--fallo solo se define en el escenario media (protocolo, sección 4.4)")
 
-    base = ("verif_" if a.verificacion else "") + f"{a.distribucion}_{a.escenario}_r{a.repeticion:02d}"
+    base = ("verif_" if a.verificacion else "") + f"{a.distribucion}_{a.escenario}{'-fallo' if a.fallo else ''}_r{a.repeticion:02d}"
     d_k6, d_meta, d_snap = (os.path.join(RAIZ, "data", x) for x in ("k6-resultados", "metadatos", "prometheus-snapshots"))
     f_json, f_res, f_meta = (os.path.join(d_k6, base + ".json.gz"), os.path.join(d_k6, base + ".resumen.json"),
                              os.path.join(d_meta, base + ".json"))
@@ -138,7 +188,21 @@ def main():
             print(f"AVISO: el JSON de k6 estimaría {est / 1e6:.0f} MB (límite de GitHub 100 MB por archivo)", file=sys.stderr)
 
     estabilizar(a.prometheus, a.distribucion, a.estabilizacion, a.objetivo)
+    try:
+        acc = fallo.acceso(RAIZ, a.distribucion)
+    except (OSError, AttributeError):
+        acc = None
+    if a.fallo and acc is None:
+        sys.exit(f"Falta el inventario de {a.distribucion} (lo genera Terraform) para acceder por SSH")
+    reloj = fallo.reloj(acc, IPS_NODOS) if acc else None
     tit_ini = titulares(a.prometheus, a.distribucion)
+    plan = None
+    if a.fallo:
+        plan = preparar_fallo(a, acc, tit_ini)
+        tit_ini = titulares(a.prometheus, a.distribucion)
+        params = fallo.parametros_efectivos(a.distribucion, acc, plan[2])
+        macs = {ip: mac_de(ip) for ip in IPS_NODOS}
+        obs = fallo.Observador(a.distribucion, acc, plan[2], {m: nombres_nodos(a.prometheus, a.distribucion)[ip] for ip, m in macs.items()})
 
     env = dict(os.environ, DISTRIBUCION=a.distribucion, ESCENARIO=a.escenario, REPETICION=str(a.repeticion),
                RAMPA_S=str(a.rampa), ESTABLE_S=str(a.estable), DESCENSO_S=str(a.descenso),
@@ -147,15 +211,42 @@ def main():
         env["TASA"] = str(a.tasa)
     cmd = ["taskset", "-c", a.cpus, "k6", "run", "--out", f"json={f_json}", "--summary-export", f_res,
            os.path.join(RAIZ, "k6", f"{a.escenario}.js")]
+    ev, hilo = {}, None
+    if plan:
+        nodo_f, ip_f, ip_s, movido, reinicios = plan
+        ev["preparacion"] = fallo.preparar(a.distribucion, acc, ip_f)
+        obs.iniciar()
     t_lanzado = time.time()
     k6 = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    time.sleep(max(0, t_lanzado + a.rampa - time.time()))
-    e0, ta0, tb0 = leer_rapl()
-    time.sleep(max(0, t_lanzado + a.rampa + a.estable - time.time()))
-    e1, ta1, tb1 = leer_rapl()
-    rc = k6.wait()
-    t_fin_ejec = time.time()
+    def fallar():
+        time.sleep(max(0, t_lanzado + a.rampa + a.fallo_en - time.time()))
+        ev["rc_inyeccion"], ev["t_antes"], ev["t_despues"] = fallo.inyectar(RAIZ, a.distribucion, acc, ip_f)
+        time.sleep(a.fallo_retener)
+        ev["t_restaura"] = time.time()
+        ev["restauracion"] = fallo.restaurar(a.distribucion, acc, ip_f)
+
+    try:
+        if plan:
+            hilo = threading.Thread(target=fallar)
+            hilo.start()
+        time.sleep(max(0, t_lanzado + a.rampa - time.time()))
+        e0, ta0, tb0 = leer_rapl()
+        time.sleep(max(0, t_lanzado + a.rampa + a.estable - time.time()))
+        e1, ta1, tb1 = leer_rapl()
+        rc = k6.wait()
+        t_fin_ejec = time.time()
+    finally:
+        if plan:
+            if hilo:
+                hilo.join(timeout=a.fallo_retener + 200)
+            ev["restauracion_final"] = fallo.restaurar(a.distribucion, acc, ip_f)
+            for _ in range(150):
+                if obs.nodo_listo(nodo_f):
+                    break
+                time.sleep(2)
+            ev["nodo_listo_al_final"] = obs.nodo_listo(nodo_f)
+            obs.detener()
 
     maximo = int(open(RAPL + "max_energy_range_uj").read())
     t_ini_v, t_fin_v = (ta0 + tb0) / 2, (ta1 + tb1) / 2
@@ -166,6 +257,24 @@ def main():
     tam_json = os.path.getsize(f_json) if os.path.exists(f_json) else None
     if tam_json and tam_json > UMBRAL_AVISO * LIMITE_ARCHIVO:
         print(f"AVISO: {f_json} pesa {tam_json / 1e6:.0f} MB (límite de GitHub 100 MB por archivo)", file=sys.stderr)
+    bloque_fallo = None
+    if plan and "t_antes" in ev:
+        consulta = (f'kube_node_status_condition{{distribution="{a.distribucion}",node="{nodo_f}",'
+                    'condition="Ready",status="true"}')
+        ksm = prom_rango(a.prometheus, consulta, ev["t_antes"] - 60, time.time())
+        f_obs = os.path.join(d_meta, base + ".observador.json.gz")
+        with gzip.open(f_obs, "wt") as fh:
+            json.dump({"muestras": obs.muestras, "estado": obs.estado, "ksm": ksm}, fh)
+        bloque_fallo = {
+            "nodo_fallado": nodo_f, "ip": ip_f, "unidad": fallo.UNIDAD[a.distribucion], "nodo_observador": ip_s,
+            "parametros": {"fallo_en_s": a.fallo_en, "retener_s": a.fallo_retener, "reinicio_automatico": "desactivado durante la retención"},
+            "pod_movido": movido, "reinicios_kube_vip": reinicios,
+            "parametros_efectivos": params, "eventos": ev,
+            "observador": os.path.relpath(f_obs, RAIZ),
+            "analisis": fallo.analizar(obs, ev["t_antes"], ev["t_despues"], nodo_f, ksm, f_json),
+        }
+    elif plan:
+        bloque_fallo = {"error": "no se inyectó el fallo", "eventos": ev}
     primer_punto = None
     if os.path.exists(f_json):
         with gzip.open(f_json, "rt") as fh:
@@ -192,7 +301,7 @@ def main():
         "k6": {"codigo_salida": rc, "cpus": a.cpus, "json": os.path.relpath(f_json, RAIZ),
                "resumen": os.path.relpath(f_res, RAIZ), "tamano_json_bytes": tam_json, "primer_punto_json": primer_punto,
                "version": subprocess.run(["k6", "version"], capture_output=True, text=True).stdout.strip()},
-        "snapshot": snap,
+        "snapshot": snap, "reloj_antes": reloj, "fallo": bloque_fallo,
     }
     json.dump(meta, open(f_meta, "w"), indent=2)
     print(json.dumps({k: meta[k] for k in ("t_inicio", "t_fin", "titulares", "snapshot")} | {"k6_rc": rc,

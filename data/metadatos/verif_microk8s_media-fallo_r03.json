@@ -1,0 +1,226 @@
+{
+  "esquema": 1,
+  "verificacion": true,
+  "distribution": "microk8s",
+  "escenario": "media",
+  "repeticion": 3,
+  "t_inicio": 1792536062.579,
+  "t_fin": 1792536242.58,
+  "t_ejecucion_inicio": 1792536032.574,
+  "t_ejecucion_fin": 1792536272.984,
+  "parametros": {
+    "tasa": 100.0,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 60,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 25353480967,
+    "energy_uj_fin": 27043693820,
+    "lectura_inicio_s": [
+      1792536062.574,
+      1792536062.584
+    ],
+    "lectura_fin_s": [
+      1792536242.574,
+      1792536242.585
+    ],
+    "desbordamiento": false,
+    "delta_uj": 1690212853,
+    "potencia_media_W": 9.39
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "microk8s-node2",
+      "nodo_vip_servicio": "microk8s-node2",
+      "nodo_pod": "microk8s-node1"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node1"
+    },
+    "cambiaron": true,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-resultados/verif_microk8s_media-fallo_r03.json.gz",
+    "resumen": "data/k6-resultados/verif_microk8s_media-fallo_r03.resumen.json",
+    "tamano_json_bytes": 2923438,
+    "primer_punto_json": "2026-10-20T19:40:33.393804047-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "snapshot": {
+    "nombre": "20261020T224434Z-11c7ac0b00796a5f",
+    "copiado": true,
+    "destino": "data/prometheus-snapshots/20261020T224434Z-11c7ac0b00796a5f"
+  },
+  "reloj_antes": {
+    "host": {
+      "Stratum": "3",
+      "System time": "0.000800594 seconds fast of NTP time",
+      "Last offset": "+0.001059645 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Stratum": "4",
+        "System time": "0.000007257 seconds slow of NTP time",
+        "Last offset": "-0.000010233 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Stratum": "4",
+        "System time": "0.000001324 seconds fast of NTP time",
+        "Last offset": "+0.000002673 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Stratum": "4",
+        "System time": "0.000000156 seconds slow of NTP time",
+        "Last offset": "-0.000004046 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "fallo": {
+    "nodo_fallado": "microk8s-node2",
+    "ip": "192.168.100.12",
+    "unidad": "snap.microk8s.daemon-kubelite",
+    "nodo_observador": "192.168.100.11",
+    "parametros": {
+      "fallo_en_s": 30,
+      "retener_s": 120,
+      "reinicio_automatico": "desactivado durante la retenci\u00f3n"
+    },
+    "pod_movido": {
+      "desde": "microk8s-node2",
+      "hacia": "microk8s-node1"
+    },
+    "reinicios_kube_vip": 0,
+    "parametros_efectivos": {
+      "argumentos_explicitos": [
+        "--eviction-hard=\"memory.available<100Mi,nodefs.available<1Gi,imagefs.available<1Gi\""
+      ],
+      "tolerancias_pod": [
+        {
+          "effect": "NoExecute",
+          "key": "node.kubernetes.io/not-ready",
+          "operator": "Exists",
+          "tolerationSeconds": 300
+        },
+        {
+          "effect": "NoExecute",
+          "key": "node.kubernetes.io/unreachable",
+          "operator": "Exists",
+          "tolerationSeconds": 300
+        }
+      ]
+    },
+    "eventos": {
+      "preparacion": [
+        0,
+        "Restart=no"
+      ],
+      "rc_inyeccion": 0,
+      "t_antes": 1792536092.5776699,
+      "t_despues": 1792536093.2718356,
+      "t_restaura": 1792536213.2725976,
+      "restauracion": [
+        0,
+        "active"
+      ],
+      "restauracion_final": [
+        0,
+        "active"
+      ],
+      "nodo_listo_al_final": true
+    },
+    "observador": "data/metadatos/verif_microk8s_media-fallo_r03.observador.json.gz",
+    "analisis": {
+      "t_fallo": 1792536092.925,
+      "cota_t_fallo_s": 0.347,
+      "api_vip": [
+        {
+          "desde_s": 0.7,
+          "hasta_s": 21.7
+        }
+      ],
+      "app_vip": [],
+      "titular_vip_cp": [
+        {
+          "t_s": -29.3,
+          "titular": "microk8s-node2"
+        },
+        {
+          "t_s": 20.7,
+          "titular": "microk8s-node3"
+        }
+      ],
+      "titular_vip_svc": [
+        {
+          "t_s": -29.3,
+          "titular": "microk8s-node2"
+        },
+        {
+          "t_s": 17.7,
+          "titular": "microk8s-node3"
+        }
+      ],
+      "nodo_notready_kubectl": {
+        "desde_s": 111.9,
+        "hasta_s": 125.9
+      },
+      "nodo_notready_ksm": {
+        "desde_s": 119.7,
+        "hasta_s": 129.7
+      },
+      "leases": [
+        {
+          "t_s": -60.4,
+          "kube-controller-manager": "microk8s-node2_c57d1d15-95d3-447e-ad9f-72eebeb3e6a4",
+          "kube-scheduler": "microk8s-node2_63b12dd8-44c5-48bb-8a0c-4b82ba73440d",
+          "plndr-cp-lock": "microk8s-node2",
+          "plndr-svcs-lock": "microk8s-node2"
+        },
+        {
+          "t_s": 17.9,
+          "kube-controller-manager": "microk8s-node2_c57d1d15-95d3-447e-ad9f-72eebeb3e6a4",
+          "kube-scheduler": "microk8s-node2_63b12dd8-44c5-48bb-8a0c-4b82ba73440d",
+          "plndr-cp-lock": "microk8s-node2",
+          "plndr-svcs-lock": "microk8s-node3"
+        },
+        {
+          "t_s": 19.9,
+          "kube-controller-manager": "microk8s-node2_c57d1d15-95d3-447e-ad9f-72eebeb3e6a4",
+          "kube-scheduler": "microk8s-node2_63b12dd8-44c5-48bb-8a0c-4b82ba73440d",
+          "plndr-cp-lock": "microk8s-node3",
+          "plndr-svcs-lock": "microk8s-node3"
+        },
+        {
+          "t_s": 61.9,
+          "kube-controller-manager": "microk8s-node3_4d0a1408-3895-4365-92b2-b56b2157a608",
+          "kube-scheduler": "microk8s-node1_f48b6a89-34b6-43fc-be88-5e5e7aa1bf18",
+          "plndr-cp-lock": "microk8s-node3",
+          "plndr-svcs-lock": "microk8s-node3"
+        }
+      ],
+      "k6": {
+        "fallidas_antes": 0,
+        "fallidas_despues": 0,
+        "total_antes": 4530,
+        "total_despues": 16469,
+        "descartadas_despues": 0,
+        "ultima_fallida_s": null
+      }
+    }
+  }
+}
