@@ -1,0 +1,26 @@
+{
+  "t_inicio": 1793141869.071,
+  "t_fin": 1793142049.071,
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "microk8s-node1",
+      "nodo_vip_servicio": "microk8s-node1",
+      "nodo_pod": "microk8s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "microk8s-node1",
+      "nodo_vip_servicio": "microk8s-node1",
+      "nodo_pod": "microk8s-node2"
+    },
+    "cambiaron": false,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "snapshot": {
+    "nombre": "20261027T230119Z-145337d0d000a148",
+    "copiado": false,
+    "motivo": "snapshot cumulativo: se copia solo con --copiar-snapshot"
+  },
+  "k6_rc": 0,
+  "rapl_W": 6.621,
+  "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_alta_r01.json"
+}

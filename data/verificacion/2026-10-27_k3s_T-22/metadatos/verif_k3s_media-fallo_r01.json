@@ -1,0 +1,347 @@
+{
+  "esquema": 2,
+  "tipo": "verificacion",
+  "verificacion": true,
+  "distribution": "k3s",
+  "escenario": "media",
+  "repeticion": 1,
+  "t_inicio": 1793139257.073,
+  "t_fin": 1793139437.073,
+  "t_ejecucion_inicio": 1793139227.064,
+  "t_ejecucion_fin": 1793139467.685,
+  "parametros": {
+    "tasa": 450.0,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 120,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 10630646665,
+    "energy_uj_fin": 11732760126,
+    "lectura_inicio_s": [
+      1793139257.064,
+      1793139257.081
+    ],
+    "lectura_fin_s": [
+      1793139437.064,
+      1793139437.081
+    ],
+    "desbordamiento": false,
+    "delta_uj": 1102113461,
+    "potencia_media_W": 6.123
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "k3s-node1",
+      "nodo_vip_servicio": "k3s-node1",
+      "nodo_pod": "k3s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "k3s-node2",
+      "nodo_vip_servicio": "k3s-node2",
+      "nodo_pod": "k3s-node2"
+    },
+    "cambiaron": true,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-crudo/verificacion/2026-10-27_k3s_T-22/verif_k3s_media-fallo_r01.json.gz",
+    "resumen": "data/verificacion/2026-10-27_k3s_T-22/k6-resultados/verif_k3s_media-fallo_r01.resumen.json",
+    "tamano_json_bytes": 12921695,
+    "sha256_json": "c30811a10f9077f2c81f83fc229393fb7681a0ee934909dc9bee8e87c811edb3",
+    "por_segundo": "data/verificacion/2026-10-27_k3s_T-22/k6-resultados/verif_k3s_media-fallo_r01.por_segundo.json.gz",
+    "primer_punto_json": "2026-10-27T19:13:47.515542646-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "snapshot": {
+    "nombre": "20261027T221749Z-2a1c9c9ec48bf13e",
+    "copiado": false,
+    "motivo": "snapshot cumulativo: se copia solo con --copiar-snapshot"
+  },
+  "ventana_prometheus": {
+    "archivo": "data/verificacion/2026-10-27_k3s_T-22/prometheus-ventanas/verif_k3s_media-fallo_r01.json.gz",
+    "series": 1701
+  },
+  "reloj_antes": {
+    "host": {
+      "Reference ID": "C8011310 (slot.inf.utfsm.cl)",
+      "Stratum": "3",
+      "System time": "0.001270286 seconds fast of NTP time",
+      "Last offset": "-0.001583991 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000330785 seconds slow of NTP time",
+        "Last offset": "-0.000344161 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000383692 seconds slow of NTP time",
+        "Last offset": "-0.000235612 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.001468241 seconds slow of NTP time",
+        "Last offset": "-0.002813831 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "reloj_espera_s": 1.9,
+  "estado_host": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "64764"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "procesos_top_cpu": [
+      [
+        "qemu-system-x86",
+        "31,7"
+      ],
+      [
+        "qemu-system-x86",
+        "26,7"
+      ],
+      [
+        "qemu-system-x86",
+        "25,7"
+      ],
+      [
+        "node_exporter",
+        "2,0"
+      ],
+      [
+        "kcompactd0",
+        "1,0"
+      ],
+      [
+        "ksmd",
+        "1,0"
+      ],
+      [
+        "kworker/u64:10-writeback",
+        "1,0"
+      ],
+      [
+        "prometheus",
+        "1,0"
+      ],
+      [
+        "top",
+        "1,0"
+      ],
+      [
+        "systemd",
+        "0,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "boost_cpu": "0",
+    "memoria_disponible_mb": 6144,
+    "presion_memoria_some_avg60": "0.00",
+    "frecuencia_max_khz": "1901000",
+    "epp_cpu0": "balance_performance",
+    "perfil_plataforma": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 46.6,
+    "carga_1min": 2.62744140625,
+    "ufw_habilitado": false,
+    "politica": {
+      "boost_cpu": 0,
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 100,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "valida_para_campana": false,
+  "motivos_no_valida": [
+    "tipo verificacion"
+  ],
+  "fallo": {
+    "nodo_fallado": "k3s-node1",
+    "ip": "192.168.100.11",
+    "unidad": "k3s",
+    "nodo_observador": "192.168.100.12",
+    "parametros": {
+      "fallo_en_s": 30,
+      "retener_s": 120,
+      "reinicio_automatico": "desactivado durante la retenci\u00f3n"
+    },
+    "pod_movido": null,
+    "reinicios_kube_vip": 0,
+    "parametros_efectivos": {
+      "argumentos_explicitos": [
+        "evictionHard:",
+        "evictionMinimumReclaim:",
+        "evictionPressureTransitionPeriod: 5m0s",
+        "nodeStatusReportFrequency: 5m0s",
+        "nodeStatusUpdateFrequency: 10s"
+      ],
+      "tolerancias_pod": [
+        {
+          "effect": "NoExecute",
+          "key": "node.kubernetes.io/not-ready",
+          "operator": "Exists",
+          "tolerationSeconds": 300
+        },
+        {
+          "effect": "NoExecute",
+          "key": "node.kubernetes.io/unreachable",
+          "operator": "Exists",
+          "tolerationSeconds": 300
+        }
+      ]
+    },
+    "eventos": {
+      "preparacion": [
+        0,
+        "Restart=no"
+      ],
+      "rc_inyeccion": 0,
+      "t_antes": 1793139287.0692747,
+      "t_despues": 1793139288.7800205,
+      "t_restaura": 1793139408.781278,
+      "restauracion": [
+        0,
+        "active"
+      ],
+      "restauracion_final": [
+        0,
+        "active"
+      ],
+      "nodo_listo_al_final": true
+    },
+    "observador": "data/verificacion/2026-10-27_k3s_T-22/metadatos/verif_k3s_media-fallo_r01.observador.json.gz",
+    "analisis": {
+      "t_fallo": 1793139287.925,
+      "cota_t_fallo_s": 0.855,
+      "api_vip": [
+        {
+          "desde_s": 1.1,
+          "hasta_s": 19.2
+        }
+      ],
+      "app_vip": [],
+      "titular_vip_cp": [
+        {
+          "t_s": -29.9,
+          "titular": "k3s-node1"
+        },
+        {
+          "t_s": 18.2,
+          "titular": "k3s-node2"
+        }
+      ],
+      "titular_vip_svc": [
+        {
+          "t_s": -29.9,
+          "titular": "k3s-node1"
+        },
+        {
+          "t_s": 18.2,
+          "titular": "k3s-node2"
+        }
+      ],
+      "nodo_notready_kubectl": {
+        "desde_s": 67.7,
+        "hasta_s": 131.8
+      },
+      "nodo_notready_ksm": {
+        "desde_s": 74.1,
+        "hasta_s": 144.1
+      },
+      "leases": [
+        {
+          "t_s": -60.9,
+          "kube-controller-manager": "k3s-node1_1e7c775a-fc2c-4c0c-a95e-e02a214a44f1",
+          "kube-scheduler": "k3s-node1_9786eae0-3ebe-4857-98e4-1dbed0ee13b5",
+          "plndr-cp-lock": "k3s-node1",
+          "plndr-svcs-lock": "k3s-node1"
+        },
+        {
+          "t_s": 15.5,
+          "kube-controller-manager": "k3s-node3_fffdb270-48c8-4fef-89f5-84e37a812a50",
+          "kube-scheduler": "k3s-node1_9786eae0-3ebe-4857-98e4-1dbed0ee13b5",
+          "plndr-cp-lock": "k3s-node2",
+          "plndr-svcs-lock": "k3s-node1"
+        },
+        {
+          "t_s": 17.5,
+          "kube-controller-manager": "k3s-node3_fffdb270-48c8-4fef-89f5-84e37a812a50",
+          "kube-scheduler": "k3s-node1_9786eae0-3ebe-4857-98e4-1dbed0ee13b5",
+          "plndr-cp-lock": "k3s-node2",
+          "plndr-svcs-lock": "k3s-node2"
+        },
+        {
+          "t_s": 21.7,
+          "kube-controller-manager": "k3s-node3_fffdb270-48c8-4fef-89f5-84e37a812a50",
+          "kube-scheduler": "k3s-node3_94fcfb0a-1135-405a-8e21-ce4b23bf9e25",
+          "plndr-cp-lock": "k3s-node2",
+          "plndr-svcs-lock": "k3s-node2"
+        }
+      ],
+      "k6": {
+        "fallidas_antes": 0,
+        "fallidas_despues": 0,
+        "total_antes": 20599,
+        "total_despues": 73899,
+        "descartadas_despues": 1,
+        "ultima_fallida_s": null
+      }
+    }
+  }
+}

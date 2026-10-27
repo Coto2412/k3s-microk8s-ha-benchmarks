@@ -11,6 +11,7 @@ data/
 ├── campana/plan_campana_v1.json            plan de la campaña (borrador sin fijar; lo genera k6/medicion/plan_campana.py)
 ├── campana/<sesión>/                       corridas definitivas (aún no hay)
 ├── verificacion/<fecha>_<distribución>/    verificaciones del orquestador, fallos controlados y pilotos de T-17.4
+│     las sesiones `<fecha>_<distribución>_T-22` añaden `validacion/` (salida de k6/operacion/validacion.py)
 │     cada carpeta de sesión lleva:  k6-resultados/  metadatos/  prometheus-ventanas/
 ├── exploratorio/<fecha>_<distribución>[_nota]/   corridas con otra política (boost encendido) o de sesiones previas;
 │                                                 mismas subcarpetas, se citan en la evidencia pero no son resultados

@@ -1,0 +1,640 @@
+{
+ "esquema": 1,
+ "tipo": "verificacion",
+ "valida_para_campana": false,
+ "distribucion": "microk8s",
+ "sesion": "2026-10-27_microk8s_T-22",
+ "ciclo_despliegue": 6,
+ "inicio": 1793140018.064,
+ "pasos": [
+  {
+   "paso": "1 construcci\u00f3n completa (terraform + ansible, aplicaci\u00f3n definitiva)",
+   "inicio": 1793140018.065,
+   "registro": {
+    "distribucion": "microk8s",
+    "accion": "construir",
+    "ciclo": 6,
+    "rc": 0,
+    "modo_medicion": true,
+    "sin_carga": true,
+    "inicio": 1793140018.0753286,
+    "fin": 1793140970.118574,
+    "duracion_total_s": 952.043245518,
+    "fases": {
+     "tf_construir": {
+      "inicio": 1793140018.077727,
+      "fin": 1793140059.808227,
+      "duracion_s": 41.730500023
+     },
+     "huellas": {
+      "inicio": 1793140059.8131924,
+      "fin": 1793140071.6792378,
+      "duracion_s": 11.866045419
+     },
+     "ansible": {
+      "inicio": 1793140071.6847174,
+      "fin": 1793140970.1120458,
+      "duracion_s": 898.427328211
+     }
+    },
+    "log": "/tmp/despliegue_microk8s_construir_c6.log"
+   },
+   "fin": 1793140970.144,
+   "ok": true
+  },
+  {
+   "paso": "2 comprobaciones de HA y de la aplicaci\u00f3n",
+   "inicio": 1793140970.17,
+   "comprobaciones": {
+    "nodos_ready": {
+     "ok": true,
+     "listos": [
+      "microk8s-node1",
+      "microk8s-node2",
+      "microk8s-node3"
+     ]
+    },
+    "vip_plano_control": {
+     "ok": true,
+     "ip": "192.168.100.100",
+     "http": "401"
+    },
+    "vip_servicio": {
+     "ok": true,
+     "ip": "192.168.100.150",
+     "sha256_iteraciones": 300,
+     "respuesta_prefijo": "eebe5aba7c52ba40"
+    },
+    "titulares": {
+     "ok": true,
+     "nodo_vip_plano_control": "microk8s-node1",
+     "nodo_vip_servicio": "microk8s-node1",
+     "nodo_pod": "microk8s-node2"
+    },
+    "aplicacion": {
+     "ok": true,
+     "limite_cpu": "2",
+     "solicitud_cpu": "500m",
+     "esperado": {
+      "limite": "2000m",
+      "solicitud": "500m"
+     },
+     "replicas_listas": "1"
+    }
+   },
+   "intentos": 1,
+   "espera_s": 1.9,
+   "fin": 1793140972.062,
+   "ok": true
+  },
+  {
+   "paso": "3 corrida idle (1 repetici\u00f3n, sin carga rps)",
+   "inicio": 1793140972.066,
+   "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_idle_r01.json",
+   "fin": 1793141339.679,
+   "ok": true
+  },
+  {
+   "paso": "3 corrida media (1 repetici\u00f3n, 450 rps)",
+   "inicio": 1793141339.684,
+   "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_media_r01.json",
+   "fin": 1793141711.819,
+   "ok": true
+  },
+  {
+   "paso": "3 corrida alta (1 repetici\u00f3n, 900 rps)",
+   "inicio": 1793141711.826,
+   "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_alta_r01.json",
+   "fin": 1793142089.618,
+   "ok": true
+  },
+  {
+   "paso": "3 corrida media-fallo (1 repetici\u00f3n, 450 rps)",
+   "inicio": 1793142089.63,
+   "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_media-fallo_r01.json",
+   "fin": 1793142471.607,
+   "ok": true
+  },
+  {
+   "paso": "4 destrucci\u00f3n del cl\u00faster",
+   "inicio": 1793142471.616,
+   "registro": {
+    "distribucion": "microk8s",
+    "accion": "destruir",
+    "ciclo": 6,
+    "rc": 0,
+    "modo_medicion": true,
+    "sin_carga": true,
+    "inicio": 1793142471.6271362,
+    "fin": 1793142478.4716501,
+    "duracion_total_s": 6.844513956,
+    "fases": {
+     "tf_destruir": {
+      "inicio": 1793142471.6293776,
+      "fin": 1793142478.4667826,
+      "duracion_s": 6.837404893
+     }
+    },
+    "log": "/tmp/despliegue_microk8s_destruir_c6.log"
+   },
+   "fin": 1793142478.481,
+   "ok": true
+  }
+ ],
+ "corridas": {
+  "idle": {
+   "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_idle_r01.json",
+   "valida_para_campana": false,
+   "duracion_total_s": 367.5,
+   "fuentes": {
+    "rapl": {
+     "ok": true,
+     "delta_uj": 893203442,
+     "potencia_media_W": 4.962,
+     "desbordamiento": false,
+     "ventana_s": 180.0
+    },
+    "k6": {
+     "ok": true,
+     "codigo_salida": 0,
+     "json_bytes": 11451
+    },
+    "scaphandre": {
+     "ok": true,
+     "muestras": {
+      "127.0.0.1:8080": 27
+     },
+     "esperadas": 27
+    },
+    "node_exporter": {
+     "ok": true,
+     "host": {
+      "127.0.0.1:9100": 27
+     },
+     "vms": {
+      "192.168.100.11:9100": 27,
+      "192.168.100.12:9100": 27,
+      "192.168.100.13:9100": 27
+     },
+     "esperadas": 27
+    },
+    "kube_state_metrics": {
+     "ok": true,
+     "nodos": 3,
+     "muestras_nodo_min": 27,
+     "pod": {
+      "nginx-referencia-5c64f8bfc-jvrnm": 27
+     },
+     "esperadas": 27
+    }
+   },
+   "memoria_corrida_completa": {
+    "muestras_host": 74,
+    "mem_disponible_min_mb": 1576,
+    "mem_disponible_min_t": 1793141333.1,
+    "swap_libre_min_mb": 1999,
+    "swap_total_mb": 2048,
+    "pswpin_delta": 382,
+    "pswpout_delta": 245,
+    "psi_some_avg10_max": 0.51,
+    "psi_some_delta_us": 5763,
+    "psi_full_delta_us": 5759
+   },
+   "memoria_fase_estable": {
+    "muestras_host": 36,
+    "mem_disponible_min_mb": 1578,
+    "mem_disponible_min_t": 1793141263.1,
+    "swap_libre_min_mb": 2002,
+    "swap_total_mb": 2048,
+    "pswpin_delta": 84,
+    "pswpout_delta": 0,
+    "psi_some_avg10_max": 0.0,
+    "psi_some_delta_us": 2095,
+    "psi_full_delta_us": 2091
+   },
+   "memoria_vms_ventana_completa": {
+    "192.168.100.11:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2835,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.12:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2991,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.13:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 3007,
+     "swap_usado_max_mb": 0
+    }
+   },
+   "memoria_vms_fase_estable": {
+    "192.168.100.11:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2839,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.12:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2991,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.13:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 3007,
+     "swap_usado_max_mb": 0
+    }
+   }
+  },
+  "media": {
+   "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_media_r01.json",
+   "valida_para_campana": false,
+   "duracion_total_s": 372.0,
+   "fuentes": {
+    "rapl": {
+     "ok": true,
+     "delta_uj": 1062572323,
+     "potencia_media_W": 5.903,
+     "desbordamiento": false,
+     "ventana_s": 180.0
+    },
+    "k6": {
+     "ok": true,
+     "codigo_salida": 0,
+     "json_bytes": 13253359,
+     "segundos_con_datos": 181,
+     "solicitudes_por_s": 450.0,
+     "fallidas": 0,
+     "descartadas": 0
+    },
+    "scaphandre": {
+     "ok": true,
+     "muestras": {
+      "127.0.0.1:8080": 27
+     },
+     "esperadas": 27
+    },
+    "node_exporter": {
+     "ok": true,
+     "host": {
+      "127.0.0.1:9100": 28
+     },
+     "vms": {
+      "192.168.100.11:9100": 27,
+      "192.168.100.12:9100": 27,
+      "192.168.100.13:9100": 27
+     },
+     "esperadas": 27
+    },
+    "kube_state_metrics": {
+     "ok": true,
+     "nodos": 3,
+     "muestras_nodo_min": 27,
+     "pod": {
+      "nginx-referencia-5c64f8bfc-jvrnm": 27
+     },
+     "esperadas": 27
+    }
+   },
+   "memoria_corrida_completa": {
+    "muestras_host": 74,
+    "mem_disponible_min_mb": 1482,
+    "mem_disponible_min_t": 1793141678.1,
+    "swap_libre_min_mb": 1996,
+    "swap_total_mb": 2048,
+    "pswpin_delta": 31,
+    "pswpout_delta": 1691,
+    "psi_some_avg10_max": 0.0,
+    "psi_some_delta_us": 10747,
+    "psi_full_delta_us": 10682
+   },
+   "memoria_fase_estable": {
+    "muestras_host": 36,
+    "mem_disponible_min_mb": 1490,
+    "mem_disponible_min_t": 1793141578.1,
+    "swap_libre_min_mb": 1998,
+    "swap_total_mb": 2048,
+    "pswpin_delta": 5,
+    "pswpout_delta": 1072,
+    "psi_some_avg10_max": 0.0,
+    "psi_some_delta_us": 1556,
+    "psi_full_delta_us": 1556
+   },
+   "memoria_vms_ventana_completa": {
+    "192.168.100.11:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2834,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.12:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2965,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.13:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2997,
+     "swap_usado_max_mb": 0
+    }
+   },
+   "memoria_vms_fase_estable": {
+    "192.168.100.11:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2845,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.12:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2965,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.13:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 3000,
+     "swap_usado_max_mb": 0
+    }
+   }
+  },
+  "alta": {
+   "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_alta_r01.json",
+   "valida_para_campana": false,
+   "duracion_total_s": 377.7,
+   "fuentes": {
+    "rapl": {
+     "ok": true,
+     "delta_uj": 1191746551,
+     "potencia_media_W": 6.621,
+     "desbordamiento": false,
+     "ventana_s": 180.0
+    },
+    "k6": {
+     "ok": true,
+     "codigo_salida": 0,
+     "json_bytes": 26347159,
+     "segundos_con_datos": 181,
+     "solicitudes_por_s": 899.5,
+     "fallidas": 0,
+     "descartadas": 85
+    },
+    "scaphandre": {
+     "ok": true,
+     "muestras": {
+      "127.0.0.1:8080": 27
+     },
+     "esperadas": 27
+    },
+    "node_exporter": {
+     "ok": true,
+     "host": {
+      "127.0.0.1:9100": 27
+     },
+     "vms": {
+      "192.168.100.11:9100": 28,
+      "192.168.100.12:9100": 27,
+      "192.168.100.13:9100": 27
+     },
+     "esperadas": 27
+    },
+    "kube_state_metrics": {
+     "ok": true,
+     "nodos": 3,
+     "muestras_nodo_min": 27,
+     "pod": {
+      "nginx-referencia-5c64f8bfc-jvrnm": 27
+     },
+     "esperadas": 27
+    }
+   },
+   "memoria_corrida_completa": {
+    "muestras_host": 76,
+    "mem_disponible_min_mb": 1430,
+    "mem_disponible_min_t": 1793142053.1,
+    "swap_libre_min_mb": 1988,
+    "swap_total_mb": 2048,
+    "pswpin_delta": 53,
+    "pswpout_delta": 2048,
+    "psi_some_avg10_max": 0.0,
+    "psi_some_delta_us": 4623,
+    "psi_full_delta_us": 4600
+   },
+   "memoria_fase_estable": {
+    "muestras_host": 36,
+    "mem_disponible_min_mb": 1446,
+    "mem_disponible_min_t": 1793142033.1,
+    "swap_libre_min_mb": 1988,
+    "swap_total_mb": 2048,
+    "pswpin_delta": 32,
+    "pswpout_delta": 1024,
+    "psi_some_avg10_max": 0.0,
+    "psi_some_delta_us": 2901,
+    "psi_full_delta_us": 2878
+   },
+   "memoria_vms_ventana_completa": {
+    "192.168.100.11:9100": {
+     "muestras": 28,
+     "mem_disponible_min_mb": 2819,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.12:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2956,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.13:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2989,
+     "swap_usado_max_mb": 0
+    }
+   },
+   "memoria_vms_fase_estable": {
+    "192.168.100.11:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2831,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.12:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2968,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.13:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 3000,
+     "swap_usado_max_mb": 0
+    }
+   }
+  },
+  "media-fallo": {
+   "meta": "data/verificacion/2026-10-27_microk8s_T-22/metadatos/verif_microk8s_media-fallo_r01.json",
+   "valida_para_campana": false,
+   "duracion_total_s": 381.8,
+   "fuentes": {
+    "rapl": {
+     "ok": true,
+     "delta_uj": 1111976811,
+     "potencia_media_W": 6.178,
+     "desbordamiento": false,
+     "ventana_s": 180.0
+    },
+    "k6": {
+     "ok": true,
+     "codigo_salida": 0,
+     "json_bytes": 13221974,
+     "segundos_con_datos": 181,
+     "solicitudes_por_s": 449.9,
+     "fallidas": 0,
+     "descartadas": 20
+    },
+    "scaphandre": {
+     "ok": true,
+     "muestras": {
+      "127.0.0.1:8080": 27
+     },
+     "esperadas": 27
+    },
+    "node_exporter": {
+     "ok": true,
+     "host": {
+      "127.0.0.1:9100": 27
+     },
+     "vms": {
+      "192.168.100.11:9100": 28,
+      "192.168.100.12:9100": 27,
+      "192.168.100.13:9100": 27
+     },
+     "esperadas": 27
+    },
+    "kube_state_metrics": {
+     "ok": true,
+     "nodos": 3,
+     "muestras_nodo_min": 28,
+     "pod": {
+      "nginx-referencia-5c64f8bfc-jvrnm": 28
+     },
+     "esperadas": 27
+    }
+   },
+   "memoria_corrida_completa": {
+    "muestras_host": 76,
+    "mem_disponible_min_mb": 1420,
+    "mem_disponible_min_t": 1793142438.1,
+    "swap_libre_min_mb": 1988,
+    "swap_total_mb": 2048,
+    "pswpin_delta": 25,
+    "pswpout_delta": 0,
+    "psi_some_avg10_max": 0.0,
+    "psi_some_delta_us": 4542,
+    "psi_full_delta_us": 4516
+   },
+   "memoria_fase_estable": {
+    "muestras_host": 36,
+    "mem_disponible_min_mb": 1447,
+    "mem_disponible_min_t": 1793142428.1,
+    "swap_libre_min_mb": 1988,
+    "swap_total_mb": 2048,
+    "pswpin_delta": 7,
+    "pswpout_delta": 0,
+    "psi_some_avg10_max": 0.0,
+    "psi_some_delta_us": 2802,
+    "psi_full_delta_us": 2797
+   },
+   "memoria_vms_ventana_completa": {
+    "192.168.100.11:9100": {
+     "muestras": 28,
+     "mem_disponible_min_mb": 2814,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.12:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2960,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.13:9100": {
+     "muestras": 27,
+     "mem_disponible_min_mb": 2949,
+     "swap_usado_max_mb": 0
+    }
+   },
+   "memoria_vms_fase_estable": {
+    "192.168.100.11:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2843,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.12:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2960,
+     "swap_usado_max_mb": 0
+    },
+    "192.168.100.13:9100": {
+     "muestras": 18,
+     "mem_disponible_min_mb": 2949,
+     "swap_usado_max_mb": 0
+    }
+   },
+   "fallo": {
+    "ok": true,
+    "nodo_fallado": "microk8s-node1",
+    "pod_movido": null,
+    "reinicios_kube_vip": 0,
+    "api_vip": [
+     {
+      "desde_s": 1.2,
+      "hasta_s": 19.3
+     }
+    ],
+    "app_vip": [],
+    "titular_vip_cp": [
+     {
+      "t_s": -29.8,
+      "titular": "microk8s-node1"
+     },
+     {
+      "t_s": 18.3,
+      "titular": "microk8s-node3"
+     }
+    ],
+    "titular_vip_svc": [
+     {
+      "t_s": -29.8,
+      "titular": "microk8s-node1"
+     },
+     {
+      "t_s": 18.3,
+      "titular": "microk8s-node2"
+     }
+    ],
+    "nodo_notready_kubectl": {
+     "desde_s": 117.2,
+     "hasta_s": 129.3
+    },
+    "nodo_notready_ksm": {
+     "desde_s": 124.2,
+     "hasta_s": 134.2
+    },
+    "k6": {
+     "fallidas_antes": 0,
+     "fallidas_despues": 0,
+     "total_antes": 20554,
+     "total_despues": 73925,
+     "descartadas_despues": 0,
+     "ultima_fallida_s": null
+    },
+    "nodo_listo_al_final": true,
+    "cota_t_fallo_s": 0.794
+   }
+  }
+ },
+ "incidencias": [
+  "idle: el host us\u00f3 swap (pswpin +382, pswpout +245); sin ajustar",
+  "media: el host us\u00f3 swap (pswpin +31, pswpout +1691); sin ajustar",
+  "alta: el host us\u00f3 swap (pswpin +53, pswpout +2048); sin ajustar",
+  "media-fallo: el host us\u00f3 swap (pswpin +25, pswpout +0); sin ajustar"
+ ],
+ "detenida": null,
+ "ajustes_manuales": "ninguno por el script: construy\u00f3 con despliegue.sh y no ejecut\u00f3 comandos fuera de la secuencia; lo confirma quien lo lanz\u00f3",
+ "memoria_errores_muestreo": 0,
+ "swap_libre_inicio_mb": 1983,
+ "fin": 1793142478.492
+}

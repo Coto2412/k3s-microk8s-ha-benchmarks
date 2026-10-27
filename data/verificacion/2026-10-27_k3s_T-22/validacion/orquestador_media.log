@@ -1,0 +1,27 @@
+reloj sin converger (192.168.100.11: System time 0.005257631 seconds slow of NTP time (umbral 5 ms)); reintento en 10 s
+{
+  "t_inicio": 1793138511.794,
+  "t_fin": 1793138691.793,
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "k3s-node1",
+      "nodo_vip_servicio": "k3s-node1",
+      "nodo_pod": "k3s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "k3s-node1",
+      "nodo_vip_servicio": "k3s-node1",
+      "nodo_pod": "k3s-node2"
+    },
+    "cambiaron": false,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "snapshot": {
+    "nombre": "20261027T220522Z-2b07cc76703bace3",
+    "copiado": false,
+    "motivo": "snapshot cumulativo: se copia solo con --copiar-snapshot"
+  },
+  "k6_rc": 0,
+  "rapl_W": 6.0,
+  "meta": "data/verificacion/2026-10-27_k3s_T-22/metadatos/verif_k3s_media_r01.json"
+}

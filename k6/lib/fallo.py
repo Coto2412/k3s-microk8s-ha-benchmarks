@@ -50,7 +50,7 @@ def restaurar(dist, acc, ip):
 
 
 def inyectar(raiz, dist, acc, ip):
-    r = subprocess.run(["bash", os.path.join(raiz, "k6", "fallo-controlado.sh"), dist, ip, *acc],
+    r = subprocess.run(["bash", os.path.join(raiz, "k6", "operacion", "fallo-controlado.sh"), dist, ip, *acc],
                        capture_output=True, text=True)
     m = dict(re.findall(r"(t_\w+)=([\d.]+)", r.stdout))
     return r.returncode, float(m["t_antes"]), float(m["t_despues"])
