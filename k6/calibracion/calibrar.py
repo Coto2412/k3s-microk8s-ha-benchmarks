@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Calibración de tasas (T-20.5): escalones de carga en modelo abierto hasta saturación; los datos son calibración, no resultados.
 
 Un escalón es sostenido si, en su tramo estable: se aplicó ≥ 99 % de la tasa pedida, fallaron ≤ 0,1 % de las solicitudes,
@@ -7,12 +6,12 @@ el pod no está estrangulado por CFS (≤ 1 % de los periodos), y el generador n
 la regla inicial (p95 > 3 veces el del primer escalón) se retiró tras ver datos por arbitraria (ver evidencia_T-20, sección 6). Si el escalón falla por el generador, el techo medido
 es del generador, no del nodo.
 
-Ejemplo: k6/calibrar.py --distribucion k3s
+Ejemplo: python3 -m k6.calibracion.calibrar --distribucion k3s
 """
 import argparse, json, os, statistics, subprocess, sys, time
 
-import agregado, estado_host, fallo
-from orquestador import IPS_NODOS, IP_VIP_SVC, RAIZ, estabilizar, prom, sha256
+from k6.lib import agregado, estado_host, fallo
+from k6.lib.comun import IPS_NODOS, IP_VIP_SVC, RAIZ, estabilizar, prom, sha256
 
 
 def consulta(url, expr, t):
@@ -30,7 +29,7 @@ def escalon(a, tasa, n, p0, pod):
     c0 = fallo.cpu_pod(a.acc, pod[1], pod[0])
     t0 = time.time()
     rc = subprocess.run(["taskset", "-c", a.cpus, "k6", "run", "--out", f"json={f_json}", "--summary-export", f_res,
-                         os.path.join(RAIZ, "k6", "calibracion.js")], env=env, capture_output=True).returncode
+                         os.path.join(RAIZ, "k6", "escenarios", "calibracion.js")], env=env, capture_output=True).returncode
     t_k6 = time.time()
     c1 = fallo.cpu_pod(a.acc, pod[1], pod[0])
     t_ini, t_fin = t0 + a.rampa + a.recorte, t0 + a.rampa + a.estable

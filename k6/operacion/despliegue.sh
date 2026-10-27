@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Uso: k6/despliegue.sh <k3s|microk8s> <construir|destruir> <ciclo>
+# Uso: k6/operacion/despliegue.sh <k3s|microk8s> <construir|destruir> <ciclo>
 # Cronometra por fases (sin carga de k6) y agrega una línea a data/despliegue/despliegue_<distribución>.jsonl (T-20.6).
 set -euo pipefail
 
 dist="${1:?uso: despliegue.sh <k3s|microk8s> <construir|destruir> <ciclo>}"
 accion="${2:?falta acción}"; ciclo="${3:?falta ciclo}"
-raiz="$(cd "$(dirname "$0")/.." && pwd)"
+raiz="$(cd "$(dirname "$0")/../.." && pwd)"
 base="${raiz}/${dist}HA"
 [ -d "$base" ] || { echo "distribución inválida: $dist" >&2; exit 2; }
 registro="${raiz}/data/despliegue/despliegue_${dist}.jsonl"

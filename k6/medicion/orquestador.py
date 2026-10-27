@@ -1,28 +1,18 @@
-#!/usr/bin/env python3
 """Orquestador de una repetición (T-32.1): estabiliza, ejecuta k6, mide RAPL, registra titulares y toma el snapshot.
 
 Ejemplo (verificación corta, no es una repetición válida):
-  k6/orquestador.py --distribucion k3s --escenario media --repeticion 0 --tasa 50 \
+  python3 -m k6.medicion.orquestador --distribucion k3s --escenario media --repeticion 0 --tasa 50 \
       --rampa 5 --estable 20 --descenso 5 --estabilizacion 10 --verificacion
 """
-import argparse, gzip, hashlib, json, os, re, shutil, subprocess, sys, time
+import argparse, gzip, json, os, re, shutil, subprocess, sys, time
 import threading
 import urllib.parse, urllib.request
 
-import agregado, estado_host, fallo
+from k6.lib import agregado, estado_host, fallo
+from k6.lib.comun import RAIZ, RAPL, IP_VIP_CP, IP_VIP_SVC, IPS_NODOS, delta_rapl, estabilizar, leer_rapl, prom, sha256
 
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAPL = "/sys/class/powercap/intel-rapl:0/"
-IP_VIP_CP, IP_VIP_SVC = "192.168.100.100", "192.168.100.150"
-IPS_NODOS = ["192.168.100.11", "192.168.100.12", "192.168.100.13"]
-OBJETIVOS_ESPERADOS = 7  # host, 3 VMs, scaphandre, kube-state-metrics y prometheus
 B_POR_SOLICITUD = 144  # bytes del .json.gz por solicitud: máximo de 4 corridas de humo (133 a 144)
 LIMITE_ARCHIVO, UMBRAL_AVISO = 100_000_000, 0.8  # GitHub rechaza archivos > 100 MB
-
-
-def delta_rapl(a, b, maximo):
-    """Delta del contador con un solo desbordamiento posible (la ventana dura minutos)."""
-    return b - a if b >= a else b - a + maximo
 
 
 def mac_de(ip):
@@ -30,15 +20,6 @@ def mac_de(ip):
     out = subprocess.run(["ip", "neigh", "show", ip], capture_output=True, text=True).stdout
     m = re.search(r"lladdr ([0-9a-f:]{17})", out)
     return m.group(1) if m else None
-
-
-def prom(url, consulta, t=None):
-    q = {"query": consulta}
-    if t:
-        q["time"] = t
-    d = json.load(urllib.request.urlopen(f"{url}/api/v1/query?" + urllib.parse.urlencode(q), timeout=15))
-    assert d["status"] == "success", d
-    return d["data"]["result"]
 
 
 def prom_rango(url, consulta, t0, t1):
@@ -71,31 +52,6 @@ def titulares(url, distribucion):
             "nodo_pod": nodos_pod.pop() if len(nodos_pod) == 1 else "no determinado"}
 
 
-def leer_rapl():
-    t0 = time.time()
-    try:
-        v = int(open(RAPL + "energy_uj").read())
-    except PermissionError:
-        v = int(subprocess.run(["sudo", "-n", "/usr/bin/cat", RAPL + "energy_uj"],
-                               capture_output=True, text=True, check=True).stdout)
-    return v, t0, time.time()
-
-
-def estabilizar(url, distribucion, segundos, objetivo):
-    time.sleep(segundos)
-    up = prom(url, "last_over_time(up[30s])")  # excluye series de la etiqueta anterior que aún están en la ventana de 5 min
-    distros = {x["metric"].get("distribution") for x in up}
-    if distros != {distribucion}:
-        sys.exit(f"Prometheus etiqueta {sorted(map(str, distros))} y se pidió '{distribucion}': "
-                 "correr el playbook del host con -e active_distribution=" + distribucion)
-    caidos = [x["metric"]["job"] + "/" + x["metric"]["instance"] for x in up if x["value"][1] != "1"]
-    if len(up) != OBJETIVOS_ESPERADOS or caidos:
-        sys.exit(f"Targets: {len(up)} (esperados {OBJETIVOS_ESPERADOS}), caídos: {caidos}")
-    codigo = urllib.request.urlopen(objetivo, timeout=5).status
-    if codigo != 200:
-        sys.exit(f"{objetivo} respondió {codigo}")
-
-
 def exportar_ventana(url, t0, t1, destino):
     """Muestras crudas de la ventana (consulta de rango vectorial) para que cada repetición sea analizable sin la TSDB."""
     dur = int(t1 - t0) + 1
@@ -110,14 +66,6 @@ def exportar_ventana(url, t0, t1, destino):
     with gzip.open(destino, "wt") as fh:
         json.dump({"t_desde": t0, "t_hasta": t1, "resultado": datos}, fh)
     return {"archivo": destino, "series": sum(len(v) for v in datos.values())}
-
-
-def sha256(ruta):
-    h = hashlib.sha256()
-    with open(ruta, "rb") as fh:
-        for bloque in iter(lambda: fh.read(1 << 20), b""):
-            h.update(bloque)
-    return h.hexdigest()
 
 
 def snapshot(url, datos_prom, destino, copiar):
@@ -163,15 +111,7 @@ def preparar_fallo(a, acc, tit):
     return nodo, ip_de[nodo], ip_de[otros[0]], movido, reinicios
 
 
-def autotest():
-    assert delta_rapl(10, 25, 100) == 15
-    assert delta_rapl(95, 5, 100) == 10
-    print("autotest ok")
-
-
 def main():
-    if "--autotest" in sys.argv:
-        return autotest()
     ap = argparse.ArgumentParser()
     ap.add_argument("--distribucion", required=True, choices=["k3s", "microk8s"])
     ap.add_argument("--escenario", required=True, choices=["idle", "media", "alta"])
@@ -255,7 +195,7 @@ def main():
     if a.tasa is not None:
         env["TASA"] = str(a.tasa)
     cmd = ["taskset", "-c", a.cpus, "k6", "run", "--out", f"json={f_json}", "--summary-export", f_res,
-           os.path.join(RAIZ, "k6", f"{a.escenario}.js")]
+           os.path.join(RAIZ, "k6", "escenarios", f"{a.escenario}.js")]
     ev, hilo = {}, None
     if plan:
         nodo_f, ip_f, ip_s, movido, reinicios = plan

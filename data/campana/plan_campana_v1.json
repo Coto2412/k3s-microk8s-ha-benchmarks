@@ -1,0 +1,665 @@
+{
+ "version": "v1",
+ "estado": "borrador sin fijar: aún no existe la etiqueta plan-campana-v1",
+ "semilla": 20261028,
+ "diseno": "8 bloques; 4 empiezan por K3s y 4 por MicroK8s (sorteo con la semilla); la unidad de análisis es el promedio de cada celda (bloque x distribución x escenario)",
+ "repeticiones_por_celda": 2,
+ "repeticiones_por_celda_provisional": true,
+ "fases_s": {
+  "rampa": 30,
+  "estable": 180,
+  "descenso": 30,
+  "estabilizacion": 120
+ },
+ "validez": "una corrida entra al análisis solo si el orquestador la marca valida_para_campana; el resto de las reglas de exclusión se fijan antes del primer bloque",
+ "bloques": [
+  {
+   "bloque": 1,
+   "orden": [
+    "k3s",
+    "microk8s"
+   ],
+   "tramos": [
+    {
+     "sesion": "b01_k3s",
+     "distribucion": "k3s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    },
+    {
+     "sesion": "b01_microk8s",
+     "distribucion": "microk8s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "bloque": 2,
+   "orden": [
+    "k3s",
+    "microk8s"
+   ],
+   "tramos": [
+    {
+     "sesion": "b02_k3s",
+     "distribucion": "k3s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    },
+    {
+     "sesion": "b02_microk8s",
+     "distribucion": "microk8s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "bloque": 3,
+   "orden": [
+    "microk8s",
+    "k3s"
+   ],
+   "tramos": [
+    {
+     "sesion": "b03_microk8s",
+     "distribucion": "microk8s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    },
+    {
+     "sesion": "b03_k3s",
+     "distribucion": "k3s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "bloque": 4,
+   "orden": [
+    "microk8s",
+    "k3s"
+   ],
+   "tramos": [
+    {
+     "sesion": "b04_microk8s",
+     "distribucion": "microk8s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    },
+    {
+     "sesion": "b04_k3s",
+     "distribucion": "k3s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "bloque": 5,
+   "orden": [
+    "k3s",
+    "microk8s"
+   ],
+   "tramos": [
+    {
+     "sesion": "b05_k3s",
+     "distribucion": "k3s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    },
+    {
+     "sesion": "b05_microk8s",
+     "distribucion": "microk8s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "bloque": 6,
+   "orden": [
+    "k3s",
+    "microk8s"
+   ],
+   "tramos": [
+    {
+     "sesion": "b06_k3s",
+     "distribucion": "k3s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    },
+    {
+     "sesion": "b06_microk8s",
+     "distribucion": "microk8s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "bloque": 7,
+   "orden": [
+    "microk8s",
+    "k3s"
+   ],
+   "tramos": [
+    {
+     "sesion": "b07_microk8s",
+     "distribucion": "microk8s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    },
+    {
+     "sesion": "b07_k3s",
+     "distribucion": "k3s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "bloque": 8,
+   "orden": [
+    "microk8s",
+    "k3s"
+   ],
+   "tramos": [
+    {
+     "sesion": "b08_microk8s",
+     "distribucion": "microk8s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    },
+    {
+     "sesion": "b08_k3s",
+     "distribucion": "k3s",
+     "corridas": [
+      {
+       "escenario": "idle",
+       "repeticion": 1,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 1,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 1,
+       "tasa_rps": 900
+      },
+      {
+       "escenario": "idle",
+       "repeticion": 2,
+       "tasa_rps": null
+      },
+      {
+       "escenario": "media",
+       "repeticion": 2,
+       "tasa_rps": 450
+      },
+      {
+       "escenario": "alta",
+       "repeticion": 2,
+       "tasa_rps": 900
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

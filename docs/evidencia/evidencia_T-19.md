@@ -73,7 +73,7 @@ Con el `SIGKILL` y sin desactivar el reinicio de systemd: la VIP **migró igual*
 ### 2.6 Parámetros efectivos de detección y tolerancia (T-19.4)
 
 - Tolerancias del pod de NGINX (las inyecta Kubernetes, en ambas distribuciones): `node.kubernetes.io/not-ready` y `node.kubernetes.io/unreachable`, `NoExecute`, `tolerationSeconds: 300`.
-- K3s: en `verif_k3s_media-fallo_r03` el campo `parametros_efectivos.argumentos_explicitos` trae, del kubelet (`00-k3s-defaults.conf`), `nodeStatusUpdateFrequency: 10s`, `nodeStatusReportFrequency: 5m0s`, `evictionPressureTransitionPeriod: 5m0s` y las claves `evictionHard` y `evictionMinimumReclaim`. Los argumentos del `kube-controller-manager` embebido que muestra el *journal* son `--cluster-cidr=10.42.0.0/16` y `--controllers=*,tokencleaner,-service,-route,-cloud-node-lifecycle` (leídos a mano en una corrida anterior); **no hay ningún argumento explícito de detección** (`node-monitor-grace-period` y similares). En `r01` y `r02` ese campo quedó vacío por un error de permisos al expandir el `*.conf`, ya corregido en `k6/fallo.py` y reprobado en `r03`.
+- K3s: en `verif_k3s_media-fallo_r03` el campo `parametros_efectivos.argumentos_explicitos` trae, del kubelet (`00-k3s-defaults.conf`), `nodeStatusUpdateFrequency: 10s`, `nodeStatusReportFrequency: 5m0s`, `evictionPressureTransitionPeriod: 5m0s` y las claves `evictionHard` y `evictionMinimumReclaim`. Los argumentos del `kube-controller-manager` embebido que muestra el *journal* son `--cluster-cidr=10.42.0.0/16` y `--controllers=*,tokencleaner,-service,-route,-cloud-node-lifecycle` (leídos a mano en una corrida anterior); **no hay ningún argumento explícito de detección** (`node-monitor-grace-period` y similares). En `r01` y `r02` ese campo quedó vacío por un error de permisos al expandir el `*.conf`, ya corregido en `k6/lib/fallo.py` y reprobado en `r03`.
 - MicroK8s: el único argumento explícito que coincide con el patrón es `--eviction-hard="memory.available<100Mi,nodefs.available<1Gi,imagefs.available<1Gi"` (del kubelet, sin relación con la detección de nodo caído).
 - Por tanto, el tiempo hasta `NotReady` que medí es el resultado de los valores por defecto del binario. Verifiqué el valor efectivo consultando el endpoint `/configz` del `kube-controller-manager` (puerto `10257`) en cada distribución, sección `NodeLifecycleController`: `NodeMonitorGracePeriod` = `50s`, `NodeStartupGracePeriod` = `1m0s`, `PodEvictionTimeout` = `0s`.
   - K3s `v1.36.3+k3s1`: consulté los tres nodos con el certificado cliente de administrador (`/var/lib/rancher/k3s/server/tls/client-admin.crt`); los tres devolvieron `50s`.
@@ -150,9 +150,9 @@ La potencia es de una ventana de 3 min con la sesión gráfica abierta: **no la 
 
 | Archivo | Contenido |
 |---|---|
-| `k6/fallo-controlado.sh` | Inyección del `SIGKILL` (`--kill-whom=main`) con marcas de tiempo del host |
-| `k6/fallo.py` | Preparación y restauración del reinicio automático, observador a 1 Hz, movimiento del pod, parámetros efectivos, reloj, análisis y conteo de solicitudes fallidas |
-| `k6/orquestador.py` | `--fallo`, `--fallo-en`, `--fallo-retener`, regla de coincidencia de las VIP, reloj previo, bloque `fallo` en los metadatos |
+| `k6/operacion/fallo-controlado.sh` | Inyección del `SIGKILL` (`--kill-whom=main`) con marcas de tiempo del host |
+| `k6/lib/fallo.py` | Preparación y restauración del reinicio automático, observador a 1 Hz, movimiento del pod, parámetros efectivos, reloj, análisis y conteo de solicitudes fallidas |
+| `k6/medicion/orquestador.py` | `--fallo`, `--fallo-en`, `--fallo-retener`, regla de coincidencia de las VIP, reloj previo, bloque `fallo` en los metadatos |
 | `k3sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2`, `microk8sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2` | Elección de líder contra el apiserver local |
 | `data/verificacion/*/metadatos/verif_*_media-fallo_r*.json` y `.observador.json.gz` | Metadatos y muestras de las corridas con fallo |
 | `data/verificacion/*/metadatos/verif_*_idle_r0[12].json`, `data/verificacion/*/k6-resultados/verif_*` | Repeticiones idle completas y resultados de k6 |
@@ -162,7 +162,7 @@ La potencia es de una ventana de 3 min con la sesión gráfica abierta: **no la 
 
 ## 8. Criterio de aceptación
 
-- T-19.1 «Procedimiento/script de fallo»: cumplido (`k6/fallo-controlado.sh` y el orquestador) con las dos desviaciones de 4.2; reproducible sobre un único nodo, probado en K3s y MicroK8s.
+- T-19.1 «Procedimiento/script de fallo»: cumplido (`k6/operacion/fallo-controlado.sh` y el orquestador) con las dos desviaciones de 4.2; reproducible sobre un único nodo, probado en K3s y MicroK8s.
 - T-19.2 «Registro de inicio, detección y recuperación»: cumplido; `t_fallo`, `NotReady` (por `kubectl` y por `kube-state-metrics`), regreso a `Ready`, cambios de titular y caídas de la API y de la app, con la resolución de 2.4.
 - T-19.3 «Solicitudes afectadas con k6»: cumplido como herramienta (`fallo.analisis.k6`); el resultado de las cinco corridas es 0 solicitudes fallidas, a una tasa provisional.
 - T-19.4 «Ubicación del pod y parámetros de detección y tolerancia»: la regla (pod fuera del nodo fallado) está implementada y se ejecutó una vez con movimiento real (`verif_microk8s_media-fallo_r03`). Los parámetros efectivos están registrados por el propio orquestador en ambas distribuciones (2.6); el valor efectivo de `node-monitor-grace-period` (50 s) lo verifiqué por `/configz` en los tres nodos de K3s y en un nodo de MicroK8s (2.6).

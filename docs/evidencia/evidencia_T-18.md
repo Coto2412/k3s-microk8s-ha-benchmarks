@@ -73,7 +73,7 @@ Con `svc_enable: "true"` los nodos siguieron `Ready` y `192.168.100.11` conserv�
 
 ### 2.5 k6: prueba de humo y afinidad de CPU
 
-Parámetros: `TASA=20 RAMPA_S=5 ESTABLE_S=20 DESCENSO_S=5 PRE_VUS=5 MAX_VUS=20`, `REPETICION=0`, escenario `media`, por `k6/correr.sh`.
+Parámetros: `TASA=20 RAMPA_S=5 ESTABLE_S=20 DESCENSO_S=5 PRE_VUS=5 MAX_VUS=20`, `REPETICION=0`, escenario `media`, por `k6/medicion/correr.sh`.
 
 | Dato | K3s | MicroK8s |
 |---|---|---|
@@ -201,7 +201,7 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 | `k3sHA/ansible/playbook.yml`, `microk8sHA/ansible/playbook.yml` | *Play* 3 con `nginx_referencia` |
 | `k3sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2`, `microk8sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2` | `svc_enable: "true"` |
 | `ansible/roles/k6/`, `ansible/group_vars/all.yml`, `ansible/playbook.yml` | Instalación de k6 en el host |
-| `k6/common.js`, `k6/idle.js`, `k6/media.js`, `k6/alta.js`, `k6/correr.sh` | Escenarios y lanzador |
+| `k6/escenarios/common.js`, `k6/escenarios/idle.js`, `k6/escenarios/media.js`, `k6/escenarios/alta.js`, `k6/medicion/correr.sh` | Escenarios y lanzador |
 | `data/README.md`, `data/humo/` | Esquema de nombres y resultados de las pruebas de humo |
 | `.gitignore` de `data/` | Ya no ignora el contenido |
 | este documento | Resumen de hechos, interpretaciones, decisiones y pendientes |
@@ -211,7 +211,7 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 - T-18.1 «NGINX de referencia»: cumplido en K3s y MicroK8s (imagen con tag y digest, 1 réplica, límites explícitos, QoS `Guaranteed`, mismo manifiesto).
 - T-18.2 «Acceso y endpoints»: cumplido; `/` y `/healthz` responden `200` desde el host por `192.168.100.150:80` en ambos clústeres.
 - T-18.3 «Scripts de k6»: cumplido para los tres escenarios; probados `media` e `idle` en ambos clústeres; `alta.js` comparte código con `media.js` y no se ejecutó por separado.
-- T-18.4 «Organización de resultados»: cumplido con el esquema de nombres de la sección 4.2; el escritor de metadatos (T-32.1) quedó hecho después en `k6/orquestador.py` (`evidencia_T-34.md`).
+- T-18.4 «Organización de resultados»: cumplido con el esquema de nombres de la sección 4.2; el escritor de metadatos (T-32.1) quedó hecho después en `k6/medicion/orquestador.py` (`evidencia_T-34.md`).
 - T-18.5 «Service LoadBalancer con kube-vip»: cumplido en `192.168.100.150`, con la VIP `.100` respondiendo (`401` sin credenciales) en ambos clústeres.
 
 Commits previstos: (1) cierres de HU-17, (2) T-18.1, T-18.2 y T-18.5, (3) T-18.3 y T-18.4, (4) documentación y README.

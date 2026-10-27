@@ -1,13 +1,12 @@
-#!/usr/bin/env python3
 """Reposo del host (T-20.7): potencia RAPL en ventanas consecutivas, sin VMs ni k6, en el estado de medición.
 
 Estado de medición = sin sesión gráfica + `sudo tesis-modo-medicion entrar` (solo corren las unidades permitidas).
-Ejemplo: k6/reposo_host.py --sesion 1
+Ejemplo: python3 -m k6.diagnostico.reposo_host --sesion 1
 """
 import argparse, json, os, subprocess, sys, time
 
-import estado_host
-from orquestador import RAIZ, delta_rapl, leer_rapl, prom, RAPL
+from k6.lib import estado_host
+from k6.lib.comun import RAIZ, delta_rapl, leer_rapl, prom, RAPL
 
 
 def precondiciones():

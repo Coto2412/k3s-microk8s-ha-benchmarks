@@ -96,7 +96,7 @@ Entre mediciones tomadas durante la convergencia del host (21:56, tres rondas de
 
 ### 2.6 Orquestador (T-32.1)
 
-`k6/orquestador.py` ejecutó cuatro verificaciones cortas (rampa 5 s, estable 20 s, descenso 5 s), con 50 solicitudes por segundo en `media`, `--estabilizacion 10` y `--verificacion`, que prefija el nombre con `verif_`:
+`k6/medicion/orquestador.py` ejecutó cuatro verificaciones cortas (rampa 5 s, estable 20 s, descenso 5 s), con 50 solicitudes por segundo en `media`, `--estabilizacion 10` y `--verificacion`, que prefija el nombre con `verif_`:
 
 | Corrida | Potencia media RAPL en la ventana (W) | Titular `.100` / `.150` al inicio y al fin | Nodo del pod | Primer punto del JSON de k6 tras el lanzamiento (s) |
 |---|---|---|---|---|
@@ -107,7 +107,7 @@ Entre mediciones tomadas durante la convergencia del host (21:56, tres rondas de
 
 - Las ventanas duraron 20,0 s (`t_fin − t_inicio`). Dos lecturas RAPL de cada corrida tardaron entre 11 y 20 ms. Estos valores de potencia vienen de 20 s con la sesión gráfica abierta: **no los comparo entre distribuciones ni los uso como resultado**.
 - Los titulares del orquestador coincidieron con los *leases* `plndr-cp-lock` y `plndr-svcs-lock` y con la anotación `kube-vip.io/vipHost` del Service en ambos clústeres (verificación manual).
-- La lectura RAPL usa `max_energy_range_uj = 65532610987`; la fórmula de desbordamiento (`b − a` si `b ≥ a`, si no `b − a + máximo`) pasa un autotest (`k6/orquestador.py --autotest`). **Ninguna corrida tuvo desbordamiento real**; la rama no se ejercitó con hardware.
+- La lectura RAPL usa `max_energy_range_uj = 65532610987`; la fórmula de desbordamiento (`b − a` si `b ≥ a`, si no `b − a + máximo`) pasa un autotest (`python3 -m k6.lib.comun`). **Ninguna corrida tuvo desbordamiento real**; la rama no se ejercitó con hardware.
 - Tamaños medidos: `.json.gz` de `media` (50 solicitudes por segundo, 30 s) de 173 066 B en K3s y 179 506 B en MicroK8s; de `idle`, unos 1,8 kB. Eso da 138,6 B por solicitud en K3s y 143,7 B en MicroK8s (1249 solicitudes cada una); junto con las dos pruebas de humo de T-18 (133 a 139 B) el rango medido es de 133 a 144 B, y uso 144 B (el máximo) para estimar.
 - Snapshots de Prometheus: son copias completas de la TSDB y crecieron entre corridas (2,1 MB, 2,7 MB y 5,2 MB observados; `du` redondea a 3 o 6 MB en el repositorio). `data/` pesaba 36 MB al terminar.
 - El aviso de tamaño del orquestador se probó con `--tasa 5000`: imprimió `AVISO: el JSON de k6 estimaría 151 MB` y se detuvo después, porque la distribución pedida (`k3s`) no coincidía con la etiqueta de Prometheus (`microk8s`); no creó archivos.
@@ -187,7 +187,7 @@ Entre mediciones tomadas durante la convergencia del host (21:56, tres rondas de
 | `ansible/roles/operador_host/` | ACL de lectura sobre los datos de Prometheus y `sudoers` para `energy_uj` |
 | `ansible/group_vars/all.yml`, `ansible/playbook.yml` | `chrony_red_vms`, `chrony_ip_host`, `operador_host` y los roles nuevos |
 | `k3sHA/ansible/group_vars/all.yml`, `microk8sHA/ansible/group_vars/all.yml`, ambos `playbook.yml` | `chrony_servidor` y el rol `chrony` |
-| `k6/orquestador.py` | Orquestador de una repetición y escritor de metadatos |
+| `k6/medicion/orquestador.py` | Orquestador de una repetición y escritor de metadatos |
 | `analysis/verificacion/desfase_relojes.py` | Medición del desfase de las VMs respecto del host |
 | `analysis/verificacion/continuidad.py` | Corrección del rango de la consulta |
 | `data/verificacion/*/metadatos/verif_*.json`, `data/verificacion/*/k6-resultados/verif_*`, `data/prometheus-snapshots/` | Salidas de las cuatro verificaciones y sus snapshots |

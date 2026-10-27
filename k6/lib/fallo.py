@@ -1,6 +1,6 @@
 """Fallo controlado de un nodo (T-19): inyección, observación desde el host y cálculo de tiempos.
 
-Lo usa k6/orquestador.py con --fallo. El protocolo es el de la Etapa 2, sección 4.4.
+Lo usa k6/medicion/orquestador.py con --fallo. El protocolo es el de la Etapa 2, sección 4.4.
 """
 import datetime, gzip, json, os, re, ssl, subprocess, threading, time, urllib.error, urllib.request
 

@@ -47,7 +47,9 @@ Más diagramas: [topología de red](docs/img/topologia.png) · [observabilidad](
 ├── ansible/               Playbook del host: scaphandre, node_exporter, prometheus, k6, chrony,
 │                          operador_host, host_mediciones (modo medición)
 ├── k8s/                   Plantillas de NGINX, Service y kube-state-metrics
-├── k6/                    Scripts de carga, calibración, orquestador, despliegue y pilotos
+├── k6/                    Paquete Python y scripts, por función:
+│     escenarios/ (k6 JS)  lib/ (módulos compartidos)  medicion/ (orquestador, plan, pilotos)
+│     calibracion/  diagnostico/ (reposo del host, desfase de potencia)  operacion/ (despliegue, fallo manual)
 ├── analysis/verificacion/ Scripts de verificación sobre Prometheus
 ├── data/                  Resultados versionados (ver data/README.md)
 └── docs/                  Entregables, evidencias (docs/evidencia/) y diagramas (docs/img/)
@@ -58,8 +60,8 @@ Más diagramas: [topología de red](docs/img/topologia.png) · [observabilidad](
 ### 1. Levantar y destruir un clúster
 
 ```bash
-k6/despliegue.sh <k3s|microk8s> construir <ciclo>
-k6/despliegue.sh <k3s|microk8s> destruir <ciclo>
+k6/operacion/despliegue.sh <k3s|microk8s> construir <ciclo>
+k6/operacion/despliegue.sh <k3s|microk8s> destruir <ciclo>
 ```
 
 `despliegue.sh` encadena `terraform apply`, `limpia_fingerprint.sh` y el playbook del clúster, y registra los tiempos por fase en `data/despliegue/despliegue_<distribución>.jsonl`. Los pasos manuales equivalentes están en el README de cada distribución.
@@ -82,14 +84,15 @@ sudo /usr/local/sbin/tesis-modo-medicion entrar      # y `salir` al terminar
 ### 3. Calibrar y medir
 
 ```bash
-python3 k6/calibrar.py --distribucion <dist> --tasas 100,200,400,800,1200,1600,1800,2000,2400 --seguir
-k6/secuencia_piloto.sh <dist> <tasa_media> <tasa_alta> [repeticiones]
+# desde la raíz del repositorio
+python3 -m k6.calibracion.calibrar --distribucion <dist> --tasas 100,200,400,800,1200,1600,1800,2000,2400 --seguir
+k6/medicion/secuencia_piloto.sh <dist> <tasa_media> <tasa_alta> [repeticiones]
 ```
 
 - `calibrar.py` sube la tasa por escalones hasta encontrar la última sostenible (≥99 % aplicada, ≤0,1 % fallidas, pod con throttling de CFS ≤1 % de los periodos, k6 con CPU <85 %). Resultado actual: techo de ≈1100 rps en K3s y ≈1000 rps en MicroK8s; ahí satura el nodo, no el generador.
-- `secuencia_piloto.sh` corre `idle`, `media` y `alta` con 3 repeticiones cada una (tasas fijadas con la aplicación actual: `media` 450 y `alta` 900 rps, iguales en ambas distribuciones; los pilotos ya hechos usaron NGINX estático y 900/1600 rps). Cada repetición pasa por `k6/orquestador.py`: espera a que los relojes converjan, lanza k6, lee RAPL antes y después de la fase estable, consulta Prometheus y escribe los metadatos.
+- `secuencia_piloto.sh` corre `idle`, `media` y `alta` con 3 repeticiones cada una (tasas fijadas con la aplicación actual: `media` 450 y `alta` 900 rps, iguales en ambas distribuciones; los pilotos ya hechos usaron NGINX estático y 900/1600 rps). Cada repetición pasa por `python3 -m k6.medicion.orquestador`: espera a que los relojes converjan, lanza k6, lee RAPL antes y después de la fase estable, consulta Prometheus y escribe los metadatos.
 - Las corridas de medición las lanzo desde la consola de texto, con la sesión gráfica cerrada.
-- Fallo controlado: `k6/orquestador.py --fallo` mata el proceso de orquestación (`k3s` o `snap.microk8s.daemon-kubelite`) en el nodo que sostiene las VIP, durante carga media.
+- Fallo controlado: `python3 -m k6.medicion.orquestador --fallo` mata el proceso de orquestación (`k3s` o `snap.microk8s.daemon-kubelite`) en el nodo que sostiene las VIP, durante carga media.
 
 ## Protocolo experimental (diseño)
 

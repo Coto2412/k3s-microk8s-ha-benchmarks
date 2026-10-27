@@ -8,6 +8,7 @@ Resultados del laboratorio, versionados como respaldo. El JSON crudo de k6 no se
 data/
 ├── calibracion/<fecha>_<distribución>/     calib_<distribución>_<fecha>.json (una por calibración)
 ├── pilotos/<fecha>_<distribución>/         una carpeta por secuencia de pilotos
+├── campana/plan_campana_v1.json            plan de la campaña (borrador sin fijar; lo genera k6/medicion/plan_campana.py)
 ├── campana/<sesión>/                       corridas definitivas (aún no hay)
 ├── verificacion/<fecha>_<distribución>/    verificaciones del orquestador, fallos controlados y pilotos de T-17.4
 │     cada carpeta de sesión lleva:  k6-resultados/  metadatos/  prometheus-ventanas/
@@ -15,12 +16,13 @@ data/
 │                                                 mismas subcarpetas, se citan en la evidencia pero no son resultados
 ├── reposo/                                 potencia del host sin VMs (reposo_host_s<NN>.json)
 ├── despliegue/                             tiempos de construcción y destrucción (despliegue_<distribución>.jsonl)
-├── humo/                                   pruebas de humo de k6 (k6/correr.sh)
+├── humo/                                   pruebas de humo de k6 (k6/medicion/correr.sh)
+├── diagnostico/<fecha>/                    salidas de k6/diagnostico/diagnostico_desfase.py (T-24.4)
 ├── prometheus-snapshots/                   snapshots de la TSDB copiados con --copiar-snapshot
 └── k6-crudo/<tipo>/<sesión>/               JSON crudo de k6, ignorado por git
 ```
 
-La sesión por defecto es la fecha local y la distribución (`2026-10-27_k3s`); `k6/orquestador.py --sesion` la cambia y `k6/secuencia_piloto.sh` la fija una vez para toda la secuencia.
+La sesión por defecto es la fecha local y la distribución (`2026-10-27_k3s`); `k6/medicion/orquestador.py --sesion` la cambia y `k6/medicion/secuencia_piloto.sh` la fija una vez para toda la secuencia.
 
 ## Contenido de una sesión
 
@@ -36,7 +38,7 @@ Los snapshots de Prometheus son acumulativos: cada uno contiene a los anteriores
 
 ## Metadatos de una repetición
 
-Los escribe `k6/orquestador.py`. Las rutas que contienen apuntan a esta misma estructura.
+Los escribe `k6/medicion/orquestador.py`. Las rutas que contienen apuntan a esta misma estructura.
 
 | Campo | Contenido |
 |---|---|

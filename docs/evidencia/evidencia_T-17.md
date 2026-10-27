@@ -223,7 +223,7 @@ Esto afecta a T-17.3 (etiquetas) y deja la distribución dentro de cada snapshot
 - **kube-state-metrics por `NodePort` a través de la VIP `.100`**: el diseño exige leer la API estándar de Kubernetes sin acoplarse a etcd/Dqlite. Elegí `NodePort` porque Prometheus (en el host, fuera del clúster) no necesita token ni CA, y el mecanismo es idéntico en K3s y MicroK8s (comparación simétrica). El Service `LoadBalancer` de kube-vip se deja para la aplicación de referencia (T-18): `svc_enable` sigue en `"false"` a propósito.
 - **Versión fijada v2.20.0 con digest**: se usan los manifiestos `examples/standard` de la versión, con el Service cambiado de *headless* a `NodePort`. La misma imagen corre en las dos distribuciones.
 - **Criterio de continuidad fijado antes de medir** (2.7), para no ajustarlo a los resultados.
-- **Convención de metadatos**: la distribución va como etiqueta estática (4.3); escenario, repetición y ventana van en un JSON por repetición. El escritor definitivo de ese JSON quedó hecho después en `k6/orquestador.py` (T-32.1, `evidencia_T-34.md`); `continuidad.py` solo verifica.
+- **Convención de metadatos**: la distribución va como etiqueta estática (4.3); escenario, repetición y ventana van en un JSON por repetición. El escritor definitivo de ese JSON quedó hecho después en `k6/medicion/orquestador.py` (T-32.1, `evidencia_T-34.md`); `continuidad.py` solo verifica.
 - **Sin almacenamiento externo al host**: el respaldo de snapshots y resultados es el repositorio (`data/` versionado); no habrá copia fuera del equipo.
 - **Prueba de continuidad con la VIP**: el target `kube_state_metrics` depende de la VIP; durante una conmutación de la VIP tendrá un hueco breve. Lo acepto: es parte de lo que mide el protocolo de fallo controlado.
 

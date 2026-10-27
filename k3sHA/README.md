@@ -36,7 +36,7 @@ EOF
 ssh -i keys/key <usuario_admin>@192.168.100.100 kubectl get nodes -o wide     # 3 nodos Ready
 ```
 
-Destruir: `cd terraform && bash limpia.sh`. Lo normal es usar `k6/despliegue.sh k3s construir|destruir <ciclo>` desde la raíz, que además cronometra cada fase.
+Destruir: `cd terraform && bash limpia.sh`. Lo normal es usar `k6/operacion/despliegue.sh k3s construir|destruir <ciclo>` desde la raíz, que además cronometra cada fase.
 
 ## Variables principales
 

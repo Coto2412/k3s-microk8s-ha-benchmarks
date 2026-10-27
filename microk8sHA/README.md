@@ -36,7 +36,7 @@ EOF
 ssh -i keys/key <usuario_admin>@192.168.100.100 microk8s kubectl get nodes -o wide     # 3 nodos Ready
 ```
 
-El primer arranque de cada nodo tarda varios minutos (pull de imágenes de Calico en 2 vCPU); los timeouts del playbook ya lo consideran. Destruir: `cd terraform && bash limpia.sh`. Lo normal es usar `k6/despliegue.sh microk8s construir|destruir <ciclo>` desde la raíz.
+El primer arranque de cada nodo tarda varios minutos (pull de imágenes de Calico en 2 vCPU); los timeouts del playbook ya lo consideran. Destruir: `cd terraform && bash limpia.sh`. Lo normal es usar `k6/operacion/despliegue.sh microk8s construir|destruir <ciclo>` desde la raíz.
 
 ## Variables principales
 

@@ -7,11 +7,11 @@ Estado al 27-oct-2026. Este documento se completa a medida que ejecuto las medic
 | Tarea | Estado | Qué hay |
 |---|---|---|
 | T-20.7 política de servicios | Aplicada y usada en todas las corridas de esta evidencia | Rol `ansible/roles/host_mediciones/` (lista blanca); `entrar`/`salir` ejecutados por mí en consola de texto |
-| T-20.7 criterio de reloj | Implementado y usado en cada corrida del orquestador y de `calibrar.py` | `k6/estado_host.py`; corregí la comparación por IP (sección 3.4) |
+| T-20.7 criterio de reloj | Implementado y usado en cada corrida del orquestador y de `calibrar.py` | `k6/lib/estado_host.py`; corregí la comparación por IP (sección 3.4) |
 | T-20.7 ufw | Decidido (sección 4) | Sin cambios de código |
-| T-20.7 política de datos | Implementada y ejercitada en los pilotos (sección 5) | `k6/agregado.py`, `data/.gitignore` |
+| T-20.7 política de datos | Implementada y ejercitada en los pilotos (sección 5) | `k6/lib/agregado.py`, `data/.gitignore` |
 | T-20.7 reposo del host (sin sesión gráfica) | Medido (sección 2.3) | 3 sesiones × 3 ventanas con boost de CPU activo y 3 × 3 con boost apagado |
-| T-20.5 calibración | Ejecutada con la política definitiva (6.2); con el techo en el contenedor y luego en el generador apliqué la contingencia SHA-256 de la Etapa 2 y recalibré ambas distribuciones (6.5 y 6.6). Tasas fijadas: `media` 450 y `alta` 900 rps | `k6/calibrar.py`; hay además corridas exploratorias, rotuladas como tales |
+| T-20.5 calibración | Ejecutada con la política definitiva (6.2); con el techo en el contenedor y luego en el generador apliqué la contingencia SHA-256 de la Etapa 2 y recalibré ambas distribuciones (6.5 y 6.6). Tasas fijadas: `media` 450 y `alta` 900 rps | `k6/calibracion/calibrar.py`; hay además corridas exploratorias, rotuladas como tales |
 | T-20.1 a T-20.4 (pilotos) | K3s 9 de 9 y MicroK8s 9 de 9, ambos el 27-oct en la misma sesión; T-20.3 y T-20.4 documentados (sección 7) | Hallazgo abierto: dos niveles de potencia con la misma carga (≈ 1 W), sin causa conocida y no atribuibles a la sesión (7.4, punto 6) |
 | T-20.6 despliegue | K3s 6 ciclos y MicroK8s 5, mediciones puntuales (sección 8) | `data/despliegue/despliegue_*.jsonl` |
 
@@ -42,9 +42,9 @@ Mido la potencia del paquete (RAPL `package-0`, la misma lectura de `energy_uj` 
 
 ```
 sudo /usr/local/sbin/tesis-modo-medicion entrar
-python3 k6/reposo_host.py --sesion 1
-python3 k6/reposo_host.py --sesion 2
-python3 k6/reposo_host.py --sesion 3
+python3 -m k6.diagnostico.reposo_host --sesion 1
+python3 -m k6.diagnostico.reposo_host --sesion 2
+python3 -m k6.diagnostico.reposo_host --sesion 3
 sudo /usr/local/sbin/tesis-modo-medicion salir
 ```
 
@@ -145,13 +145,13 @@ Alternativas descartadas:
 
 Límite: el crudo local se pierde si falla el disco del equipo; el respaldo fuera del repositorio es manual (no lo automatizo). Los archivos anteriores a esta política (`data/humo/` y `data/verificacion/*/k6-resultados/*.json.gz`) quedan como están, ya versionados.
 
-Código: `k6/orquestador.py` (`exportar_ventana`, `sha256`, `--copiar-snapshot`, bloque `ventana_prometheus` y `k6.por_segundo` en los metadatos, esquema `2`), `k6/agregado.py`, `data/.gitignore`.
+Código: `k6/medicion/orquestador.py` (`exportar_ventana`, `sha256`, `--copiar-snapshot`, bloque `ventana_prometheus` y `k6.por_segundo` en los metadatos, esquema `2`), `k6/lib/agregado.py`, `data/.gitignore`.
 
 ## 6. Calibración de tasas (T-20.5)
 
 ### 6.1 Método
 
-- Herramienta: `k6/calibrar.py --distribucion <k3s|microk8s>`. Sube una escalera de tasas (por defecto 100, 200, 400, 800, 1200, 1600, 2400, 3200, 4800 y 6400 solicitudes por segundo; en las corridas definitivas usé además 1800 y 2000) en modelo abierto (`k6/calibracion.js`, mismo `discardResponseBodies` que los escenarios), un escalón de 60 s (5 s de rampa y 10 s descartados), con 20 s de pausa.
+- Herramienta: `k6/calibracion/calibrar.py --distribucion <k3s|microk8s>`. Sube una escalera de tasas (por defecto 100, 200, 400, 800, 1200, 1600, 2400, 3200, 4800 y 6400 solicitudes por segundo; en las corridas definitivas usé además 1800 y 2000) en modelo abierto (`k6/escenarios/calibracion.js`, mismo `discardResponseBodies` que los escenarios), un escalón de 60 s (5 s de rampa y 10 s descartados), con 20 s de pausa.
 - Un escalón es **sostenido** si en su tramo estable: se aplicó ≥ 99 % de la tasa pedida; fallaron ≤ 0,1 % de las solicitudes; el pod estuvo estrangulado por CFS en ≤ 1 % de los períodos (`cpu.stat` del cgroup del pod); la CPU de los núcleos de k6 está < 85 % y los VUs en uso < 80 % de `maxVUs`. Los umbrales son decisiones mías, no derivados.
 - **Cambio posterior a ver datos:** la primera versión exigía además que la mediana del p95 por segundo no superara 3 veces la del primer escalón. La quité después de ver que marcaba como fallidos escalones sin pérdida ni descarte, y la regla era arbitraria. La latencia queda solo como dato reportado. Es un ajuste post hoc y lo declaro así. `--reanalizar` re-aplica el criterio vigente a una corrida guardada.
 - Salida: `data/calibracion/<fecha>_<distribución>/calib_<distribución>_<fecha>.json` (prefijo `calib_` para que nadie lo use como resultado de la campaña).
@@ -236,7 +236,7 @@ Con la política definitiva repetí la prueba del límite: pod con límite `2000
 
 **Tasas fijadas, iguales en ambas distribuciones.** La Etapa 2 justifica el modelo abierto porque «ambas distribuciones reciban exactamente la misma tasa» (RNF-03), así que descarté usar una tasa por distribución. Tomo como saturación común la de la distribución que satura antes (MicroK8s, ≈ 1000 rps):
 - `alta` = **900 rps**: la tasa limpia inmediatamente inferior en ambas (MicroK8s: 99,4 % aplicada, 0 descartadas, p95 15 ms). 1000 rps no sirve porque en MicroK8s ya hay descartadas.
-- `media` = **450 rps**, la mitad de `alta`, como dice el texto de la Etapa 2 («la mitad de la tasa así determinada para carga alta»). El Cuadro 4 de la misma entrega dice «50 % de la tasa de saturación», que daría 500 rps; las dos redacciones no coinciden y elegí la del texto.
+- `media` = **450 rps**, la mitad de `alta`, como dice el texto de la Etapa 2 («la mitad de la tasa así determinada para carga alta»). El Cuadro 4 de la misma entrega dice «50 % de la tasa de saturación», que daría 500 rps; las dos redacciones no coinciden y elegí la del texto; el informe debe corregir el Cuadro 4.
 
 Los pilotos de la sección 7 se hicieron antes de este cambio (NGINX estático, `500m`, 900 y 1600 rps): valen como pilotos del procedimiento de medición, no como mediciones de la aplicación definitiva.
 
@@ -244,7 +244,7 @@ Los pilotos de la sección 7 se hicieron antes de este cambio (NGINX estático, 
 
 ### 7.1 Qué corrí
 
-Política definitiva con la aplicación de entonces (modo medición, boost apagado, perfil `balanced`, 4 GB por VM, NGINX estático, límite del pod `500m`; la aplicación definitiva es la de 6.6). Cada distribución en un clúster recién construido, calibrado (sección 6) y con la misma secuencia: `idle`, `media` y `alta` × 3 repeticiones (`k6/secuencia_piloto.sh`), 120 s de estabilización, rampa de 30 s, fase estable de 180 s y descenso de 30 s. Tasas: `media` 900 rps y `alta` 1600 rps (sección 6.2).
+Política definitiva con la aplicación de entonces (modo medición, boost apagado, perfil `balanced`, 4 GB por VM, NGINX estático, límite del pod `500m`; la aplicación definitiva es la de 6.6). Cada distribución en un clúster recién construido, calibrado (sección 6) y con la misma secuencia: `idle`, `media` y `alta` × 3 repeticiones (`k6/medicion/secuencia_piloto.sh`), 120 s de estabilización, rampa de 30 s, fase estable de 180 s y descenso de 30 s. Tasas: `media` 900 rps y `alta` 1600 rps (sección 6.2).
 
 | Distribución | idle | media | alta | Observación |
 |---|---|---|---|---|
@@ -278,7 +278,7 @@ Las corridas de K3s con boost activo y las del 26-oct (K3s y MicroK8s) están en
 ### 7.4 T-20.4: anomalías
 
 1. **Desbordamiento del contador RAPL dentro de una ventana** (ocurrió dos veces: `piloto_microk8s_alta_r02` del 26-oct y `piloto_microk8s_idle_r01` del 27-oct; el detalle siguiente es de la primera). El contador de energía tiene rango máximo 65.532.610.987 µJ y se desborda cada ≈ 8500 s a 7,7 W (≈ 2,4 h; cálculo mío). El orquestador lo detectó (`desbordamiento: true`) y corrigió el delta: 7,712 W, consistente con las vecinas (7,755 y 7,735) y con la energía de Scaphandre corregida por el desbordamiento (≈ 7,713 W). Scaphandre, en cambio, publica el contador crudo: calculada sin corregir, su diferencia de energía da −356 W y la serie `scaph_socket_power_microwatts` tiene una muestra de 0,0 W en ese punto (media de la ventana 7,274 W, −5,7 %). Scaphandre no se reinició (`NRestarts=0`). **Consecuencia para el análisis:** cualquier cálculo de potencia con series de Scaphandre debe corregir el desbordamiento y descartar la muestra en cero; con ventanas de 180 s, ≈ 2 % de las ventanas de la campaña lo tendrán (cálculo mío: 180 s / 8500 s). En la de `idle_r01` del 27-oct Scaphandre dio −358 W sin corregir y 5,864 W corregido, contra 5,864 W de RAPL.
-2. **Corridas descartadas por tasa distinta de la prevista.** Tres `media` de K3s se lanzaron a 800 rps en lugar de 900; se descartaron y no se conservan. `k6/secuencia_piloto.sh` ahora imprime las tasas que recibe antes de empezar.
+2. **Corridas descartadas por tasa distinta de la prevista.** Tres `media` de K3s se lanzaron a 800 rps en lugar de 900; se descartaron y no se conservan. `k6/medicion/secuencia_piloto.sh` ahora imprime las tasas que recibe antes de empezar.
 3. **Reinicios de `kube-vip` durante la unión de nodos** en la construcción del ciclo 4 de MicroK8s (1 y 2 reinicios en dos pods); quedaron `Running` y no vi efecto en las corridas.
 4. **Holgura de memoria con MicroK8s y 4 GB:** ver 7.2.
 5. **Sin explicar:** la variabilidad entre corridas de la sección 6.3 (punto 4); ver el punto 6.
@@ -290,11 +290,12 @@ Las corridas de K3s con boost activo y las del 26-oct (K3s y MicroK8s) están en
 - Pendiente: identificar la causa de los dos niveles de potencia (7.4, punto 6) antes de la campaña; candidatos sin descartar: estados de bajo consumo (C-states), KSM y la actividad de las VMs en reposo. El orquestador no registra hoy residencia de C-states ni contadores de KSM por repetición.
 - Datos: de los snapshots de Prometheus del 26 y 27-oct dejé solo el último (`20261027T153553Z-7cd2151d00457ec0`, 26 MB), que contiene a los anteriores (misma TSDB desde el 13-oct; verifiqué los rangos de tiempo de sus bloques). Borré los crudos de k6 de las calibraciones y del piloto de MicroK8s del 26-oct; quedan los de los 18 pilotos del 27-oct en `data/k6-crudo/pilotos/` (≈ 408 MB, sin versionar).
 - Hecho: calibración con la aplicación definitiva (SHA-256, `2000m`) en ambas distribuciones y tasas fijadas (6.6). Pendiente: repetir los pilotos con esa aplicación y con `media` 450 y `alta` 900 rps antes de la campaña; los de la sección 7 usaron NGINX estático, `500m` y 900/1600 rps. Falta además construir K3s por el flujo completo con la aplicación definitiva (hoy la calibré con el NGINX aplicado con `kubectl`).
-- Etiqueta git de los datos del piloto antes de las mejoras de HU-21 (T-20.4): no la creé; la creo junto con el commit.
+- Pendiente antes de la campaña (T-24.4): medir el margen de memoria de MicroK8s con la aplicación definitiva (si baja de 1024 MB, el orquestador aborta la corrida) y definir si la medida principal de energía es la lectura de RAPL del orquestador o la de Scaphandre.
+- Hecho: etiqueta git `piloto-T-20.4` sobre el commit `db590df`, con los datos del piloto antes de las mejoras de HU-21 (T-20.4).
 
 ## 8. Despliegue (T-20.6) y escenarios sin ejercitar
 
-Medido con `k6/despliegue.sh` (fases `tf_construir`, `huellas`, `ansible` y `tf_destruir`), sin carga, en modo medición. Son mediciones puntuales (K3s 6 ciclos, MicroK8s 5; los ciclos 5 y 6 de K3s y el 4 y el 5 de MicroK8s se hicieron desde la red de la oficina, más lenta, y casi duplican o superan el tiempo de los ciclos anteriores): sin dispersión estimable ni intención de comparar distribuciones, y no las presento como serie. Los ciclos son las reconstrucciones de la secuencia de pilotos y de las calibraciones, no ciclos dedicados.
+Medido con `k6/operacion/despliegue.sh` (fases `tf_construir`, `huellas`, `ansible` y `tf_destruir`), sin carga, en modo medición. Son mediciones puntuales (K3s 6 ciclos, MicroK8s 5; los ciclos 5 y 6 de K3s y el 4 y el 5 de MicroK8s se hicieron desde la red de la oficina, más lenta, y casi duplican o superan el tiempo de los ciclos anteriores): sin dispersión estimable ni intención de comparar distribuciones, y no las presento como serie. Los ciclos son las reconstrucciones de la secuencia de pilotos y de las calibraciones, no ciclos dedicados.
 
 | Distribución | Ciclo | Construir (s) | Terraform (s) | Huellas (s) | Ansible (s) | Destruir (s) |
 |---|---|---|---|---|---|---|
@@ -310,7 +311,13 @@ Medido con `k6/despliegue.sh` (fases `tf_construir`, `huellas`, `ansible` y `tf_
 | MicroK8s | 4 | 1467,6 | 129,8 | 11,2 | 1326,5 | 7,1 |
 | MicroK8s | 5 (con SHA-256) | 1188,1 | 44,1 | 11,5 | 1132,4 | 6,8 |
 
-- Fuente: `data/despliegue/despliegue_k3s.jsonl` y `despliegue_microk8s.jsonl`. La función de cronometraje de `k6/despliegue.sh` no propagaba el código de salida de las fases; la corregí.
+- Fuente: `data/despliegue/despliegue_k3s.jsonl` y `despliegue_microk8s.jsonl`. La función de cronometraje de `k6/operacion/despliegue.sh` no propagaba el código de salida de las fases; la corregí.
 - El supuesto de planificación de 20–25 min por construcción era incorrecto para K3s (≈ 5–7 min) y razonable para MicroK8s solo en el extremo bajo (13–16 min medidos). Solo valen los tiempos medidos.
 - **Desviación del diseño:** la Etapa 2 pide ciclos dedicados de destroy/apply; estos ciclos son las reconstrucciones de la secuencia de pilotos. No son ciclos aislados y lo declaro.
 - Si un escenario del diseño no se ejercita en el piloto, lo declaro como no ejercitado y no lo marco como validado (hoy los tres escenarios se ejercitaron en ambas distribuciones, pero el piloto de energía no es confiable por la anomalía de 7.4, punto 6).
+
+## 9. Consecuencia para el análisis de la campaña
+
+Dentro de una celda de tres repeticiones la sd agrupada es 0,018 W (11 de 12 celdas con ≤ 0,037 W; la restante, K3s `media` del 26-oct, 1,095 W); entre series el nivel absoluto cambia hasta ≈ 1 W (7.4, punto 6 y `evidencia_T-21.md`, 4.2). Las repeticiones de una misma sesión no son independientes, y mis pruebas de repetibilidad solo muestran precisión dentro de una sesión, no reproducibilidad entre sesiones. Por eso en el análisis trato la sesión como bloque, la varianza relevante es la de entre sesiones y esa es la que uso para revisar el tamaño muestral (T-21.4).
+
+Los valores de energía de los pilotos (7.2) son de la aplicación anterior (NGINX estático, `500m`, 900/1600 rps). No los cito como resultados ni comparo distribuciones con ellos; los reemplazan los pilotos con la aplicación definitiva.

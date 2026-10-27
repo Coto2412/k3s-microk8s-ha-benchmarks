@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Agregado por segundo del JSON de k6: solicitudes, fallidas, descartadas y percentiles de http_req_duration."""
 import datetime, gzip, json, sys
 

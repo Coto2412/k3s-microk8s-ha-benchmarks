@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Estado del host antes de una corrida (T-20.7): reloj convergido y política de servicios.
 
 La política (servicios, perfil de energía, umbrales del reloj) la instala el rol Ansible host_mediciones.
