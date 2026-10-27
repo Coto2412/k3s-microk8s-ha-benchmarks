@@ -1,2 +1,4 @@
-# data/ se versiona completo como respaldo para revisión (snapshots de Prometheus, JSON de k6, metadatos).
-# Los JSON crudos de k6 pueden ser grandes: si superan ~50 MB, comprimirlos (gzip) antes de agregarlos.
+# data/ se versiona como respaldo para revisión, salvo el JSON crudo de k6 (decisión de T-20.7, ver docs/evidencia/evidencia_T-20.md).
+# El crudo pesa cientos de MB a tasas altas y GitHub rechaza archivos > 100 MB; en su lugar se versiona el agregado por segundo,
+# y el crudo se identifica por su sha256 en los metadatos y se respalda fuera del repositorio.
+k6-crudo/

@@ -1,0 +1,154 @@
+{
+  "esquema": 1,
+  "tipo": "reposo_host",
+  "sesion": 1,
+  "parametros": {
+    "ventana_s": 180,
+    "ventanas": 3,
+    "calentamiento_s": 120
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987
+  },
+  "ventanas": [
+    {
+      "ventana": 1,
+      "t_inicio": 1792956277.645,
+      "t_fin": 1792956457.656,
+      "delta_uj": 444659149,
+      "potencia_media_W": 2.47,
+      "desbordamiento": false,
+      "sondas": {
+        "carga_1min": 0.13916015625,
+        "cpu_ocupada_node_exporter": 0.00457,
+        "temperatura_cpu_C": 41.0
+      }
+    },
+    {
+      "ventana": 2,
+      "t_inicio": 1792956457.656,
+      "t_fin": 1792956637.668,
+      "delta_uj": 459471661,
+      "potencia_media_W": 2.552,
+      "desbordamiento": false,
+      "sondas": {
+        "carga_1min": 0.123046875,
+        "cpu_ocupada_node_exporter": 0.00521,
+        "temperatura_cpu_C": 40.1
+      }
+    },
+    {
+      "ventana": 3,
+      "t_inicio": 1792956637.668,
+      "t_fin": 1792956817.679,
+      "delta_uj": 468578459,
+      "potencia_media_W": 2.603,
+      "desbordamiento": false,
+      "sondas": {
+        "carga_1min": 0.171875,
+        "cpu_ocupada_node_exporter": 0.00482,
+        "temperatura_cpu_C": 39.8
+      }
+    }
+  ],
+  "estado_host_inicio": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "64764"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "procesos_top_cpu": [
+      [
+        "irq/93-rtw89_pci",
+        "2,0"
+      ],
+      [
+        "prometheus",
+        "2,0"
+      ],
+      [
+        "kworker/u64:1-events_unbound",
+        "2,0"
+      ],
+      [
+        "claude",
+        "2,0"
+      ],
+      [
+        "kworker/14:2-events",
+        "1,0"
+      ],
+      [
+        "top",
+        "1,0"
+      ],
+      [
+        "systemd",
+        "0,0"
+      ],
+      [
+        "kthreadd",
+        "0,0"
+      ],
+      [
+        "pool_workqueue_release",
+        "0,0"
+      ],
+      [
+        "kworker/R-rcu_gp",
+        "0,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 43.2,
+    "carga_1min": 0.23876953125,
+    "ufw_habilitado": false,
+    "politica": {
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 20,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "motivos_estado": [],
+  "chronyc_tracking": "Reference ID    : 40B00374 (sa-south-1.clearnet.pw)\nStratum         : 3\nRef time (UTC)  : Sun Oct 25 19:21:39 2026\nSystem time     : 0.000085334 seconds fast of NTP time\nLast offset     : +0.001648918 seconds\nRMS offset      : 0.004568278 seconds\nFrequency       : 6.657 ppm slow\nResidual freq   : +0.063 ppm\nSkew            : 7.406 ppm\nRoot delay      : 0.024750985 seconds\nRoot dispersion : 0.037471514 seconds\nUpdate interval : 517.2 seconds\nLeap status     : Normal\n"
+}

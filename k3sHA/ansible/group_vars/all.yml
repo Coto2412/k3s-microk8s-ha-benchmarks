@@ -26,9 +26,10 @@ node_exporter_collectors:
   - loadavg
 
 nginx_image: nginx:1.30.6@sha256:eb1c896deef834f4e056829fd6dadac8305501f16cc71ba65fb252c8d0aa168e
-nginx_cpu_limit: "500m"
-nginx_cpu_request: "{{ nginx_cpu_limit }}"
+nginx_cpu_limit: "2000m"
+nginx_cpu_request: "500m"
 nginx_memory: 128Mi
+nginx_sha_iteraciones: 300
 app_node: k3s-node2
 lb_ip: 192.168.100.150
 

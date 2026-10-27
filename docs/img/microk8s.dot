@@ -1,0 +1,13 @@
+digraph microk8s {
+  rankdir=TB; fontname="Helvetica"; node [fontname="Helvetica", shape=box, style="rounded,filled", fillcolor="#f4f4f4"]; edge [fontname="Helvetica", fontsize=10];
+  subgraph cluster_host { label="Host físico (QEMU/KVM + libvirt)"; style="rounded"; 
+    subgraph cluster_net { label="Red libvirt NAT 192.168.100.0/24"; style="rounded,dashed";
+      gw [label="Host / gateway\n.1"];
+      vip [label="VIP plano de control\n.100:16443 (kube-vip, ARP)", fillcolor="#dbeafe"];
+      n1 [label="microk8s-node1 .11\nplano de control + Dqlite"]; n2 [label="microk8s-node2 .12\nplano de control + Dqlite"]; n3 [label="microk8s-node3 .13\nplano de control + Dqlite"];
+    }
+  }
+  gw -> n1 [dir=none]; gw -> n2 [dir=none]; gw -> n3 [dir=none];
+  vip -> n1 [style=dashed, label="líder"]; vip -> n2 [style=dotted]; vip -> n3 [style=dotted];
+  n1 -> n2 [dir=both, label="Dqlite"]; n2 -> n3 [dir=both, label="Dqlite"]; n1 -> n3 [dir=both, label="Dqlite"];
+}

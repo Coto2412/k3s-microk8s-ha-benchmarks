@@ -164,7 +164,7 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 - **Sin almacenamiento externo al host**: el respaldo de snapshots y resultados de k6 es el repositorio (`data/` versionado); no habrá copia fuera del equipo.
 - **k6 anclado a las CPU 0 y 1** con `taskset` (núcleo 0, reservado fuera del mapeo de las VMs).
 - **Parámetros de k6 por variables de entorno**: `TASA` es obligatoria y no tiene valor por defecto; `RAMPA_S`, `ESTABLE_S` y `DESCENSO_S` valen 30, 180 y 30 por defecto (las fases del diseño); `PRE_VUS=50` y `MAX_VUS=200` son valores por defecto provisionales que no calibré; `DISTRIBUCION`, `ESCENARIO` y `REPETICION` los toma `correr.sh`.
-- **Nombres de resultados**: `data/k6-resultados/<distribución>_<escenario>_r<NN>.json.gz` y `.resumen.json`; `r00` marca las pruebas de humo. El JSON se escribe comprimido porque `data/` se versiona. El escritor de metadatos con el mismo esquema (`data/metadatos/<distribución>_<escenario>_r<NN>.json`) queda para T-32.1.
+- **Nombres de resultados**: `data/humo/<distribución>_<escenario>_r<NN>.json.gz` y `.resumen.json`; `r00` marca las pruebas de humo. El JSON se escribe comprimido porque `data/` se versiona. El escritor de metadatos con el mismo esquema (`data/<tipo>/<sesión>/metadatos/<distribución>_<escenario>_r<NN>.json`) queda para T-32.1.
 
 ### 4.3 Desviaciones respecto del prompt y del diseño
 
@@ -202,7 +202,7 @@ Durante el borrado del pod, 120 solicitudes a `http://192.168.100.150/` (una cad
 | `k3sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2`, `microk8sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2` | `svc_enable: "true"` |
 | `ansible/roles/k6/`, `ansible/group_vars/all.yml`, `ansible/playbook.yml` | Instalación de k6 en el host |
 | `k6/common.js`, `k6/idle.js`, `k6/media.js`, `k6/alta.js`, `k6/correr.sh` | Escenarios y lanzador |
-| `data/README.md`, `data/k6-resultados/` | Esquema de nombres y resultados de las pruebas de humo |
+| `data/README.md`, `data/humo/` | Esquema de nombres y resultados de las pruebas de humo |
 | `.gitignore` de `data/` | Ya no ignora el contenido |
 | este documento | Resumen de hechos, interpretaciones, decisiones y pendientes |
 

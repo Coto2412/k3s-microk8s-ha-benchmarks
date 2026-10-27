@@ -5,11 +5,11 @@ Ejemplo (verificación corta, no es una repetición válida):
   k6/orquestador.py --distribucion k3s --escenario media --repeticion 0 --tasa 50 \
       --rampa 5 --estable 20 --descenso 5 --estabilizacion 10 --verificacion
 """
-import argparse, gzip, json, os, re, shutil, subprocess, sys, time
+import argparse, gzip, hashlib, json, os, re, shutil, subprocess, sys, time
 import threading
 import urllib.parse, urllib.request
 
-import fallo
+import agregado, estado_host, fallo
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAPL = "/sys/class/powercap/intel-rapl:0/"
@@ -96,9 +96,35 @@ def estabilizar(url, distribucion, segundos, objetivo):
         sys.exit(f"{objetivo} respondió {codigo}")
 
 
-def snapshot(url, datos_prom, destino):
+def exportar_ventana(url, t0, t1, destino):
+    """Muestras crudas de la ventana (consulta de rango vectorial) para que cada repetición sea analizable sin la TSDB."""
+    dur = int(t1 - t0) + 1
+    selectores = [f'{{job=~"node_exporter_host|node_exporter_vms|scaphandre"}}[{dur}s]',
+                  f'{{job="kube_state_metrics",__name__=~"kube_node_status_condition|kube_node_info|kube_pod_info|kube_pod_status_ready"}}[{dur}s]']
+    datos = {}
+    for sel in selectores:
+        q = urllib.parse.urlencode({"query": sel, "time": t1})
+        d = json.load(urllib.request.urlopen(f"{url}/api/v1/query?{q}", timeout=60))
+        assert d["status"] == "success", d
+        datos[sel] = d["data"]["result"]
+    with gzip.open(destino, "wt") as fh:
+        json.dump({"t_desde": t0, "t_hasta": t1, "resultado": datos}, fh)
+    return {"archivo": destino, "series": sum(len(v) for v in datos.values())}
+
+
+def sha256(ruta):
+    h = hashlib.sha256()
+    with open(ruta, "rb") as fh:
+        for bloque in iter(lambda: fh.read(1 << 20), b""):
+            h.update(bloque)
+    return h.hexdigest()
+
+
+def snapshot(url, datos_prom, destino, copiar):
     r = json.load(urllib.request.urlopen(urllib.request.Request(url + "/api/v1/admin/tsdb/snapshot", method="POST"), timeout=60))
     nombre = r["data"]["name"]
+    if not copiar:
+        return {"nombre": nombre, "copiado": False, "motivo": "snapshot cumulativo: se copia solo con --copiar-snapshot"}
     try:
         shutil.copytree(os.path.join(datos_prom, "snapshots", nombre), os.path.join(destino, nombre))
         return {"nombre": nombre, "copiado": True, "destino": os.path.join("data/prometheus-snapshots", nombre)}
@@ -164,22 +190,33 @@ def main():
     ap.add_argument("--fallo", action="store_true", help="inyecta el fallo controlado (solo escenario media)")
     ap.add_argument("--fallo-en", type=int, default=30, help="s desde el inicio de la fase estable (provisional)")
     ap.add_argument("--fallo-retener", type=int, default=120, help="s con el proceso caído antes de restaurarlo (provisional)")
-    ap.add_argument("--verificacion", action="store_true", help="marca la ejecución como prueba del orquestador")
+    ap.add_argument("--tipo", default="definitiva", choices=["definitiva", "piloto", "calibracion", "verificacion"],
+                    help="piloto, calibración y verificación no son resultados finales; llevan prefijo en los archivos")
+    ap.add_argument("--verificacion", action="store_const", const="verificacion", dest="tipo", help="alias de --tipo verificacion")
+    ap.add_argument("--sesion", help="carpeta de sesión en data/<tipo>/ (por defecto: fecha local y distribución)")
     ap.add_argument("--sin-snapshot", action="store_true")
+    ap.add_argument("--copiar-snapshot", action="store_true",
+                    help="copia el snapshot a data/ (cada uno contiene los anteriores: copiar el último de cada bloque)")
     a = ap.parse_args()
     if a.escenario != "idle" and a.tasa is None:
         ap.error("--tasa es obligatoria en media y alta")
     if a.fallo and a.escenario != "media":
         ap.error("--fallo solo se define en el escenario media (protocolo, sección 4.4)")
 
-    base = ("verif_" if a.verificacion else "") + f"{a.distribucion}_{a.escenario}{'-fallo' if a.fallo else ''}_r{a.repeticion:02d}"
-    d_k6, d_meta, d_snap = (os.path.join(RAIZ, "data", x) for x in ("k6-resultados", "metadatos", "prometheus-snapshots"))
-    f_json, f_res, f_meta = (os.path.join(d_k6, base + ".json.gz"), os.path.join(d_k6, base + ".resumen.json"),
+    prefijo = {"definitiva": "", "piloto": "piloto_", "calibracion": "calib_", "verificacion": "verif_"}[a.tipo]
+    base = prefijo + f"{a.distribucion}_{a.escenario}{'-fallo' if a.fallo else ''}_r{a.repeticion:02d}"
+    tipo_dir = {"definitiva": "campana", "piloto": "pilotos", "calibracion": "calibracion", "verificacion": "verificacion"}[a.tipo]
+    sesion = a.sesion or f"{time.strftime('%Y-%m-%d')}_{a.distribucion}"
+    d_k6, d_meta, d_ventana = (os.path.join(RAIZ, "data", tipo_dir, sesion, x) for x in (
+        "k6-resultados", "metadatos", "prometheus-ventanas"))
+    d_snap, d_crudo = os.path.join(RAIZ, "data", "prometheus-snapshots"), os.path.join(RAIZ, "data", "k6-crudo", tipo_dir, sesion)
+    f_json, f_res, f_meta = (os.path.join(d_crudo, base + ".json.gz"), os.path.join(d_k6, base + ".resumen.json"),
                              os.path.join(d_meta, base + ".json"))
-    for f in (f_json, f_res, f_meta):
+    f_seg, f_ventana = os.path.join(d_k6, base + ".por_segundo.json.gz"), os.path.join(d_ventana, base + ".json.gz")
+    for f in (f_json, f_res, f_meta, f_seg, f_ventana):
         if os.path.exists(f):
             sys.exit(f"Ya existe {f}; no se sobrescribe")
-    for d in (d_k6, d_meta, d_snap):
+    for d in (d_k6, d_meta, d_snap, d_crudo, d_ventana):
         os.makedirs(d, exist_ok=True)
 
     if a.tasa:
@@ -194,7 +231,15 @@ def main():
         acc = None
     if a.fallo and acc is None:
         sys.exit(f"Falta el inventario de {a.distribucion} (lo genera Terraform) para acceder por SSH")
-    reloj = fallo.reloj(acc, IPS_NODOS) if acc else None
+    pol = estado_host.cargar_politica()
+    if pol is None:
+        sys.exit("Falta /etc/tesis/medicion.json: correr el playbook del host (rol host_mediciones)")
+    if acc is None:
+        sys.exit(f"Falta el inventario de {a.distribucion} (lo genera Terraform): sin SSH no se puede verificar el reloj de las VM")
+    reloj, motivos_reloj, espera_reloj = estado_host.esperar_reloj(lambda: fallo.reloj(acc, IPS_NODOS), pol)
+    if motivos_reloj:
+        sys.exit(f"Reloj sin converger tras {espera_reloj} s, no se lanza k6: {motivos_reloj}")
+    estado, motivos_estado = estado_host.estado_host(pol)
     tit_ini = titulares(a.prometheus, a.distribucion)
     plan = None
     if a.fallo:
@@ -252,7 +297,12 @@ def main():
     t_ini_v, t_fin_v = (ta0 + tb0) / 2, (ta1 + tb1) / 2
     d_uj = delta_rapl(e0, e1, maximo)
     tit_fin = titulares(a.prometheus, a.distribucion)
-    snap = None if a.sin_snapshot else snapshot(a.prometheus, a.datos_prometheus, d_snap)
+    snap = None if a.sin_snapshot else snapshot(a.prometheus, a.datos_prometheus, d_snap, a.copiar_snapshot)
+    ventana = exportar_ventana(a.prometheus, t_lanzado - 30, time.time(), f_ventana)
+    ventana["archivo"] = os.path.relpath(f_ventana, RAIZ)
+    filas = agregado.por_segundo(f_json) if os.path.exists(f_json) else []
+    with gzip.open(f_seg, "wt") as fh:
+        json.dump(filas, fh)
 
     tam_json = os.path.getsize(f_json) if os.path.exists(f_json) else None
     if tam_json and tam_json > UMBRAL_AVISO * LIMITE_ARCHIVO:
@@ -284,7 +334,7 @@ def main():
                     primer_punto = m.group(1)
                     break
     meta = {
-        "esquema": 1, "verificacion": a.verificacion, "distribution": a.distribucion,
+        "esquema": 2, "tipo": a.tipo, "verificacion": a.tipo == "verificacion", "distribution": a.distribucion,
         "escenario": a.escenario, "repeticion": a.repeticion,
         "t_inicio": round(t_ini_v, 3), "t_fin": round(t_fin_v, 3),
         "t_ejecucion_inicio": round(t_lanzado, 3), "t_ejecucion_fin": round(t_fin_ejec, 3),
@@ -299,9 +349,12 @@ def main():
                       "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; "
                                 "pod: kube_pod_info de kube-state-metrics vía Prometheus"},
         "k6": {"codigo_salida": rc, "cpus": a.cpus, "json": os.path.relpath(f_json, RAIZ),
-               "resumen": os.path.relpath(f_res, RAIZ), "tamano_json_bytes": tam_json, "primer_punto_json": primer_punto,
+               "resumen": os.path.relpath(f_res, RAIZ), "tamano_json_bytes": tam_json, "sha256_json": sha256(f_json) if tam_json else None,
+               "por_segundo": os.path.relpath(f_seg, RAIZ), "primer_punto_json": primer_punto,
                "version": subprocess.run(["k6", "version"], capture_output=True, text=True).stdout.strip()},
-        "snapshot": snap, "reloj_antes": reloj, "fallo": bloque_fallo,
+        "snapshot": snap, "ventana_prometheus": ventana, "reloj_antes": reloj,
+        "reloj_espera_s": espera_reloj, "estado_host": estado, "valida_para_campana": a.tipo == "definitiva" and not motivos_estado,
+        "motivos_no_valida": motivos_estado + ([f"tipo {a.tipo}"] if a.tipo != "definitiva" else []), "fallo": bloque_fallo,
     }
     json.dump(meta, open(f_meta, "w"), indent=2)
     print(json.dumps({k: meta[k] for k in ("t_inicio", "t_fin", "titulares", "snapshot")} | {"k6_rc": rc,

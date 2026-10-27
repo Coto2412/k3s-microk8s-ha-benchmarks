@@ -1,0 +1,159 @@
+{
+  "esquema": 1,
+  "tipo": "reposo_host",
+  "sesion": 3,
+  "parametros": {
+    "ventana_s": 180,
+    "ventanas": 3,
+    "calentamiento_s": 120
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987
+  },
+  "ventanas": [
+    {
+      "ventana": 1,
+      "t_inicio": 1792973285.775,
+      "t_fin": 1792973465.79,
+      "delta_uj": 457861514,
+      "potencia_media_W": 2.543,
+      "desbordamiento": false,
+      "sondas": {
+        "carga_1min": 0.1904296875,
+        "cpu_ocupada_node_exporter": 0.0049,
+        "temperatura_cpu_C": 39.0
+      }
+    },
+    {
+      "ventana": 2,
+      "t_inicio": 1792973465.79,
+      "t_fin": 1792973645.806,
+      "delta_uj": 453768206,
+      "potencia_media_W": 2.521,
+      "desbordamiento": false,
+      "sondas": {
+        "carga_1min": 0.0654296875,
+        "cpu_ocupada_node_exporter": 0.0049,
+        "temperatura_cpu_C": 38.6
+      }
+    },
+    {
+      "ventana": 3,
+      "t_inicio": 1792973645.806,
+      "t_fin": 1792973825.823,
+      "delta_uj": 491463811,
+      "potencia_media_W": 2.73,
+      "desbordamiento": false,
+      "sondas": {
+        "carga_1min": 0.1025390625,
+        "cpu_ocupada_node_exporter": 0.0068,
+        "temperatura_cpu_C": 39.0
+      }
+    }
+  ],
+  "estado_host_inicio": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "64764"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "procesos_top_cpu": [
+      [
+        "claude",
+        "3,0"
+      ],
+      [
+        "top",
+        "2,0"
+      ],
+      [
+        "irq/93-rtw89_pci",
+        "1,0"
+      ],
+      [
+        "kworker/u64:9-events_unbound",
+        "1,0"
+      ],
+      [
+        "prometheus",
+        "1,0"
+      ],
+      [
+        "kworker/4:1-events",
+        "1,0"
+      ],
+      [
+        "systemd",
+        "0,0"
+      ],
+      [
+        "kthreadd",
+        "0,0"
+      ],
+      [
+        "pool_workqueue_release",
+        "0,0"
+      ],
+      [
+        "kworker/R-rcu_gp",
+        "0,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "boost_cpu": "0",
+    "frecuencia_max_khz": "1901000",
+    "epp_cpu0": "balance_performance",
+    "perfil_plataforma": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 39.1,
+    "carga_1min": 0.0908203125,
+    "ufw_habilitado": false,
+    "politica": {
+      "boost_cpu": 0,
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 20,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "motivos_estado": [],
+  "chronyc_tracking": "Reference ID    : 40B00374 (sa-south-1.clearnet.pw)\nStratum         : 3\nRef time (UTC)  : Sun Oct 25 23:56:18 2026\nSystem time     : 0.002756636 seconds fast of NTP time\nLast offset     : +0.002556140 seconds\nRMS offset      : 0.009127486 seconds\nFrequency       : 9.714 ppm slow\nResidual freq   : +0.022 ppm\nSkew            : 2.241 ppm\nRoot delay      : 0.058584202 seconds\nRoot dispersion : 0.033635266 seconds\nUpdate interval : 1028.3 seconds\nLeap status     : Normal\n"
+}

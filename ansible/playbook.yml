@@ -9,4 +9,5 @@
     - prometheus
     - k6
     - chrony
+    - host_mediciones
     - operador_host

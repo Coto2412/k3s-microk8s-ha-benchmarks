@@ -1,0 +1,220 @@
+{
+  "esquema": 1,
+  "verificacion": true,
+  "distribution": "k3s",
+  "escenario": "media",
+  "repeticion": 3,
+  "t_inicio": 1792537078.373,
+  "t_fin": 1792537258.373,
+  "t_ejecucion_inicio": 1792537048.367,
+  "t_ejecucion_fin": 1792537288.858,
+  "parametros": {
+    "tasa": 100.0,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 60,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 33631109548,
+    "energy_uj_fin": 35066234382,
+    "lectura_inicio_s": [
+      1792537078.367,
+      1792537078.379
+    ],
+    "lectura_fin_s": [
+      1792537258.367,
+      1792537258.378
+    ],
+    "desbordamiento": false,
+    "delta_uj": 1435124834,
+    "potencia_media_W": 7.973
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "k3s-node1",
+      "nodo_vip_servicio": "k3s-node1",
+      "nodo_pod": "k3s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "k3s-node2",
+      "nodo_vip_servicio": "k3s-node2",
+      "nodo_pod": "k3s-node2"
+    },
+    "cambiaron": true,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics vía Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/verificacion/2026-10-20_k3s/k6-resultados/verif_k3s_media-fallo_r03.json.gz",
+    "resumen": "data/verificacion/2026-10-20_k3s/k6-resultados/verif_k3s_media-fallo_r03.resumen.json",
+    "tamano_json_bytes": 2860115,
+    "primer_punto_json": "2026-10-20T19:57:29.187498111-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "snapshot": {
+    "nombre": "20261020T230129Z-6f527b1f659a1a0f",
+    "copiado": true,
+    "destino": "data/prometheus-snapshots/20261020T230129Z-6f527b1f659a1a0f"
+  },
+  "reloj_antes": {
+    "host": {
+      "Stratum": "3",
+      "System time": "0.000220857 seconds slow of NTP time",
+      "Last offset": "-0.001044720 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Stratum": "4",
+        "System time": "0.000001021 seconds slow of NTP time",
+        "Last offset": "-0.000001129 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Stratum": "4",
+        "System time": "0.000014913 seconds slow of NTP time",
+        "Last offset": "-0.000016168 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Stratum": "4",
+        "System time": "0.000005900 seconds fast of NTP time",
+        "Last offset": "+0.000006261 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "fallo": {
+    "nodo_fallado": "k3s-node1",
+    "ip": "192.168.100.11",
+    "unidad": "k3s",
+    "nodo_observador": "192.168.100.12",
+    "parametros": {
+      "fallo_en_s": 30,
+      "retener_s": 120,
+      "reinicio_automatico": "desactivado durante la retención"
+    },
+    "pod_movido": null,
+    "reinicios_kube_vip": 0,
+    "parametros_efectivos": {
+      "argumentos_explicitos": [
+        "evictionHard:",
+        "evictionMinimumReclaim:",
+        "evictionPressureTransitionPeriod: 5m0s",
+        "nodeStatusReportFrequency: 5m0s",
+        "nodeStatusUpdateFrequency: 10s"
+      ],
+      "tolerancias_pod": [
+        {
+          "effect": "NoExecute",
+          "key": "node.kubernetes.io/not-ready",
+          "operator": "Exists",
+          "tolerationSeconds": 300
+        },
+        {
+          "effect": "NoExecute",
+          "key": "node.kubernetes.io/unreachable",
+          "operator": "Exists",
+          "tolerationSeconds": 300
+        }
+      ]
+    },
+    "eventos": {
+      "preparacion": [
+        0,
+        "Restart=no"
+      ],
+      "rc_inyeccion": 0,
+      "t_antes": 1792537108.370817,
+      "t_despues": 1792537109.084927,
+      "t_restaura": 1792537229.0856597,
+      "restauracion": [
+        0,
+        "active"
+      ],
+      "restauracion_final": [
+        0,
+        "active"
+      ],
+      "nodo_listo_al_final": true
+    },
+    "observador": "data/verificacion/2026-10-20_k3s/metadatos/verif_k3s_media-fallo_r03.observador.json.gz",
+    "analisis": {
+      "t_fallo": 1792537108.728,
+      "cota_t_fallo_s": 0.357,
+      "api_vip": [
+        {
+          "desde_s": 0.6,
+          "hasta_s": 23.7
+        }
+      ],
+      "app_vip": [],
+      "titular_vip_cp": [
+        {
+          "t_s": -29.4,
+          "titular": "k3s-node1"
+        },
+        {
+          "t_s": 22.7,
+          "titular": "k3s-node2"
+        }
+      ],
+      "titular_vip_svc": [
+        {
+          "t_s": -29.4,
+          "titular": "k3s-node1"
+        },
+        {
+          "t_s": 22.7,
+          "titular": "k3s-node2"
+        }
+      ],
+      "nodo_notready_kubectl": {
+        "desde_s": 74.0,
+        "hasta_s": 128.0
+      },
+      "nodo_notready_ksm": {
+        "desde_s": 84.6,
+        "hasta_s": 134.6
+      },
+      "leases": [
+        {
+          "t_s": -60.4,
+          "kube-controller-manager": "k3s-node1_27c2e866-f8a4-4e80-864c-e1c7aa80cc5b",
+          "kube-scheduler": "k3s-node1_966046a9-4943-435c-a65f-4f75457cdf79",
+          "plndr-cp-lock": "k3s-node1",
+          "plndr-svcs-lock": "k3s-node1"
+        },
+        {
+          "t_s": 22.0,
+          "kube-controller-manager": "k3s-node3_52695320-087e-44af-a7ee-4327c45f8468",
+          "kube-scheduler": "k3s-node2_aa04cb2c-60ac-499e-b125-6e492b867270",
+          "plndr-cp-lock": "k3s-node1",
+          "plndr-svcs-lock": "k3s-node2"
+        },
+        {
+          "t_s": 24.0,
+          "kube-controller-manager": "k3s-node3_52695320-087e-44af-a7ee-4327c45f8468",
+          "kube-scheduler": "k3s-node2_aa04cb2c-60ac-499e-b125-6e492b867270",
+          "plndr-cp-lock": "k3s-node2",
+          "plndr-svcs-lock": "k3s-node2"
+        }
+      ],
+      "k6": {
+        "fallidas_antes": 0,
+        "fallidas_despues": 0,
+        "total_antes": 4531,
+        "total_despues": 16468,
+        "descartadas_despues": 0,
+        "ultima_fallida_s": null
+      }
+    }
+  }
+}

@@ -145,7 +145,7 @@ Entre mediciones tomadas durante la convergencia del host (21:56, tres rondas de
 - **Regla de `ufw` condicionada** a que el firewall esté activo (con `LC_ALL=C`), limitada a UDP 123 desde `192.168.100.0/24` hacia `192.168.100.1`; sin probar porque `ufw` está inactivo en el host.
 - **Acceso del orquestador sin ejecutarlo como root** (rol `operador_host`): ACL de lectura sobre el directorio de datos de Prometheus (para copiar el snapshot) y una regla de `sudoers` que permite solo `/usr/bin/cat /sys/class/powercap/intel-rapl\:0/energy_uj` sin contraseña. Es la única ampliación de permisos del host.
 - **Método de titular verificable**: el host hace `ping` a la VIP y a cada nodo, lee la MAC desde `ip neigh` y la asocia a la única IP de nodo con esa MAC; el nombre del nodo sale de `kube_node_info`. Si la MAC no calza con exactamente una IP, el campo dice `no determinado`. El nodo del pod sale de `kube_pod_info`.
-- **Metadatos**: `data/metadatos/<base>.json` con `t_inicio` y `t_fin` de la fase estable (puntos medios de las lecturas RAPL), los de la ejecución completa, los dos valores crudos de `energy_uj`, `max_energy_range_uj`, el desborde, el delta y los titulares al inicio y fin (esquema completo en `data/README.md`).
+- **Metadatos**: `data/verificacion/<sesión>/metadatos/<base>.json` con `t_inicio` y `t_fin` de la fase estable (puntos medios de las lecturas RAPL), los de la ejecución completa, los dos valores crudos de `energy_uj`, `max_energy_range_uj`, el desborde, el delta y los titulares al inicio y fin (esquema completo en `data/README.md`).
 - **Estabilización**: el orquestador espera `--estabilizacion` segundos (60 por defecto, **provisional**) y aborta si Prometheus no tiene exactamente los 7 targets en `up`, si la etiqueta `distribution` no es la pedida o si la VIP `.150` no responde 200.
 - **No sobrescribe** archivos existentes de la misma repetición.
 
@@ -190,7 +190,7 @@ Entre mediciones tomadas durante la convergencia del host (21:56, tres rondas de
 | `k6/orquestador.py` | Orquestador de una repetición y escritor de metadatos |
 | `analysis/verificacion/desfase_relojes.py` | Medición del desfase de las VMs respecto del host |
 | `analysis/verificacion/continuidad.py` | Corrección del rango de la consulta |
-| `data/metadatos/verif_*.json`, `data/k6-resultados/verif_*`, `data/prometheus-snapshots/` | Salidas de las cuatro verificaciones y sus snapshots |
+| `data/verificacion/*/metadatos/verif_*.json`, `data/verificacion/*/k6-resultados/verif_*`, `data/prometheus-snapshots/` | Salidas de las cuatro verificaciones y sus snapshots |
 | `data/README.md`, `README.md`, `k3sHA/README.md`, `microk8sHA/README.md` | Estado real documentado |
 | este documento | Resumen de hechos, interpretaciones, decisiones y pendientes |
 

@@ -151,7 +151,7 @@ En ninguna segunda pasada cambió una tarea de `node_exporter` o `prometheus`.
 | K3s | 15:26:27 a 15:46:27 | 7 | 120/120 | 10,0 s | 0 |
 | MicroK8s | 15:57:51 a 16:17:51 | 7 | 120/120 | 10,0 s | 0 |
 
-**Separación por distribución (T-17.3).** En la ventana de MicroK8s, `node_load1` promedió 0,154 (`.11`), 0,133 (`.12`) y 0,111 (`.13`); la misma consulta con `distribution="k3s"` devolvió 0 series. La ventana, el escenario y la repetición no son etiquetas (decisión de diseño); van en un JSON de metadatos por repetición, con la estructura de los archivos `data/metadatos/piloto_T-17.4_<distribución>.json` (`data/` no se versionaba cuando los generé; copio aquí el contenido):
+**Separación por distribución (T-17.3).** En la ventana de MicroK8s, `node_load1` promedió 0,154 (`.11`), 0,133 (`.12`) y 0,111 (`.13`); la misma consulta con `distribution="k3s"` devolvió 0 series. La ventana, el escenario y la repetición no son etiquetas (decisión de diseño); van en un JSON de metadatos por repetición, con la estructura de los archivos `data/verificacion/*/metadatos/piloto_T-17.4_<distribución>.json` (`data/` no se versionaba cuando los generé; copio aquí el contenido):
 
 ```json
 {"distribution": "k3s", "escenario": "reposo", "repeticion": 1, "tarea": "T-17.4",
@@ -266,7 +266,7 @@ T-16.3 (consulta a Prometheus de la misma ventana) se cerró el 18 de octubre; v
 | `k3sHA/ansible/roles/kube_state_metrics/`, `microk8sHA/ansible/roles/kube_state_metrics/` | Despliegue del manifiesto en cada distribución |
 | `analysis/verificacion/continuidad.py` | Verificación de continuidad por ventana de metadatos |
 | `analysis/verificacion/consulta_prometheus.py` | Comparación de T-16.3 (ver `evidencia_T-16.md`) |
-| `data/metadatos/`, `data/prometheus-snapshots/` | Metadatos y snapshots de los pilotos (versionados; ver `data/README.md`) |
+| `data/verificacion/*/metadatos/`, `data/prometheus-snapshots/` | Metadatos y snapshots de los pilotos (versionados; ver `data/README.md`) |
 | este documento | Resumen de hechos, interpretaciones, decisiones y pendientes |
 
 ## 8. Criterio de aceptación

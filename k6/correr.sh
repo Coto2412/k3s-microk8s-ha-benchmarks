@@ -8,7 +8,7 @@ dist="${DISTRIBUCION:?falta DISTRIBUCION (k3s|microk8s)}"
 rep="${REPETICION:?falta REPETICION}"
 raiz="$(cd "$(dirname "$0")/.." && pwd)"
 base="${dist}_${esc}_r$(printf '%02d' "$rep")"
-salida="${raiz}/data/k6-resultados"
+salida="${raiz}/data/humo"
 mkdir -p "$salida"
 
 export DISTRIBUCION="$dist" ESCENARIO="$esc" REPETICION="$rep"

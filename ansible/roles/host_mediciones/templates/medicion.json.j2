@@ -1,0 +1,12 @@
+{{ {
+  "unidades_permitidas": medicion_unidades_permitidas,
+  "servicios_requeridos": medicion_servicios_requeridos,
+  "perfil_energia": medicion_perfil_energia,
+  "boost_cpu": medicion_boost_cpu,
+  "ip_host": chrony_ip_host,
+  "reloj": {
+    "umbral_host_ms": medicion_reloj_umbral_host_ms,
+    "umbral_vm_ms": medicion_reloj_umbral_vm_ms,
+    "espera_max_s": medicion_reloj_espera_max_s
+  }
+} | to_nice_json }}

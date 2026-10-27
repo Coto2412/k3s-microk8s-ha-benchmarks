@@ -1,0 +1,405 @@
+{
+  "esquema": 1,
+  "tipo": "calibracion",
+  "distribucion": "k3s",
+  "parametros": {
+    "tasas": "400,3200,4800,6400,8000,9600,12800",
+    "rampa": 5,
+    "estable": 60,
+    "recorte": 10,
+    "pausa": 20,
+    "pre_vus": 100,
+    "max_vus": 600,
+    "cpus": "0,1",
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "nota": "EXPLORATORIO: limite de CPU del pod subido de 500m a 2000m con kubectl patch (requests 500m); no es la configuracion del diseno",
+  "criterio": "Calibración de tasas (T-20.5): escalones de carga en modelo abierto hasta saturación; los datos son calibración, no resultados.",
+  "reloj_antes": {
+    "host": {
+      "Reference ID": "40B00374 (sa-south-1.clearnet.pw)",
+      "Stratum": "3",
+      "System time": "0.003808979 seconds fast of NTP time",
+      "Last offset": "+0.004623912 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000004651 seconds fast of NTP time",
+        "Last offset": "+0.000008673 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000007249 seconds fast of NTP time",
+        "Last offset": "+0.000006224 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000012644 seconds fast of NTP time",
+        "Last offset": "+0.000014348 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "estado_host": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "64764"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "procesos_top_cpu": [
+      [
+        "qemu-system-x86",
+        "19,8"
+      ],
+      [
+        "qemu-system-x86",
+        "13,9"
+      ],
+      [
+        "qemu-system-x86",
+        "13,9"
+      ],
+      [
+        "kworker/u64:3-events_unbound",
+        "1,0"
+      ],
+      [
+        "top",
+        "1,0"
+      ],
+      [
+        "systemd",
+        "0,0"
+      ],
+      [
+        "kthreadd",
+        "0,0"
+      ],
+      [
+        "pool_workqueue_release",
+        "0,0"
+      ],
+      [
+        "kworker/R-rcu_gp",
+        "0,0"
+      ],
+      [
+        "kworker/R-sync_wq",
+        "0,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 65.2,
+    "carga_1min": 1.09912109375,
+    "ufw_habilitado": false,
+    "politica": {
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 20,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "motivos_estado": [],
+  "pod": {
+    "uid": "d008c25c-24d0-40db-b3a3-9bb262a68c4d",
+    "nodo_ip": "192.168.100.12"
+  },
+  "pasos": [
+    {
+      "n": 1,
+      "tasa_pedida": 400.0,
+      "k6_rc": 0,
+      "t_tramo": [
+        1792961200.5,
+        1792961250.5
+      ],
+      "segundos": 50,
+      "tasa_aplicada": 399.3,
+      "fallidas": 0,
+      "solicitudes": 19963,
+      "descartadas": 0,
+      "p95_mediana_ms": 0.498,
+      "p99_mediana_ms": 0.836,
+      "p99_max_ms": 1.914,
+      "pod_cpu_nucleos": 0.057,
+      "pod_periodos": 661,
+      "pod_periodos_estrangulados": 0,
+      "vus_max": 100,
+      "cpu_vms": {
+        "192.168.100.11:9100": 0.0806,
+        "192.168.100.12:9100": 0.0866,
+        "192.168.100.13:9100": 0.0352
+      },
+      "cpu_generador": 0.1206,
+      "crudo": {
+        "archivo": "data/k6-crudo/calibracion/2026-10-25_k3s/calib_k3s_p01_400rps.json.gz",
+        "sha256": "8125fb290083d15095c3d441ffe964508ad2931abce49d9265e71a88cfb09e1a"
+      },
+      "motivos_falla": []
+    },
+    {
+      "n": 2,
+      "tasa_pedida": 3200.0,
+      "k6_rc": 0,
+      "t_tramo": [
+        1792961300.7,
+        1792961350.7
+      ],
+      "segundos": 50,
+      "tasa_aplicada": 3198.8,
+      "fallidas": 0,
+      "solicitudes": 159940,
+      "descartadas": 0,
+      "p95_mediana_ms": 7.435,
+      "p99_mediana_ms": 16.624,
+      "p99_max_ms": 20.335,
+      "pod_cpu_nucleos": 0.376,
+      "pod_periodos": 662,
+      "pod_periodos_estrangulados": 0,
+      "vus_max": 100,
+      "cpu_vms": {
+        "192.168.100.11:9100": 0.1935,
+        "192.168.100.12:9100": 0.2789,
+        "192.168.100.13:9100": 0.0346
+      },
+      "cpu_generador": 0.5575,
+      "crudo": {
+        "archivo": "data/k6-crudo/calibracion/2026-10-25_k3s/calib_k3s_p02_3200rps.json.gz",
+        "sha256": "7cfc337057dc1c8a290ced225b43badddd981041a0ab94deda7c16fabf22b59e"
+      },
+      "motivos_falla": [
+        "mediana de p95 > 3 veces la del primer escalón"
+      ]
+    },
+    {
+      "n": 3,
+      "tasa_pedida": 4800.0,
+      "k6_rc": 0,
+      "t_tramo": [
+        1792961404.8,
+        1792961454.8
+      ],
+      "segundos": 50,
+      "tasa_aplicada": 4794.9,
+      "fallidas": 0,
+      "solicitudes": 239746,
+      "descartadas": 184,
+      "p95_mediana_ms": 14.704,
+      "p99_mediana_ms": 24.378,
+      "p99_max_ms": 30.835,
+      "pod_cpu_nucleos": 0.66,
+      "pod_periodos": 663,
+      "pod_periodos_estrangulados": 0,
+      "vus_max": 164,
+      "cpu_vms": {
+        "192.168.100.11:9100": 0.24,
+        "192.168.100.12:9100": 0.4725,
+        "192.168.100.13:9100": 0.0382
+      },
+      "cpu_generador": 0.6906,
+      "crudo": {
+        "archivo": "data/k6-crudo/calibracion/2026-10-25_k3s/calib_k3s_p03_4800rps.json.gz",
+        "sha256": "40b6c55aff08abe58182a8191b0421f9ac16d7171780aede0abd589fa0abe6e5"
+      },
+      "motivos_falla": [
+        "mediana de p95 > 3 veces la del primer escalón"
+      ]
+    },
+    {
+      "n": 4,
+      "tasa_pedida": 6400.0,
+      "k6_rc": 0,
+      "t_tramo": [
+        1792961511.1,
+        1792961561.1
+      ],
+      "segundos": 50,
+      "tasa_aplicada": 6197.4,
+      "fallidas": 0,
+      "solicitudes": 309869,
+      "descartadas": 7962,
+      "p95_mediana_ms": 63.644,
+      "p99_mediana_ms": 77.138,
+      "p99_max_ms": 110.506,
+      "pod_cpu_nucleos": 0.93,
+      "pod_periodos": 664,
+      "pod_periodos_estrangulados": 0,
+      "vus_max": 600,
+      "cpu_vms": {
+        "192.168.100.11:9100": 0.3809,
+        "192.168.100.12:9100": 0.5965,
+        "192.168.100.13:9100": 0.0373
+      },
+      "cpu_generador": 0.9598,
+      "crudo": {
+        "archivo": "data/k6-crudo/calibracion/2026-10-25_k3s/calib_k3s_p04_6400rps.json.gz",
+        "sha256": "e578b72b692743134808c7451739c646d53259e663d54a4d35241e50f8eb146d"
+      },
+      "motivos_falla": [
+        "tasa aplicada < 99 % de la pedida",
+        "mediana de p95 > 3 veces la del primer escalón",
+        "generador: CPU de los núcleos de k6 ≥ 85 %",
+        "generador: VUs ≥ 80 % de maxVUs"
+      ]
+    },
+    {
+      "n": 5,
+      "tasa_pedida": 8000.0,
+      "k6_rc": 0,
+      "t_tramo": [
+        1792961629.7,
+        1792961679.7
+      ],
+      "segundos": 50,
+      "tasa_aplicada": 7326.9,
+      "fallidas": 0,
+      "solicitudes": 366343,
+      "descartadas": 33171,
+      "p95_mediana_ms": 89.923,
+      "p99_mediana_ms": 109.784,
+      "p99_max_ms": 212.799,
+      "pod_cpu_nucleos": 1.02,
+      "pod_periodos": 664,
+      "pod_periodos_estrangulados": 0,
+      "vus_max": 600,
+      "cpu_vms": {
+        "192.168.100.11:9100": 0.4196,
+        "192.168.100.12:9100": 0.7209,
+        "192.168.100.13:9100": 0.0397
+      },
+      "cpu_generador": 0.971,
+      "crudo": {
+        "archivo": "data/k6-crudo/calibracion/2026-10-25_k3s/calib_k3s_p05_8000rps.json.gz",
+        "sha256": "7367a490e2afb24ce374988e7600bbe84f229b333b7a494c2421be004f4a8591"
+      },
+      "motivos_falla": [
+        "tasa aplicada < 99 % de la pedida",
+        "mediana de p95 > 3 veces la del primer escalón",
+        "generador: CPU de los núcleos de k6 ≥ 85 %",
+        "generador: VUs ≥ 80 % de maxVUs"
+      ]
+    },
+    {
+      "n": 6,
+      "tasa_pedida": 9600.0,
+      "k6_rc": 0,
+      "t_tramo": [
+        1792961760.0,
+        1792961810.0
+      ],
+      "segundos": 50,
+      "tasa_aplicada": 8447.1,
+      "fallidas": 0,
+      "solicitudes": 422356,
+      "descartadas": 57407,
+      "p95_mediana_ms": 93.163,
+      "p99_mediana_ms": 124.205,
+      "p99_max_ms": 185.88,
+      "pod_cpu_nucleos": 1.041,
+      "pod_periodos": 666,
+      "pod_periodos_estrangulados": 0,
+      "vus_max": 600,
+      "cpu_vms": {
+        "192.168.100.11:9100": 0.46,
+        "192.168.100.12:9100": 0.7684,
+        "192.168.100.13:9100": 0.042
+      },
+      "cpu_generador": 0.9737,
+      "crudo": {
+        "archivo": "data/k6-crudo/calibracion/2026-10-25_k3s/calib_k3s_p06_9600rps.json.gz",
+        "sha256": "7269dcb88894c3ec4d3f8ef08324566d9278bfab9582c1fc6b1a1a8cdc8a597e"
+      },
+      "motivos_falla": [
+        "tasa aplicada < 99 % de la pedida",
+        "mediana de p95 > 3 veces la del primer escalón",
+        "generador: CPU de los núcleos de k6 ≥ 85 %",
+        "generador: VUs ≥ 80 % de maxVUs"
+      ]
+    },
+    {
+      "n": 7,
+      "tasa_pedida": 12800.0,
+      "k6_rc": 0,
+      "t_tramo": [
+        1792961902.5,
+        1792961952.5
+      ],
+      "segundos": 50,
+      "tasa_aplicada": 8387.1,
+      "fallidas": 0,
+      "solicitudes": 419355,
+      "descartadas": 220789,
+      "p95_mediana_ms": 143.401,
+      "p99_mediana_ms": 155.537,
+      "p99_max_ms": 256.81,
+      "pod_cpu_nucleos": 1.024,
+      "pod_periodos": 667,
+      "pod_periodos_estrangulados": 0,
+      "vus_max": 600,
+      "cpu_vms": {
+        "192.168.100.11:9100": 0.3798,
+        "192.168.100.12:9100": 0.8124,
+        "192.168.100.13:9100": 0.0386
+      },
+      "cpu_generador": 0.9068,
+      "crudo": {
+        "archivo": "data/k6-crudo/calibracion/2026-10-25_k3s/calib_k3s_p07_12800rps.json.gz",
+        "sha256": "dcd33827f953f599c29e65896f04474ca7c5fd4b2ad136f91e44054efa8375df"
+      },
+      "motivos_falla": [
+        "tasa aplicada < 99 % de la pedida",
+        "mediana de p95 > 3 veces la del primer escalón",
+        "generador: CPU de los núcleos de k6 ≥ 85 %",
+        "generador: VUs ≥ 80 % de maxVUs"
+      ]
+    }
+  ],
+  "ultima_tasa_sostenida": 400.0,
+  "limite_por_generador": true,
+  "limite_por_contenedor": false
+}

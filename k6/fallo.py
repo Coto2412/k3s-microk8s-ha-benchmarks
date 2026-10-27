@@ -87,9 +87,29 @@ def parametros_efectivos(dist, acc, ip):
 def reloj(acc, ips):
     """chronyc tracking del host y de cada VM, antes de lanzar k6."""
     def campos(txt):
-        return {k: v for k, v in re.findall(r"^(Stratum|System time|Last offset|Leap status)\s*:\s*(.+)$", txt, re.M)}
+        return {k: v for k, v in re.findall(r"^(Reference ID|Stratum|System time|Last offset|Leap status)\s*:\s*(.+)$", txt, re.M)}
     r = subprocess.run(["chronyc", "tracking"], capture_output=True, text=True)
     return {"host": campos(r.stdout), "vms": {ip: campos(ssh(acc, ip, "chronyc tracking", 20)[1]) for ip in ips}}
+
+
+def pod_nginx(dist, acc, ip):
+    """(uid, IP del nodo) del pod de referencia."""
+    rc, out = ssh(acc, ip, f"{KUBECTL[dist]} get pod -l app=nginx-referencia "
+                  "-o jsonpath='{.items[0].metadata.uid} {.items[0].status.hostIP}'")
+    if rc or len(out.split()) != 2:
+        raise RuntimeError(f"no encontré el pod de referencia: {out}")
+    return tuple(out.split())
+
+
+def cpu_pod(acc, ip, uid):
+    """cpu.stat del cgroup del pod (usage_usec, nr_periods, nr_throttled, throttled_usec) en su nodo."""
+    cmd = (f"sudo find /sys/fs/cgroup -type f -name cpu.stat \\( -path '*pod{uid}/cpu.stat' -o "
+           f"-path '*pod{uid.replace('-', '_')}.slice/cpu.stat' \\) | head -1 | xargs -r sudo cat")
+    rc, out = ssh(acc, ip, cmd)
+    d = dict((k, int(v)) for k, v in re.findall(r"^(usage_usec|nr_periods|nr_throttled|throttled_usec) (\d+)$", out, re.M))
+    if rc or len(d) != 4:
+        raise RuntimeError(f"no pude leer cpu.stat del pod {uid}: {out}")
+    return d
 
 
 def _http(url, https=False):

@@ -1,194 +1,78 @@
-# K3s — clúster de Alta Disponibilidad
+# K3s — clúster HA
 
-Ver también: [README raíz del proyecto](../README.md) · [README de MicroK8s](../microk8sHA/README.md).
+Volver al [README raíz](../README.md) · [MicroK8s](../microk8sHA/README.md)
 
-## 1. Propósito y alcance
+Terraform + Ansible para un clúster K3s de 3 nodos (todos plano de control, etcd embebido) con kube-vip.
 
-Este directorio contiene la infraestructura como código (Terraform + Ansible) para aprovisionar un clúster K3s de 3 nodos en Alta Disponibilidad, con etcd embebido y acceso redundante al plano de control vía kube-vip. Cubre los requisitos RF-01, RF-03 y RF-05 del proyecto (ver [README raíz, §14](../README.md#14-trazabilidad-requisito--implementación)).
+![K3s HA](../docs/img/k3s.png)
 
-## 2. Arquitectura
-
-```mermaid
-flowchart TB
-    subgraph HOST["Host físico"]
-        subgraph NET["Red libvirt NAT k3s-tesis 192.168.100.0/24"]
-            GW[".1 gateway"]
-            VIP["VIP .100:6443 (kube-vip, ARP)"]
-            N1["k3s-node1 .11<br/>server + etcd"]
-            N2["k3s-node2 .12<br/>server + etcd"]
-            N3["k3s-node3 .13<br/>server + etcd"]
-        end
-    end
-    GW --- N1
-    GW --- N2
-    GW --- N3
-    N1 <-.líder ARP.-> VIP
-    N2 -.-> VIP
-    N3 -.-> VIP
-    N1 <-->|etcd| N2
-    N2 <-->|etcd| N3
-    N1 <-->|etcd| N3
-```
-
-Los 3 nodos son `server` con etcd embebido; no hay nodos `agent` separados. kube-vip corre como DaemonSet en los 3, y el pod que gana la elección de líder asume la VIP en su interfaz real.
-
-## 3. Estructura de carpetas
+## Estructura
 
 ```
 k3sHA/
+├── terraform/             red libvirt NAT, volúmenes, cloud-init, 3 VMs con vcpupin (config/vcpupin.xsl.tftpl)
 ├── ansible/
-│   ├── ansible.cfg
 │   ├── playbook.yml
-│   ├── group_vars/all.yml         # versiones fijadas: k3s_version, kube_vip_version, puerto, interfaz
-│   └── roles/
-│       ├── common/                # swap off, módulos de kernel, sysctl
-│       ├── ssh_config/            # hardening SSH
-│       ├── k3s_server/            # instalación y unión de nodos K3s
-│       ├── kube_vip/              # manifiesto RBAC + DaemonSet de kube-vip
-│       ├── chrony/                # cliente NTP: única fuente 192.168.100.1; retira systemd-timesyncd
-│       ├── node_exporter/         # Node Exporter en cada VM, 9100 restringido al host con ufw
-│       ├── kube_state_metrics/    # despliega k8s/kube-state-metrics.yaml
-│       └── nginx_referencia/      # NGINX de referencia y Service LoadBalancer (.150)
-├── terraform/
-│   ├── main.tf                    # red, volúmenes, cloud-init, dominios libvirt, pinning de CPU
-│   ├── variables.tf
-│   ├── provider.tf
-│   ├── terraform.tf                # versiones de providers fijadas
-│   └── config/
-│       ├── cloud-init.cfg
-│       ├── network-config.cfg
-│       └── vcpupin.xsl.tftpl       # XSLT de pinning de CPU
-├── keys/                          # llaves SSH generadas localmente — no versionadas
-├── nat_on.sh / nat_off.sh         # NAT temporal opcional del host hacia la red de las VMs
-├── limpia_fingerprint.sh          # limpia known_hosts y valida conectividad
-└── .gitignore
+│   ├── group_vars/all.yml versiones, puerto de la API, interfaz de kube-vip, servidor chrony
+│   └── roles/             common, ssh_config, k3s_server, kube_vip, chrony, node_exporter,
+│                          kube_state_metrics, nginx_referencia
+├── keys/                  llaves SSH locales (no versionadas)
+├── limpia_fingerprint.sh  limpia known_hosts y valida conectividad
+└── nat_on.sh / nat_off.sh NAT temporal del host hacia la red de las VMs
 ```
 
-## 4. Prerrequisitos y variables
-
-Prerrequisitos: ver [README raíz, §10](../README.md#10-reproducibilidad).
-
-### Variables de Terraform (`terraform/variables.tf`)
-
-| Variable | Valor por defecto | Descripción |
-|---|---|---|
-| `vm_count` | `3` | Número de nodos |
-| `vm_memory` | `4096` (MB) | RAM por nodo |
-| `vm_cpu` | `2` | vCPU por nodo |
-| `vm_disk_size` | `50` (GB) | Disco raíz |
-| `network_name` | `k3s-tesis` | Nombre de la red libvirt |
-| `network_cidr` | `192.168.100.0/24` | |
-| `base_image` | *(sin valor por defecto, obligatorio en `terraform.tfvars`)* | Ruta a la imagen cloud de Ubuntu 24.04 LTS |
-| `cluster_user` | *(sin valor por defecto, obligatorio en `terraform.tfvars`)* | Usuario administrativo de las VMs |
-| `vip_address` | `192.168.100.100` | VIP del plano de control |
-| `vm_names` | `["k3s-node1", "k3s-node2", "k3s-node3"]` | |
-| `vm_ips` | `["192.168.100.11", "192.168.100.12", "192.168.100.13"]` | |
-
-### Variables de Ansible (`ansible/group_vars/all.yml`)
-
-| Variable | Valor | Descripción |
-|---|---|---|
-| `k3s_version` | `v1.36.3+k3s1` | Versión de K3s, fijada |
-| `kube_vip_version` | `v1.2.4` | Tag de imagen de kube-vip, fijado |
-| `kube_vip_svc_election` | `"false"` | Elección de líder por Service en kube-vip; `"true"` probado en T-18; queda `"false"` como valor definitivo |
-| `kube_vip_interface` | `ens3` | Interfaz donde kube-vip anuncia la VIP |
-| `kube_vip_port` | `6443` | Puerto de la API de K3s |
-| `chrony_servidor` | `192.168.100.1` | Única fuente NTP de las VMs (el host) |
-
-## 5. Despliegue paso a paso
+## Despliegue
 
 ```bash
 cd k3sHA
 ssh-keygen -t ed25519 -f keys/key -N ""
-
 cat > terraform/terraform.tfvars <<EOF
 base_image   = "<ruta_a_imagen_ubuntu_24.04>"
 cluster_user = "<usuario_admin>"
 EOF
-
-cd terraform
-terraform init
-terraform apply
-cd ..
-```
-**Verificación:** `virsh list --all` debe mostrar `k3s-node1/2/3` en estado `running`; `virsh domifaddr k3s-node1` debe reportar `192.168.100.11`.
-
-```bash
+(cd terraform && terraform init && terraform apply)
 ./limpia_fingerprint.sh
+(cd ansible && ansible-playbook playbook.yml)
+ssh -i keys/key <usuario_admin>@192.168.100.100 kubectl get nodes -o wide     # 3 nodos Ready
 ```
-**Verificación:** el script termina con `ansible -i ansible/inventory.ini all -m ping` exitoso en los 3 nodos.
+
+Destruir: `cd terraform && bash limpia.sh`. Lo normal es usar `k6/despliegue.sh k3s construir|destruir <ciclo>` desde la raíz, que además cronometra cada fase.
+
+## Variables principales
+
+| Variable | Valor |
+|---|---|
+| `vm_memory` / `vm_cpu` / `vm_disk_size` | 4096 MB / 2 / 50 GB (`terraform/variables.tf`) |
+| `vm_ips`, `vip_address` | `.11`, `.12`, `.13`; VIP `.100` |
+| `k3s_version` | `v1.36.3+k3s1` |
+| `kube_vip_version`, `kube_vip_svc_election` | `v1.2.4`, `"false"` |
+| `kube_vip_port` | `6443` |
+| `kube_vip_interface` | `ens3` |
+| `chrony_servidor` | `192.168.100.1` (el host) |
+
+## Cómo se configura
+
+- **Instalación:** script oficial `get.k3s.io` con `INSTALL_K3S_VERSION` fijo.
+- **Primer nodo:** `--cluster-init`. Los otros dos se unen directo a `k3s-node1` (no por la VIP) con `--server` y el token.
+- **`--tls-san`:** VIP + IP de cada nodo, armado desde el inventario.
+- **Sin `--bind-address`:** la API escucha en `0.0.0.0`. Con kube-vip en ARP, si solo escuchara en la IP propia del nodo, nadie respondería en `<VIP>:6443` cuando ese nodo es el titular.
+- **`--disable traefik --disable servicelb`:** Traefik crea un Service LoadBalancer y kube-vip le asignó la IP del propio nodo, tumbando su red. Tampoco forman parte del diseño.
+- **kube-vip:** manifiesto en `/var/lib/rancher/k3s/server/manifests/`, K3s lo aplica solo. Modo ARP con `cp_enable` y `svc_enable`; la IP del Service se fija con la anotación `kube-vip.io/loadbalancerIPs`. Elige líder contra el apiserver local (`KUBERNETES_SERVICE_HOST=127.0.0.1`), así la VIP queda acoplada al proceso de K3s del nodo: si K3s muere, la VIP migra (16,7–22,7 s medidos, ver [`evidencia_T-19.md`](../docs/evidencia/evidencia_T-19.md)).
+
+## Verificaciones útiles
 
 ```bash
-cd ansible
-ansible-playbook playbook.yml
+kubectl get nodes -o wide                                   # 3 nodos Ready, control-plane,etcd
+kubectl -n kube-system get pods -l name=kube-vip-ds -o wide # kube-vip en los 3 nodos
+kubectl -n kube-system get pods -l component=etcd           # miembros de etcd
 ```
-**Verificación:** `PLAY RECAP` con `failed=0` en los 3 nodos.
 
-```bash
-ssh -i keys/key <usuario_admin>@192.168.100.100 kubectl get nodes -o wide
-```
-**Verificación:** 3 nodos en estado `Ready`, rol `control-plane,etcd`.
+No hay tarea automatizada que revise la salud de etcd; es inspección manual.
 
-## 6. Componentes y configuración clave
+## Problemas ya resueltos en el código
 
-| Componente | Configuración | Justificación |
+| Síntoma | Causa | Solución |
 |---|---|---|
-| Instalación de K3s | Script oficial `get.k3s.io`, versión fijada vía `INSTALL_K3S_VERSION` | Reproducibilidad (RNF-04) |
-| Primer nodo | `--cluster-init`, inicializa etcd | Requisito de bootstrap de etcd embebido en K3s |
-| Nodos adicionales | Se unen directamente a `k3s-node1` (no vía VIP) con `--server https://<ip-node1>:6443 --token <token>` | Durante el bootstrap inicial solo el primer servidor tiene etcd inicializado; unirse por la VIP podría enrutar el *join* hacia un nodo aún no listo (`k3sHA/ansible/roles/k3s_server/tasks/main.yml:78-85`) |
-| `--tls-san` | Lista dinámica: VIP + IP real de cada nodo del grupo `k3s_cluster`, construida en tiempo de ejecución con Jinja | Sobrevive cualquier renumeración de IPs sin editar el rol (`k3sHA/ansible/roles/k3s_server/tasks/main.yml:18-24`) |
-| `--bind-address` | **Ausente** (API en wildcard `0.0.0.0`) | Obligatorio para kube-vip en modo ARP: si la API solo escuchara en la IP propia del nodo, nadie respondería en `<VIP>:6443` cuando ese nodo es el líder |
-| `--disable traefik --disable servicelb` | Deshabilitados explícitamente | Ver hallazgo en [§8](#8-hallazgos-e-incidentes) |
-| kube-vip | Manifiesto dejado en `/var/lib/rancher/k3s/server/manifests/kube-vip.yaml`, aplicado automáticamente por el controlador de manifiestos integrado de K3s | K3s no requiere `kubectl apply` manual (`k3sHA/ansible/roles/kube_vip/tasks/main.yml:10-15`) |
-| kube-vip — modo | ARP, `cp_enable=true`, `svc_enable=true` (desde T-18; la IP del Service se fija por anotación) | Ver [D-05 del README raíz](../README.md#7-registro-de-decisiones-técnicas) y [§8](#8-hallazgos-e-incidentes) |
-
-## 7. Decisiones propias de la distribución
-
-| ID | Decisión | Referencia raíz |
-|---|---|---|
-| D-K3S-01 | Nodos adicionales se unen directamente al primer servidor, no vía VIP, durante el bootstrap inicial | Complementa D-05 |
-| D-K3S-02 | `--tls-san` dinámico, no hardcodeado, construido a partir del inventario | Complementa D-01, D-07 |
-| D-K3S-03 | API en wildcard (sin `--bind-address`) | Requisito derivado de D-05 (kube-vip ARP) |
-| D-K3S-04 | `--disable traefik --disable servicelb` | Ver hallazgo en §8 |
-| D-K3S-05 | kube-vip se auto-aplica vía el directorio de manifiestos de K3s, sin `kubectl apply` manual | Particularidad de K3s frente a MicroK8s (ver tabla de asimetrías del README raíz, §11) |
-
-## 8. Hallazgos e incidentes
-
-Durante la migración de Keepalived+HAProxy a kube-vip se encontró y corrigió lo siguiente (commit `8cd4c3d`):
-
-- **Traefik + ServiceLB rompían kube-vip.** K3s instala Traefik por defecto, que crea automáticamente un `Service` tipo `LoadBalancer`. Con la función de servicio de kube-vip habilitada (`svc_enable=true`), sin un *pool* de IP configurado, kube-vip le asignó por error la IP del propio nodo a ese `Service`, pisando la IP real asignada por DHCP y dejando al nodo sin conectividad. **Solución:** se agregó `--disable traefik --disable servicelb` a la instalación (Traefik tampoco es parte del diseño: la aplicación de referencia es NGINX mínimo) y se deshabilitó `svc_enable` en el manifiesto de kube-vip hasta implementar la aplicación de referencia. **Actualización (T-18):** `svc_enable` se volvió a habilitar con la IP del Service fijada por la anotación `kube-vip.io/loadbalancerIPs`; con `servicelb` y Traefik deshabilitados, los nodos siguieron `Ready` y conservaron su IP (ver [`evidencia_T-18.md`](../docs/evidencia/evidencia_T-18.md)). Código: `k3sHA/ansible/roles/k3s_server/tasks/main.yml:35-39`, `k3sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2:95-105`.
-- **`--bind-address` incompatible con kube-vip ARP.** La configuración original fijaba `--bind-address` a la IP propia del nodo (para convivir con HAProxy, que ya no existe). Con kube-vip en modo ARP, la VIP resuelve por ARP a la MAC del nodo líder; si la API solo escucha en su IP propia, nadie responde en `<VIP>:6443`. **Solución:** se quitó el flag, la API queda en wildcard. Código: `k3sHA/ansible/roles/k3s_server/tasks/main.yml:30-39`.
-
-## 9. Criterios de aceptación propios
-
-| ID | Criterio | Verificación | Estado |
-|---|---|---|---|
-| AC-K3S-01 | 3 nodos en estado `Ready` con rol `control-plane,etcd` | `kubectl get nodes -o wide` | Declarado por mí |
-| AC-K3S-02 | etcd embebido saludable, 3 miembros | `k3s etcd-snapshot save` o listado de miembros vía `kubectl -n kube-system get pods -l component=etcd` (no hay tarea automatizada de esta verificación en el repo) | Pendiente de automatizar — verificación manual declarada por mí |
-| AC-K3S-03 | La API responde directo en la VIP, puerto 6443, sin proxy intermedio | `ssh <VIP> kubectl get nodes` (task `Esperar API de k3s en el VIP`, `k3sHA/ansible/playbook.yml:19-24`) | Cumplido con evidencia (tarea de espera pasa en el playbook) |
-| AC-K3S-04 | Pod de kube-vip `Running` en los 3 nodos | `kubectl -n kube-system get pods -l name=kube-vip-ds -o wide` | Declarado por mí |
-| AC-K3S-05 | Failover real de la VIP al matar el nodo líder | `systemctl kill -s SIGKILL k3s` en el nodo con la VIP, confirmar migración | **Cumplido con evidencia versionada**, con el cambio de kube-vip a apiserver local: migración a los 16,7 s (`.150`) y 18,7 s (`.100`) en `verif_k3s_media-fallo_r02` (22,7 s para ambas en `r03`); con la configuración original no migró (`r01`). Ver [`evidencia_T-19.md`](../docs/evidencia/evidencia_T-19.md) |
-
-## 10. Validación de Alta Disponibilidad
-
-Procedimiento (protocolo de fallo controlado del diseño de Etapa 2): `k6/orquestador.py --fallo` identifica el nodo que sostiene las VIP, mueve el pod de NGINX si coincide, ejecuta `SIGKILL` sobre `k3s` en ese nodo (con el reinicio automático de systemd desactivado durante la retención) y registra los tiempos. **Estado: verificado con datos versionados** ([`evidencia_T-19.md`](../docs/evidencia/evidencia_T-19.md)). La validación anterior que figuraba aquí («validado por mí», sin registro) no la pude reproducir con kube-vip `v1.2.4` y su configuración original: la VIP no migraba porque el pod de kube-vip del nodo caído seguía renovando su lease. Las plantillas de kube-vip ahora hacen la elección de líder contra el apiserver local (`KUBERNETES_SERVICE_HOST=127.0.0.1`), lo que acopla la VIP al proceso de K3s del nodo.
-
-## 11. Diferencias con MicroK8s
-
-Ver tabla completa de asimetrías en el [README raíz, §11](../README.md#11-asimetrías-documentadas-entre-k3s-y-microk8s-rnf-03). En resumen: K3s no requirió ninguno de los cinco *workarounds* operativos que sí fueron necesarios en MicroK8s para estabilizar el arranque HA (ver [`microk8sHA/README.md`](../microk8sHA/README.md)).
-
-## 12. Limitaciones y trabajo pendiente
-
-- Observabilidad: este módulo instala Node Exporter en las VMs (`node_exporter`) y kube-state-metrics (`kube_state_metrics`); Scaphandre y Prometheus corren en el host (`ansible/` de la raíz). Ver [`evidencia_T-17.md`](../docs/evidencia/evidencia_T-17.md).
-- Aplicación de referencia (`nginx_referencia`) con Service LoadBalancer en la IP `.150`, verificada en este clúster; ver [`evidencia_T-18.md`](../docs/evidencia/evidencia_T-18.md). Solo se hicieron pruebas de humo de k6, sin calibración ni campaña.
-- `chrony` (rol `chrony`, variable `chrony_servidor`) deja a las VMs como clientes solo de `192.168.100.1`; el servidor está en el playbook del host (`ansible/roles/chrony/`). Verificado en este clúster; ver [`evidencia_T-34.md`](../docs/evidencia/evidencia_T-34.md). El rol es idéntico al de la otra distribución.
-- `AC-K3S-02` (verificación de salud de etcd) no está automatizada; requiere inspección manual.
-
-## 13. Solución de problemas
-
-Incidentes reales encontrados y su resolución, ambos ya incorporados al código (no requieren acción del usuario en una corrida nueva):
-
-| Síntoma | Causa | Solución aplicada |
-|---|---|---|
-| El nodo pierde conectividad de red poco después de que kube-vip queda `Running` | Traefik + ServiceLB de K3s crean un `Service LoadBalancer`; kube-vip le asigna la IP del propio nodo | `--disable traefik --disable servicelb`; `svc_enable` estuvo en `false` hasta T-18 y ahora se habilita con la IP del Service por anotación (ver §8) |
-| La API no responde en la VIP aunque el pod de kube-vip esté `Running` | `--bind-address` fijado a la IP propia del nodo, incompatible con ARP | Se quitó `--bind-address` de la instalación (ver §8) |
+| Un nodo pierde la red al quedar kube-vip `Running` | Traefik/ServiceLB crean un Service LoadBalancer y kube-vip le da la IP del nodo | `--disable traefik --disable servicelb` |
+| La API no responde en la VIP aunque kube-vip esté `Running` | `--bind-address` fijado a la IP del nodo | se quitó el flag |
+| La VIP no migraba al matar `k3s` | kube-vip del nodo caído seguía renovando su *lease* | elección de líder contra el apiserver local |

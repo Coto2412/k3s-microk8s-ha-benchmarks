@@ -45,3 +45,37 @@ chrony_red_vms: 192.168.100.0/24
 chrony_ip_host: 192.168.100.1
 
 operador_host: "{{ lookup('env', 'USER') }}"
+
+medicion_unidades_permitidas:
+  - chrony\.service
+  - node_exporter\.service
+  - prometheus\.service
+  - scaphandre\.service
+  - ssh\.service
+  - NetworkManager(-dispatcher)?\.service
+  - wpa_supplicant\.service
+  - dbus\.(service|socket)
+  - polkit\.service
+  - power-profiles-daemon\.service
+  - rsyslog\.service
+  - syslog\.socket
+  - networkd-dispatcher\.service
+  - (serial-)?getty@.*\.service
+  - user(-runtime-dir)?@.*\.service
+  - systemd-.*
+  - (lib)?virt.*
+  - dm-event\.socket
+  - lvm2-.*
+  - uuidd\.socket
+medicion_servicios_requeridos:
+  - chrony.service
+  - node_exporter.service
+  - prometheus.service
+  - scaphandre.service
+  - ssh.service
+medicion_perfil_energia: balanced
+medicion_boost_cpu: 0
+# 100 ms: cordura; las fuentes NTP externas tienen desviación de 11-28 ms (ver docs/evidencia/evidencia_T-20.md, 3.5)
+medicion_reloj_umbral_host_ms: 100
+medicion_reloj_umbral_vm_ms: 5
+medicion_reloj_espera_max_s: 180

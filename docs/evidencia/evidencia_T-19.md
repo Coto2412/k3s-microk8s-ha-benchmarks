@@ -154,8 +154,8 @@ La potencia es de una ventana de 3 min con la sesión gráfica abierta: **no la 
 | `k6/fallo.py` | Preparación y restauración del reinicio automático, observador a 1 Hz, movimiento del pod, parámetros efectivos, reloj, análisis y conteo de solicitudes fallidas |
 | `k6/orquestador.py` | `--fallo`, `--fallo-en`, `--fallo-retener`, regla de coincidencia de las VIP, reloj previo, bloque `fallo` en los metadatos |
 | `k3sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2`, `microk8sHA/ansible/roles/kube_vip/templates/kube-vip.yaml.j2` | Elección de líder contra el apiserver local |
-| `data/metadatos/verif_*_media-fallo_r*.json` y `.observador.json.gz` | Metadatos y muestras de las corridas con fallo |
-| `data/metadatos/verif_*_idle_r0[12].json`, `data/k6-resultados/verif_*` | Repeticiones idle completas y resultados de k6 |
+| `data/verificacion/*/metadatos/verif_*_media-fallo_r*.json` y `.observador.json.gz` | Metadatos y muestras de las corridas con fallo |
+| `data/verificacion/*/metadatos/verif_*_idle_r0[12].json`, `data/verificacion/*/k6-resultados/verif_*` | Repeticiones idle completas y resultados de k6 |
 | `data/prometheus-snapshots/` | Snapshots de las verificaciones |
 | `data/README.md`, `README.md`, `k3sHA/README.md`, `microk8sHA/README.md` | Estado real y campos nuevos |
 | este documento | Resumen de hechos, interpretaciones, decisiones y pendientes |

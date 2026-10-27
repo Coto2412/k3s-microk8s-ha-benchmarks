@@ -1,0 +1,42 @@
+---
+- name: Crear el directorio de la política de mediciones
+  file:
+    path: /etc/tesis
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Instalar la política de mediciones (leída por el orquestador)
+  template:
+    src: medicion.json.j2
+    dest: /etc/tesis/medicion.json
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Instalar la lista de unidades permitidas durante las mediciones
+  template:
+    src: medicion.permitidas.j2
+    dest: /etc/tesis/medicion.permitidas
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Instalar el script que entra y sale del modo medición
+  template:
+    src: tesis-modo-medicion.sh.j2
+    dest: /usr/local/sbin/tesis-modo-medicion
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: Permitir al operador entrar y salir del modo medición con sudo sin contraseña (solo esos tres comandos)
+  copy:
+    dest: /etc/sudoers.d/tesis-modo-medicion
+    content: |
+      {{ operador_host }} ALL=(root) NOPASSWD: /usr/local/sbin/tesis-modo-medicion simular, /usr/local/sbin/tesis-modo-medicion entrar, /usr/local/sbin/tesis-modo-medicion salir
+    owner: root
+    group: root
+    mode: '0440'
+    validate: /usr/sbin/visudo -cf %s

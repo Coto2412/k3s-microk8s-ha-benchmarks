@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+PERMITIDAS=/etc/tesis/medicion.permitidas
+PERFIL={{ medicion_perfil_energia }}
+BOOST=/sys/devices/system/cpu/cpufreq/boost
+ESTADO=/run/tesis-medicion.estado
+
+fuera_de_la_lista() {
+  { systemctl list-units --type=socket,path,timer --state=active --no-legend --plain
+    systemctl list-units --type=service --state=running --no-legend --plain; } | awk '{print $1}' | grep -Evx -f "$PERMITIDAS"
+}
+
+case "${1:-}" in
+  simular)
+    fuera_de_la_lista
+    ;;
+  entrar)
+    [ -e "$ESTADO" ] && { echo "ya está en modo medición" >&2; exit 1; }
+    systemctl is-active --quiet display-manager.service && { echo "cerrar antes la sesión gráfica: systemctl isolate multi-user.target" >&2; exit 1; }
+    echo "perfil:$(powerprofilesctl get)" > "$ESTADO"
+    for pasada in 1 2 3; do
+      pendientes=$(fuera_de_la_lista)
+      [ -z "$pendientes" ] && break
+      for u in $pendientes; do
+        grep -qxF "unidad:$u" "$ESTADO" || echo "unidad:$u" >> "$ESTADO"
+        systemctl stop "$u" || echo "no pude detener $u (pasada $pasada)" >&2
+      done
+    done
+    powerprofilesctl set "$PERFIL"
+    echo "boost:$(cat "$BOOST")" >> "$ESTADO"
+    echo {{ medicion_boost_cpu }} > "$BOOST"
+    ;;
+  salir)
+    [ -e "$ESTADO" ] || { echo "no estaba en modo medición" >&2; exit 1; }
+    tac "$ESTADO" | while IFS=: read -r tipo valor; do
+      case "$tipo" in
+        unidad) systemctl start "$valor" || echo "no pude iniciar $valor" >&2 ;;
+        boost) echo "$valor" > "$BOOST" ;;
+        perfil) powerprofilesctl set "$valor" ;;
+      esac
+    done
+    rm -f "$ESTADO"
+    ;;
+  *)
+    echo "uso: tesis-modo-medicion <simular|entrar|salir>" >&2
+    exit 2
+    ;;
+esac
