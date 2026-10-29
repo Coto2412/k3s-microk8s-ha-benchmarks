@@ -1,0 +1,18 @@
+{
+	"ulid": "01M5ZJKNWYK221676AS3SGJG61",
+	"minTime": 1793124000678,
+	"maxTime": 1793131200000,
+	"stats": {
+		"numSamples": 767443,
+		"numFloatSamples": 767443,
+		"numSeries": 2756,
+		"numChunks": 7877
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M5ZJKNWYK221676AS3SGJG61"
+		]
+	},
+	"version": 1
+}

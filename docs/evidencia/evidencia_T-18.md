@@ -1,6 +1,6 @@
 # Evidencia de HU-18 (T-18.1 a T-18.5): aplicación de referencia, Service LoadBalancer con kube-vip y scripts de k6
 
-Fecha: 18 de octubre de 2026. Las salidas provienen de mi terminal en el host (ThinkPad). Probé un clúster a la vez: primero K3s y, tras destruirlo, MicroK8s. Los playbooks del host se ejecutaron con `--ask-become-pass`; los de las VMs, por SSH con la llave del proyecto. Las pruebas de k6 son de humo (20 solicitudes por segundo durante 30 s): no son calibración ni medición experimental. Todo se hizo con la sesión gráfica abierta y solo dos terminales abiertas (la de Claude Code y otra); no son condiciones de ejecución definitiva.
+Fecha: 18 de octubre de 2026. Las salidas provienen de mi terminal en el host (ThinkPad). Probé un clúster a la vez: primero K3s y, tras destruirlo, MicroK8s. Los playbooks del host se ejecutaron con `--ask-become-pass`; los de las VMs, por SSH con la llave del proyecto. Las pruebas de k6 son de humo (20 solicitudes por segundo durante 30 s): no son calibración ni medición experimental. Todo se hizo con la sesión gráfica abierta y solo dos terminales abiertas (la de la herramienta de asistencia de línea de comandos y otra); no son condiciones de ejecución definitiva.
 
 Convención: la sección 2 contiene hechos medidos u observados; la 3, interpretaciones no verificadas; la 4, decisiones, hallazgos y desviaciones; la 5, limitaciones; la 6, lo pendiente; la 7, los archivos asociados; la 8, el criterio de aceptación.
 

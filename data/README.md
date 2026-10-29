@@ -25,6 +25,8 @@ data/
 
 La sesión por defecto es la fecha local y la distribución (`2026-10-27_k3s`); `k6/medicion/orquestador.py --sesion` la cambia y `k6/medicion/secuencia_piloto.sh` la fija una vez para toda la secuencia.
 
+Las sesiones `2026-10-27_*` son la configuración inicial de los pilotos (NGINX estático, límite `500m`, 900 y 1600 rps). Las `2026-10-28_*` son la configuración definitiva (SHA-256 ×300 con njs, límite `2000m`, 450 y 900 rps); ambas son `--tipo piloto` y ninguna entra en la campaña.
+
 ## Contenido de una sesión
 
 | Carpeta | Archivos |

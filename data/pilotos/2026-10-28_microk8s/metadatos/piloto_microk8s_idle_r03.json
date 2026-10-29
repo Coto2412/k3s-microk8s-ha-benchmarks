@@ -1,0 +1,215 @@
+{
+  "esquema": 2,
+  "tipo": "piloto",
+  "verificacion": false,
+  "distribution": "microk8s",
+  "escenario": "idle",
+  "repeticion": 3,
+  "t_inicio": 1793226630.103,
+  "t_fin": 1793226810.102,
+  "t_ejecucion_inicio": 1793226600.094,
+  "t_ejecucion_fin": 1793226840.936,
+  "parametros": {
+    "tasa": null,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 120,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 32925738494,
+    "energy_uj_fin": 33674013625,
+    "lectura_inicio_s": [
+      1793226630.094,
+      1793226630.112
+    ],
+    "lectura_fin_s": [
+      1793226810.094,
+      1793226810.111
+    ],
+    "desbordamiento": false,
+    "delta_uj": 748275131,
+    "potencia_media_W": 4.157
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "cambiaron": false,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-crudo/pilotos/2026-10-28_microk8s/piloto_microk8s_idle_r03.json.gz",
+    "resumen": "data/pilotos/2026-10-28_microk8s/k6-resultados/piloto_microk8s_idle_r03.resumen.json",
+    "tamano_json_bytes": 11404,
+    "sha256_json": "b7291180a95c669d9ba688db6a6aab8e8ad10acdef243d02d84b48e2c8deaab8",
+    "por_segundo": "data/pilotos/2026-10-28_microk8s/k6-resultados/piloto_microk8s_idle_r03.por_segundo.json.gz",
+    "primer_punto_json": "2026-10-28T19:30:01.122944268-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "snapshot": {
+    "nombre": "20261028T223400Z-2a21224826a5ff7b",
+    "copiado": false,
+    "motivo": "snapshot cumulativo: se copia solo con --copiar-snapshot"
+  },
+  "ventana_prometheus": {
+    "archivo": "data/pilotos/2026-10-28_microk8s/prometheus-ventanas/piloto_microk8s_idle_r03.json.gz",
+    "series": 1691
+  },
+  "reloj_antes": {
+    "host": {
+      "Reference ID": "40B00374 (sa-south-1.clearnet.pw)",
+      "Stratum": "3",
+      "System time": "0.001099561 seconds slow of NTP time",
+      "Last offset": "-0.002227605 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000473627 seconds slow of NTP time",
+        "Last offset": "-0.000689251 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000001239 seconds fast of NTP time",
+        "Last offset": "-0.001114462 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000064375 seconds slow of NTP time",
+        "Last offset": "-0.000969691 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "reloj_espera_s": 4.5,
+  "estado_host": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "64764"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "procesos_top_cpu": [
+      [
+        "qemu-system-x86",
+        "54,5"
+      ],
+      [
+        "qemu-system-x86",
+        "32,7"
+      ],
+      [
+        "qemu-system-x86",
+        "26,7"
+      ],
+      [
+        "prometheus",
+        "1,0"
+      ],
+      [
+        "kworker/u64:0-writeback",
+        "1,0"
+      ],
+      [
+        "top",
+        "1,0"
+      ],
+      [
+        "systemd",
+        "0,0"
+      ],
+      [
+        "kthreadd",
+        "0,0"
+      ],
+      [
+        "pool_workqueue_release",
+        "0,0"
+      ],
+      [
+        "kworker/R-rcu_gp",
+        "0,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "boost_cpu": "0",
+    "memoria_disponible_mb": 1547,
+    "presion_memoria_some_avg60": "0.00",
+    "frecuencia_max_khz": "1901000",
+    "epp_cpu0": "balance_performance",
+    "perfil_plataforma": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 47.5,
+    "carga_1min": 1.3642578125,
+    "ufw_habilitado": false,
+    "politica": {
+      "boost_cpu": 0,
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 100,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "valida_para_campana": false,
+  "motivos_no_valida": [
+    "tipo piloto"
+  ],
+  "fallo": null
+}

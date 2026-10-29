@@ -70,7 +70,7 @@ El estado A es el original, que el script lee y guarda en el JSON (`factor_origi
 
 ### 3.5 Cómo se ejecuta y qué devolver
 
-Lo lanzo yo desde la consola de texto, con Claude Code cerrado, el clúster arriba y el modo medición activo (`sudo /usr/local/sbin/tesis-modo-medicion entrar`).
+Lo lanzo yo desde la consola de texto, con la herramienta de asistencia de línea de comandos cerrada, el clúster arriba y el modo medición activo (`sudo /usr/local/sbin/tesis-modo-medicion entrar`).
 
 ```bash
 python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase serie

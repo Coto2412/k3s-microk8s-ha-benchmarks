@@ -1,0 +1,18 @@
+{
+	"ulid": "01M62B2SSRY1D9KGTQXA62JTWH",
+	"minTime": 1793217183700,
+	"maxTime": 1793227580680,
+	"stats": {
+		"numSamples": 1188815,
+		"numFloatSamples": 1188815,
+		"numSeries": 2675,
+		"numChunks": 11442
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M62B2SSRY1D9KGTQXA62JTWH"
+		]
+	},
+	"version": 1
+}

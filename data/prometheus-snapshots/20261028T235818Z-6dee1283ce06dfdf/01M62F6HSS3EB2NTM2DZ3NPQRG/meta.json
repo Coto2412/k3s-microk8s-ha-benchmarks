@@ -1,0 +1,18 @@
+{
+	"ulid": "01M62F6HSS3EB2NTM2DZ3NPQRG",
+	"minTime": 1793224800679,
+	"maxTime": 1793231897969,
+	"stats": {
+		"numSamples": 1599480,
+		"numFloatSamples": 1599480,
+		"numSeries": 4989,
+		"numChunks": 14497
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M62F6HSS3EB2NTM2DZ3NPQRG"
+		]
+	},
+	"version": 1
+}

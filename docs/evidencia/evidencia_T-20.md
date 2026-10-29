@@ -289,9 +289,102 @@ Las corridas de K3s con boost activo y las del 26-oct (K3s y MicroK8s) están en
 - Hecho: pilotos de K3s (9 de 9) y de MicroK8s (9 de 9), ambos el 27-oct en la misma sesión, T-20.3 y T-20.4 documentados con estos datos.
 - Pendiente: identificar la causa de los dos niveles de potencia (7.4, punto 6) antes de la campaña; candidatos sin descartar: estados de bajo consumo (C-states), KSM y la actividad de las VMs en reposo. El orquestador no registra hoy residencia de C-states ni contadores de KSM por repetición.
 - Datos: de los snapshots de Prometheus del 26 y 27-oct dejé solo el último (`20261027T153553Z-7cd2151d00457ec0`, 26 MB), que contiene a los anteriores (misma TSDB desde el 13-oct; verifiqué los rangos de tiempo de sus bloques). Borré los crudos de k6 de las calibraciones y del piloto de MicroK8s del 26-oct; quedan los de los 18 pilotos del 27-oct en `data/k6-crudo/pilotos/` (≈ 408 MB, sin versionar).
-- Hecho: calibración con la aplicación definitiva (SHA-256, `2000m`) en ambas distribuciones y tasas fijadas (6.6). Pendiente: repetir los pilotos con esa aplicación y con `media` 450 y `alta` 900 rps antes de la campaña; los de la sección 7 usaron NGINX estático, `500m` y 900/1600 rps. Falta además construir K3s por el flujo completo con la aplicación definitiva (hoy la calibré con el NGINX aplicado con `kubectl`).
-- Pendiente antes de la campaña (T-24.4): medir el margen de memoria de MicroK8s con la aplicación definitiva (si baja de 1024 MB, el orquestador aborta la corrida) y definir si la medida principal de energía es la lectura de RAPL del orquestador o la de Scaphandre.
+- Hecho: calibración con la aplicación definitiva (SHA-256, `2000m`) en ambas distribuciones y tasas fijadas (6.6). Hecho el 28-oct: pilotos repetidos con esa aplicación y con `media` 450 y `alta` 900 rps en ambas distribuciones (7.6); los de las secciones 7.1 a 7.4 usaron NGINX estático, `500m` y 900/1600 rps y quedan como configuración inicial. K3s, construido por el flujo completo con la aplicación definitiva, ya se probó el 28-oct (`evidencia_T-22.md` y 7.6).
+- Pendiente antes de la campaña (T-24.4): el margen de memoria de MicroK8s con la aplicación definitiva ya se midió (mínimo de 1420 MB en `evidencia_T-22.md` y de 1433 MB en 7.6; el orquestador no aborta por memoria, solo marca la corrida, `evidencia_T-22.md` sección 7) y definir si la medida principal de energía es la lectura de RAPL del orquestador o la de Scaphandre.
 - Hecho: etiqueta git `piloto-T-20.4` sobre el commit `db590df`, con los datos del piloto antes de las mejoras de HU-21 (T-20.4).
+
+### 7.6 Segunda pasada con la configuración definitiva (28-oct-2026)
+
+Repetí los pilotos con la configuración definitiva: NGINX con SHA-256 ×300 vía njs, límite `2000m` y solicitud `500m`, `media` 450 y `alta` 900 rps, boost apagado, `--tipo piloto` y las mismas fases que en 7.1. Son 9 corridas por distribución (`idle`, `media` y `alta` × 3), en una sola secuencia por distribución con `k6/medicion/secuencia_piloto.sh <distribución> 450 900 3`. Es una pasada más de práctica del procedimiento con la configuración que usará la campaña, no la campaña. Los pilotos del 27-oct (7.1 a 7.4) quedan como configuración inicial y no los toqué. Un clúster a la vez.
+
+**Orden.** Primero MicroK8s y después K3s, al revés que el 27-oct (K3s y luego MicroK8s), para que el orden no coincidiera con el anterior. Es una decisión mía, no un resultado.
+
+**Procedimiento.**
+1. Clúster construido desde el código con `k6/operacion/despliegue.sh <distribución> construir <ciclo>`, sin correcciones con `kubectl`. Lo hice con la sesión gráfica abierta, por eso el registro de despliegue dice `modo_medicion: false`; después activé el modo medición.
+2. Comprobaciones antes de medir (las mismas en ambas): 3 nodos `Ready`, pod de NGINX 1/1, límite de CPU `2000m` y solicitud `500m` en el `Deployment` en la revisión `1` (nunca parchado), imagen igual a la de `group_vars`, VIP `.100` respondiendo (HTTP 401 sin credenciales) y VIP `.150` devolviendo el SHA-256 ×300 calculado fuera del clúster.
+3. Estado inicial del host en `estado_inicial.txt` de cada sesión (reloj, perfil, boost, memoria, disco, swap, corriente alterna, red, contadores de swap), con el modo medición activo y la herramienta de asistencia de línea de comandos abierta; después la cerré y lancé la secuencia desde la consola de texto.
+
+| | MicroK8s | K3s |
+|---|---|---|
+| Ciclo y construcción | 7: 819,9 s (Terraform 33,0, huellas 6,6, Ansible 780,2) | 8: 278,0 s (Terraform 27,6, huellas 6,6, Ansible 243,8) |
+| Ciclos anteriores | 5: 1188,1 s; 6 (validación T-22): 952,0 s | 6: 608,9 s; 7 (validación T-22): 410,6 s |
+| Secuencia | 18:50:41 a 19:46:31 (55,8 min) | 20:02:42 a 20:58:27 (55,7 min) |
+| Sesión de datos | `data/pilotos/2026-10-28_microk8s` | `data/pilotos/2026-10-28_k3s` |
+| Pods al construir | 11 pods `1/1 Running`; `kube-vip-ds` con 2 y 1 reinicios en dos nodos y `hostpath-provisioner` con 2 | 8 pods `1/1 Running`, 0 reinicios |
+| Destrucción | ciclo 7, 7,1 s | ciclo 8, 6,8 s |
+
+Los tiempos de construcción no tienen dispersión (un ciclo cada uno) y los de los ciclos anteriores no son comparables: se construyeron en modo medición (`modo_medicion: true`) y estos con la sesión gráfica abierta; no sé cuánto influye eso. El despliegue desde el código produjo la configuración definitiva sin intervención manual en ambas distribuciones.
+
+**Resultados por corrida** (potencia media del paquete en la fase estable, RAPL `package-0`; aplicadas/s y percentiles de `http_req_duration` en la fase estable, calculados con los datos crudos de k6; memoria y swap desde las ventanas de Prometheus exportadas de cada corrida, el mínimo de `MemAvailable` y el rango de swap usado del host):
+
+| Distribución | Escenario | Rep. | Potencia (W) | Aplicadas/s | Descartadas | p95 / p99 (ms) | Mem. host mín. (MB) | Mem. VM mín. (MB) | Swap host (MB) | Reloj host / VM máx. (ms) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| MicroK8s | idle | 1 | 4.160 | n/a | n/a | n/a | 1903 | 2818 | 15–15 | 0.1 / 0.01 |
+| MicroK8s | idle | 2 | 4.155 | n/a | n/a | n/a | 1695 | 2838 | 24–24 | 1.1 / 0.16 |
+| MicroK8s | idle | 3 | 4.157 | n/a | n/a | n/a | 1508 | 2810 | 44–45 | 1.1 / 0.47 |
+| MicroK8s | media | 1 | 4.965 | 450.0 | 0 | 2.4 / 4.8 | 1850 | 2824 | 15–15 | 0.6 / 0.05 |
+| MicroK8s | media | 2 | 4.964 | 450.0 | 0 | 2.4 / 4.9 | 1494 | 2814 | 35–44 | 1.0 / 0.00 |
+| MicroK8s | media | 3 | 4.963 | 450.0 | 0 | 2.3 / 4.6 | 1469 | 2824 | 45–45 | 1.0 / 0.00 |
+| MicroK8s | alta | 1 | 5.616 | 899.7 | 34 | 44.2 / 76.4 | 1653 | 2822 | 15–24 | 0.7 / 0.02 |
+| MicroK8s | alta | 2 | 5.600 | 899.4 | 44 | 48.8 / 77.4 | 1470 | 2807 | 44–44 | 1.2 / 0.04 |
+| MicroK8s | alta | 3 | 5.609 | 899.7 | 39 | 42.0 / 72.5 | 1433 | 2816 | 45–48 | 1.1 / 0.03 |
+| K3s | idle | 1 | 4.185 | n/a | n/a | n/a | 6049 | 2924 | 0–0 | 5.7 / 1.25 |
+| K3s | idle | 2 | 4.168 | n/a | n/a | n/a | 5970 | 2919 | 0–0 | 0.7 / 0.54 |
+| K3s | idle | 3 | 4.120 | n/a | n/a | n/a | 5921 | 2929 | 0–0 | 0.7 / 0.01 |
+| K3s | media | 1 | 4.961 | 450.0 | 0 | 2.1 / 4.1 | 5978 | 2911 | 0–0 | 4.6 / 0.01 |
+| K3s | media | 2 | 4.987 | 450.0 | 0 | 2.1 / 3.9 | 5918 | 2928 | 0–0 | 0.7 / 0.00 |
+| K3s | media | 3 | 4.916 | 450.0 | 0 | 2.1 / 3.9 | 5748 | 2747 | 0–0 | 0.7 / 0.00 |
+| K3s | alta | 1 | 5.574 | 899.7 | 45 | 6.5 / 23.1 | 5916 | 2918 | 0–0 | 3.5 / 0.01 |
+| K3s | alta | 2 | 5.559 | 899.8 | 29 | 6.3 / 18.8 | 5883 | 2938 | 0–0 | 0.7 / 0.01 |
+| K3s | alta | 3 | 5.526 | 899.7 | 32 | 6.3 / 16.5 | 5563 | 2916 | 0–0 | 9.6 / 0.00 |
+
+En las 18 corridas: código de salida de k6 0, 0 solicitudes fallidas, sin desbordamiento del contador RAPL, titulares de las VIP y del pod sin cambios, espera de reloj entre 4,1 y 4,6 s, sin abortos y motivos de no validez solo `tipo piloto`. Ninguna VM usó swap.
+
+| Escenario | K3s: media (sd) en W | MicroK8s: media (sd) en W |
+|---|---|---|
+| idle | 4,158 (0,034) | 4,157 (0,003) |
+| media (450 rps) | 4,955 (0,036) | 4,964 (0,001) |
+| alta (900 rps) | 5,553 (0,025) | 5,608 (0,008) |
+| sd agrupada dentro de series | 0,032 | 0,005 |
+
+Son medias y desviaciones muestrales de 3 repeticiones; no hice pruebas de hipótesis ni comparaciones entre distribuciones.
+
+**Nivel de potencia por sesión (misma distribución).** Misma aplicación y tasas solo en las dos últimas filas:
+
+| Sesión | Aplicación y tasas | K3s idle / media / alta (W) | MicroK8s idle / media / alta (W) |
+|---|---|---|---|
+| 27-oct, pilotos (7.2) | estática, 900/1600 rps | 4,894 / 6,212 / 6,792 | 5,867 / 7,206 / 7,775 |
+| 27-oct, validación T-22 (una repetición) | definitiva, 450/900 rps | 4,965 / 6,000 / 6,676 | 4,962 / 5,903 / 6,621 |
+| 28-oct, esta pasada (3 repeticiones) | definitiva, 450/900 rps | 4,158 / 4,955 / 5,553 | 4,157 / 4,964 / 5,608 |
+
+- Entre la validación de T-22 y esta pasada, con la misma aplicación y tasas, el nivel bajó 0,81, 1,05 y 1,12 W en K3s y 0,81, 0,94 y 1,01 W en MicroK8s: otro desplazamiento casi paralelo de ≈ 1 W dentro de la misma distribución (7.4, punto 6). El `idle` de cada distribución se movió hasta 1,0 W entre sesiones (K3s 4,894 → 4,965 → 4,158 W; MicroK8s 5,867 → 4,962 → 4,157 W).
+- En T-22 y en esta pasada, los `idle` de las dos distribuciones quedaron a 0,003 y 0,001 W entre sí; el 27-oct (pilotos) estaban a 0,97 W. Son tres sesiones; no concluyo nada de eso sobre las distribuciones.
+- Diferencias de esta sesión que no controlé y que pueden o no importar: el equipo se reinició a las 17:53 (uptime de 53 min a las 18:46), la red fue `JDelPino_wifi` (el 27-oct de los pilotos fue la de la oficina; en T-22 no registré la red), la memoria swap se liberó antes de cada secuencia (abajo) y los clústeres se construyeron con la sesión gráfica abierta. **No sé la causa del nivel.** Sigue abierto para T-24.4.
+
+**Memoria y swap del host.**
+- **MicroK8s, antes de empezar:** swap en uso 533 MB de 2 GB (372, 75 y 61 MB en tres procesos QEMU), memoria disponible 2167 MB. Los tres QEMU tenían entre 3,77 y 3,88 GB de RSS de 4096 MB asignados. Contadores desde el arranque: `pswpin` 15 123 y `pswpout` 164 028. El equipo llevaba 53 min encendido.
+- **Liberación:** ejecuté `sudo swapoff -a && sudo swapon -a` en la consola de texto (el `sudo` no puede pedir contraseña desde la herramienta de asistencia). Después: swap 15 MB, memoria disponible 1706 MB, contadores `pswpin` 138 422 y `pswpout` 167 171.
+- **MicroK8s, durante la secuencia:** swap usado 15 a 48 MB según Prometheus (solo mide el nivel). Mínimo de `MemAvailable`: 1433 MB (`alta` r3), 409 MB sobre 1024 MB. Al terminar, contadores `pswpin` 139 028 y `pswpout` 195 123 (+606 y +27 952 páginas desde la liberación; ≈ 109 MB si la página es de 4 kB, supuesto estándar). A las 19:47, ya sin corridas, `swapon` mostraba 137 MB usados.
+- **K3s, antes de empezar:** swap en uso 10,2 MB; repetí `swapoff -a && swapon -a` y quedó en 0 B (contadores `pswpin` 143 425 y `pswpout` 195 171). Registré el estado inicial solo con el swap en cero.
+- **K3s, durante la secuencia:** swap usado 0 MB en todas las corridas según Prometheus. Mínimo de `MemAvailable`: 5563 MB (`alta` r3). Al terminar (21:07): `pswpin` 143 425 y `pswpout` 195 173 (+0 y +2 páginas).
+- **Lo que no sé:** si el swap residual de MicroK8s (15 a 48 MB) afectó a la potencia o la latencia; el 27-oct (pilotos) no medí el swap y en T-22 hubo actividad de swap en MicroK8s (`evidencia_T-22.md`, sección 6).
+
+**Latencia de `alta` de K3s sin mi muestreo por SSH.** Con la aplicación definitiva y 900 rps, la `alta` de K3s dio 29 a 45 iteraciones descartadas y p95 de 6,3 a 6,5 ms (p99 de 16,5 a 23,1 ms). En la validación de T-22 (`evidencia_T-22.md`, sección 4), con el muestreo por SSH a las VM cada 15 s, la misma distribución y tasa dio 2037 descartadas y p95 de 168,5 ms (p99 de 308,4 ms) en la fase estable. Es consistente con la explicación de T-22 (el SSH perturbó a k6), pero son sesiones distintas y no hice una prueba que cambie solo el muestreo.
+
+**Incidentes y desviaciones respecto del procedimiento.**
+1. El primer intento de construir MicroK8s se cortó por una caída de internet; no dejó registro de despliegue y conservé su log parcial (`/tmp/despliegue_microk8s_construir_c7.interrumpido.log`). Rehíce la construcción con el mismo ciclo (7).
+2. El swap de MicroK8s (533 MB) y de K3s (10 MB) antes de empezar, y su liberación (arriba). No estaba en el procedimiento del 27-oct.
+3. El encabezado del primer `estado_inicial.txt` de MicroK8s lo escribí mal (decía modo inactivo y sesión gráfica activa) y lo corregí; el contenido de los comandos no cambió.
+4. En K3s, la primera consulta de la etiqueta de Prometheus devolvió `microk8s` (ventana de 30 s con series viejas) y 13 s después `k3s`; no verifiqué por qué.
+5. Reloj en K3s: el host quedó entre 0,7 y 9,6 ms de NTP antes de cada corrida (en MicroK8s, hasta 1,2 ms); dentro del umbral de 100 ms y sin abortos. No investigué la causa.
+6. Al construir MicroK8s, `kube-vip` y `hostpath-provisioner` se reiniciaron 1 o 2 veces (la misma observación de 7.4, punto 3); sin efecto visible en las corridas. En K3s no hubo reinicios.
+7. El orden de las distribuciones (MicroK8s primero) es la única diferencia deliberada respecto del 27-oct, además de la aplicación y las tasas.
+
+**Integridad.** Cada sesión tiene 9 metadatos, 9 resúmenes de k6, 9 `por_segundo` y 9 ventanas de Prometheus. El último snapshot de cada una se copió a `data/prometheus-snapshots/` (`20261028T224621Z-49cd18bfbbc93524` y `20261028T235818Z-6dee1283ce06dfdf`). No hay archivos de 90 MB o más fuera de `data/k6-crudo/`; el crudo de k6 (114 MB y 112 MB) está en `data/k6-crudo/pilotos/2026-10-28_*` y git lo ignora.
+
+**Límites.** Tres repeticiones por celda, sin variabilidad entre sesiones estimable; el nivel absoluto de potencia sigue sin causa conocida, así que estos valores no se pueden usar para comparar distribuciones. Los pilotos no son la campaña.
+
+---
 
 ## 8. Despliegue (T-20.6) y escenarios sin ejercitar
 

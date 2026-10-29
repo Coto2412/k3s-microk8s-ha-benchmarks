@@ -104,7 +104,7 @@ La recuperación básica se ejercitó en la corrida con fallo de cada distribuci
 **Hallazgo: mi muestreo por SSH perturbó a k6 en la `alta` de K3s.** La primera versión del script leía la memoria de las 3 VM por SSH cada 15 s. En `alta` de K3s, los segundos con iteraciones descartadas fueron 3, 18, 34, 48, 63, 78, 93, 109, 123, 139, 154 y 168 de la fase estable, y las lecturas por SSH cayeron en 3,1; 18,1; 33,9; 48,1; 63,1; 78,1; 93,1; 108,7; 123,1; 138,2; 153,1 y 168,1 s: coinciden las 12. En esos segundos el p95 de k6 subió a 210–470 ms (mediana de la fase 8,8 ms). Por eso la tasa aplicada de 888,5 rps y los 2037 descartes de K3s no describen a K3s: son efecto de mi instrumento. En la calibración (sin ese muestreo) K3s aplicó 893,8 rps en el escalón de 900 con 0 descartes.
 - Lo quité: la memoria de las VM sale ahora de Node Exporter, y el muestreo del host solo lee `/proc`. MicroK8s se corrió con la versión corregida; K3s, con la primera.
 - En la `alta` de MicroK8s hubo 85 descartes en 7 segundos (15, 25, 35, 45, 54, 55 y 134 s; p95 máximo 141 ms). Hay una periodicidad de ≈ 10 s en cinco de ellos que coincide con el intervalo de scrape de Prometheus; **no lo verifiqué**. Que la corrección sea la causa de que MicroK8s tenga menos descartes que K3s no se puede afirmar: son distribuciones distintas y no repetí la `alta` de K3s.
-- Consecuencia: la `alta` de K3s de esta validación sirve para el criterio de «registros utilizables», no para latencia ni para tasa aplicada. No la repetí.
+- Consecuencia: la `alta` de K3s de esta validación sirve para el criterio de «registros utilizables», no para latencia ni para tasa aplicada. No la repetí en T-22. El 28-oct, sin ese muestreo, la `alta` de K3s dio 899,7 a 899,8 rps, 29 a 45 iteraciones descartadas, p95 de 6,3 a 6,5 ms y p99 de 16,5 a 23,1 ms (`evidencia_T-20.md`, 7.6). Es consistente con esta explicación, pero son sesiones distintas y no aislé el muestreo como única diferencia.
 
 **Dos fallas de muestreo en K3s** (`memoria_errores_muestreo` = 2): no identifiqué en qué momento. En MicroK8s fueron 0.
 
@@ -201,7 +201,7 @@ Dentro de las VM (mínimo de `MemAvailable` de 4096 MB asignados, desde Node Exp
 
 ## 8. Cómo se ejecuta y qué devolví
 
-Una distribución a la vez, con Claude Code cerrado y en la consola de texto, después del playbook de la etiqueta (`-e active_distribution=<dist>`) y de `salir` y `entrar`: `python3 -m k6.operacion.validacion --distribucion <dist> --solo-precondiciones` (≈ 6,4 s) y luego el mismo comando sin el flag. Al terminar, `salir`. Si el script se detiene, el clúster queda arriba y el resumen indica el comando para destruirlo.
+Una distribución a la vez, con la herramienta de asistencia de línea de comandos cerrada y en la consola de texto, después del playbook de la etiqueta (`-e active_distribution=<dist>`) y de `salir` y `entrar`: `python3 -m k6.operacion.validacion --distribucion <dist> --solo-precondiciones` (≈ 6,4 s) y luego el mismo comando sin el flag. Al terminar, `salir`. Si el script se detiene, el clúster queda arriba y el resumen indica el comando para destruirlo.
 
 Archivos: `data/verificacion/2026-10-27_k3s_T-22/` y `data/verificacion/2026-10-27_microk8s_T-22/` (≈ 0,7 MB cada una) y las líneas de los ciclos 7 (K3s) y 6 (MicroK8s) de `data/despliegue/despliegue_<distribución>.jsonl`. El JSON crudo de k6 queda fuera del repositorio.
 

@@ -1,0 +1,67 @@
+# Estado inicial tomado con el modo medición activo, sin sesión gráfica y con la herramienta de asistencia de línea de comandos abierta (antes de lanzar la secuencia)
+# modo medición: activo; display-manager: inactive
+## date
+mié 28 oct 2026 18:45:41 -03
+## chronyc tracking
+Reference ID    : 40B00374 (sa-south-1.clearnet.pw)
+Stratum         : 3
+Ref time (UTC)  : Wed Oct 28 21:44:28 2026
+System time     : 0.000122070 seconds fast of NTP time
+Last offset     : +0.001225334 seconds
+RMS offset      : 0.007770129 seconds
+Frequency       : 9.109 ppm slow
+Residual freq   : +0.045 ppm
+Skew            : 8.761 ppm
+Root delay      : 0.017995482 seconds
+Root dispersion : 0.029857008 seconds
+Update interval : 258.3 seconds
+Leap status     : Normal
+## powerprofilesctl get
+balanced
+## boost
+0
+## free -m
+               total       usado       libre  compartido   búf/caché  disponible
+Mem:           14799       12631         684           2        1858        2167
+Inter:          2047         533        1514
+## df -h
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+tmpfs            1,5G   3,6M  1,5G   1% /run
+/dev/nvme0n1p2   468G   138G  307G  31% /
+tmpfs            7,3G      0  7,3G   0% /dev/shm
+tmpfs            5,0M    16K  5,0M   1% /run/lock
+efivarfs         248K   121K  123K  50% /sys/firmware/efi/efivars
+tmpfs            7,3G      0  7,3G   0% /run/qemu
+/dev/nvme0n1p1   511M   6,3M  505M   2% /boot/efi
+tmpfs            1,5G   112K  1,5G   1% /run/user/1000
+## swapon --show
+NAME      TYPE SIZE   USED PRIO
+/swapfile file   2G 533,4M   -1
+## AC online
+1
+## red activa
+JDelPino_wifi:802-11-wireless
+lo:loopback
+br-89dbc5a81e81:bridge
+docker0:bridge
+virbr0:bridge
+virbr1:bridge
+virbr2:bridge
+vnet0:tun
+vnet1:tun
+vnet2:tun
+## /proc/vmstat pswpin pswpout (acumulados desde el arranque)
+pswpin 15123
+pswpout 164028
+## despues de swapoff -a && swapon -a: mié 28 oct 2026 18:49:46 -03
+# (herramienta de asistencia de línea de comandos abierta en el momento del registro)
+NAME      TYPE SIZE USED PRIO
+/swapfile file   2G  15M   -1
+               total       usado       libre  compartido   búf/caché  disponible
+Mem:           14799       13092         396           3        1638        1706
+Inter:          2047          15        2032
+pswpin 138422
+pswpout 167171
+## chronyc tracking (System time / Last offset)
+System time     : 0.000119830 seconds fast of NTP time
+Last offset     : +0.001225334 seconds

@@ -1,0 +1,55 @@
+# Estado inicial tomado con el modo medición activo, sin sesión gráfica y con la herramienta de asistencia de línea de comandos abierta (antes de lanzar la secuencia), tras swapoff -a && swapon -a
+# modo medición: activo; display-manager: inactive
+## date
+mié 28 oct 2026 20:02:00 -03
+## chronyc tracking
+Reference ID    : 40B00374 (sa-south-1.clearnet.pw)
+Stratum         : 3
+Ref time (UTC)  : Wed Oct 28 23:01:55 2026
+System time     : 0.006128166 seconds slow of NTP time
+Last offset     : -0.006138616 seconds
+RMS offset      : 0.005771034 seconds
+Frequency       : 10.758 ppm slow
+Residual freq   : -0.167 ppm
+Skew            : 6.163 ppm
+Root delay      : 0.051425736 seconds
+Root dispersion : 0.033244722 seconds
+Update interval : 1038.3 seconds
+Leap status     : Normal
+## powerprofilesctl get
+balanced
+## boost
+0
+## free -m
+               total       usado       libre  compartido   búf/caché  disponible
+Mem:           14799        9000         761           3        5365        5798
+Inter:          2047           0        2047
+## df -h
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+tmpfs            1,5G   3,6M  1,5G   1% /run
+/dev/nvme0n1p2   468G   135G  310G  31% /
+tmpfs            7,3G      0  7,3G   0% /dev/shm
+tmpfs            5,0M    16K  5,0M   1% /run/lock
+efivarfs         248K   121K  123K  50% /sys/firmware/efi/efivars
+tmpfs            7,3G      0  7,3G   0% /run/qemu
+/dev/nvme0n1p1   511M   6,3M  505M   2% /boot/efi
+tmpfs            1,5G   112K  1,5G   1% /run/user/1000
+## swapon --show
+NAME      TYPE SIZE USED PRIO
+/swapfile file   2G   0B   -1
+## AC online
+1
+## red activa
+JDelPino_wifi:802-11-wireless
+lo:loopback
+br-89dbc5a81e81:bridge
+docker0:bridge
+virbr0:bridge
+virbr1:bridge
+virbr2:bridge
+vnet0:tun
+vnet1:tun
+vnet2:tun
+## /proc/vmstat pswpin pswpout (acumulados desde el arranque)
+pswpin 143425
+pswpout 195171

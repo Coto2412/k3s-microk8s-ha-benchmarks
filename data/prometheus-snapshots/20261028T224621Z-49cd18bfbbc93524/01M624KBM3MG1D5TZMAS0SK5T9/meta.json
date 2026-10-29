@@ -1,0 +1,18 @@
+{
+	"ulid": "01M624KBM3MG1D5TZMAS0SK5T9",
+	"minTime": 1793138404030,
+	"maxTime": 1793145600000,
+	"stats": {
+		"numSamples": 969878,
+		"numFloatSamples": 969878,
+		"numSeries": 5115,
+		"numChunks": 9483
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M624KBM3MG1D5TZMAS0SK5T9"
+		]
+	},
+	"version": 1
+}
