@@ -253,3 +253,37 @@ def analizar(obs, t_antes, t_despues, nodo, ksm, ruta_k6):
                    if i == 0 or e["leases"] != obs.estado[i - 1]["leases"]],
         "k6": k6_fallidas(ruta_k6, t0) if ruta_k6 and os.path.exists(ruta_k6) else None,
     }
+
+
+def tiempos(an, nodo, t_restaura=None):
+    """Tiempos (s desde el fallo) y líder del controller-manager previo, calculados solo con el bloque `analisis` y t_restaura."""
+    def migracion(lista):
+        c = [x["t_s"] for x in lista if x["t_s"] > 0]
+        return c[0] if c else None
+    nr, api = an.get("nodo_notready_kubectl") or {}, an.get("api_vip") or []
+    previos = [e["kube-controller-manager"] for e in an.get("leases", []) if e["t_s"] < 0 and e.get("kube-controller-manager")]
+    lider = previos[-1].split("_")[0] if previos else None
+    t_rest = None if t_restaura is None else round(t_restaura - an["t_fallo"], 1)
+    return {"lider_controller_manager_previo": lider, "nodo_fallado_lideraba": None if lider is None else lider == nodo,
+            "notready": nr.get("desde_s"), "migracion_vip_plano_control": migracion(an.get("titular_vip_cp", [])),
+            "migracion_vip_servicio": migracion(an.get("titular_vip_svc", [])),
+            "api_caida_desde": api[0]["desde_s"] if api else None, "api_restablecida": api[0]["hasta_s"] if api else None,
+            "restauracion": t_rest, "ready_tras_restauracion": None if nr.get("hasta_s") is None or t_rest is None else round(nr["hasta_s"] - t_rest, 1),
+            "fallidas_k6": (an.get("k6") or {}).get("fallidas_despues")}
+
+
+def autotest():
+    an = {"t_fallo": 100.0, "api_vip": [{"desde_s": 1.0, "hasta_s": 19.0}],
+          "titular_vip_cp": [{"t_s": -29.0, "titular": "n1"}, {"t_s": 18.0, "titular": "n2"}],
+          "titular_vip_svc": [{"t_s": -29.0, "titular": "n1"}], "nodo_notready_kubectl": {"desde_s": 70.0, "hasta_s": 135.0},
+          "leases": [{"t_s": -60.0, "kube-controller-manager": "n1_abc"}, {"t_s": 15.0, "kube-controller-manager": "n3_def"}],
+          "k6": {"fallidas_despues": 0}}
+    t = tiempos(an, "n1", 220.0)
+    assert t["lider_controller_manager_previo"] == "n1" and t["nodo_fallado_lideraba"] is True
+    assert t["migracion_vip_plano_control"] == 18.0 and t["migracion_vip_servicio"] is None
+    assert t["restauracion"] == 120.0 and t["ready_tras_restauracion"] == 15.0 and t["api_restablecida"] == 19.0
+    print("autotest ok")
+
+
+if __name__ == "__main__":
+    autotest()

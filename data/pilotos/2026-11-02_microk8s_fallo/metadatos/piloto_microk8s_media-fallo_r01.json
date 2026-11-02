@@ -1,0 +1,461 @@
+{
+  "esquema": 2,
+  "tipo": "piloto",
+  "verificacion": false,
+  "distribution": "microk8s",
+  "escenario": "media",
+  "repeticion": 1,
+  "t_inicio": 1793642135.111,
+  "t_fin": 1793642315.112,
+  "t_ejecucion_inicio": 1793642105.102,
+  "t_ejecucion_fin": 1793642345.713,
+  "parametros": {
+    "tasa": 450.0,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 120,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 2415904191,
+    "energy_uj_fin": 3353649870,
+    "lectura_inicio_s": [
+      1793642135.103,
+      1793642135.119
+    ],
+    "lectura_fin_s": [
+      1793642315.103,
+      1793642315.121
+    ],
+    "desbordamiento": false,
+    "delta_uj": 937745679,
+    "potencia_media_W": 5.21
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "microk8s-node1",
+      "nodo_vip_servicio": "microk8s-node2",
+      "nodo_pod": "microk8s-node2"
+    },
+    "cambiaron": true,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-crudo/pilotos/2026-11-02_microk8s_fallo/piloto_microk8s_media-fallo_r01.json.gz",
+    "resumen": "data/pilotos/2026-11-02_microk8s_fallo/k6-resultados/piloto_microk8s_media-fallo_r01.resumen.json",
+    "tamano_json_bytes": 13260307,
+    "sha256_json": "126f6233d436bdb911e82b14ef8155b31eab8e8d9a0e18f3bfb32f848b2c45a9",
+    "por_segundo": "data/pilotos/2026-11-02_microk8s_fallo/k6-resultados/piloto_microk8s_media-fallo_r01.por_segundo.json.gz",
+    "primer_punto_json": "2026-11-02T14:55:05.542279211-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "rtt": null,
+  "red_virtual": {
+    "dominios": {
+      "microk8s-node1": [
+        {
+          "interfaz": "vnet7",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:01"
+        }
+      ],
+      "microk8s-node3": [
+        {
+          "interfaz": "vnet6",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:03"
+        }
+      ],
+      "microk8s-node2": [
+        {
+          "interfaz": "vnet8",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:02"
+        }
+      ]
+    },
+    "redes": {
+      "microk8s-tesis": {
+        "forward": "nat",
+        "bridge": "virbr1",
+        "ip": "192.168.100.1",
+        "mascara": null
+      }
+    }
+  },
+  "recursos_host": {
+    "inicio": {
+      "t": 1793642105.082,
+      "memavailable_kb": 1362168,
+      "memtotal_kb": 15154248,
+      "swaptotal_kb": 2097148,
+      "swapfree_kb": 2097136,
+      "pswpin": 138293,
+      "pswpout": 291432,
+      "qemu": [
+        {
+          "dominio": "microk8s-node1",
+          "pid": 50685,
+          "VmRSS": 4124400,
+          "RssAnon": 4112548,
+          "RssFile": 11852,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node2",
+          "pid": 50708,
+          "VmRSS": 4148864,
+          "RssAnon": 4136924,
+          "RssFile": 11940,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node3",
+          "pid": 50680,
+          "VmRSS": 4165872,
+          "RssAnon": 4154016,
+          "RssFile": 11856,
+          "RssShmem": 0
+        }
+      ]
+    },
+    "fin": {
+      "t": 1793642348.518,
+      "memavailable_kb": 1351200,
+      "memtotal_kb": 15154248,
+      "swaptotal_kb": 2097148,
+      "swapfree_kb": 2090552,
+      "pswpin": 138300,
+      "pswpout": 292926,
+      "qemu": [
+        {
+          "dominio": "microk8s-node1",
+          "pid": 50685,
+          "VmRSS": 4124760,
+          "RssAnon": 4112832,
+          "RssFile": 11928,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node2",
+          "pid": 50708,
+          "VmRSS": 4148932,
+          "RssAnon": 4136992,
+          "RssFile": 11940,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node3",
+          "pid": 50680,
+          "VmRSS": 4166752,
+          "RssAnon": 4154832,
+          "RssFile": 11920,
+          "RssShmem": 0
+        }
+      ]
+    },
+    "resumen": {
+      "pswpin_paginas": 7,
+      "pswpout_paginas": 1494,
+      "swap_usado_kb_inicio": 12,
+      "swap_usado_kb_fin": 6596,
+      "memavailable_min_mb_prometheus": 1272
+    }
+  },
+  "cgroup_cp": null,
+  "snapshot": {
+    "nombre": "20261102T175908Z-53a032e229e93796",
+    "copiado": false,
+    "motivo": "snapshot cumulativo: se copia solo con --copiar-snapshot"
+  },
+  "ventana_prometheus": {
+    "archivo": "data/pilotos/2026-11-02_microk8s_fallo/prometheus-ventanas/piloto_microk8s_media-fallo_r01.json.gz",
+    "series": 1691
+  },
+  "reloj_antes": {
+    "host": {
+      "Reference ID": "40B004D5 (ns-san.radel.com)",
+      "Stratum": "3",
+      "System time": "0.004014680 seconds fast of NTP time",
+      "Last offset": "+0.003089845 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000007522 seconds fast of NTP time",
+        "Last offset": "+0.000005179 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000002676 seconds fast of NTP time",
+        "Last offset": "+0.000003536 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000000718 seconds slow of NTP time",
+        "Last offset": "-0.000005266 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "reloj_espera_s": 4.8,
+  "estado_host": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "64764"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "procesos_top_cpu": [
+      [
+        "qemu-system-x86",
+        "29,7"
+      ],
+      [
+        "qemu-system-x86",
+        "22,8"
+      ],
+      [
+        "qemu-system-x86",
+        "14,9"
+      ],
+      [
+        "migration/0",
+        "1,0"
+      ],
+      [
+        "migration/9",
+        "1,0"
+      ],
+      [
+        "kworker/14:0-events",
+        "1,0"
+      ],
+      [
+        "kworker/12:0-events",
+        "1,0"
+      ],
+      [
+        "systemd",
+        "0,0"
+      ],
+      [
+        "kthreadd",
+        "0,0"
+      ],
+      [
+        "pool_workqueue_release",
+        "0,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "boost_cpu": "0",
+    "memoria_disponible_mb": 1323,
+    "presion_memoria_some_avg60": "0.00",
+    "frecuencia_max_khz": "1901000",
+    "epp_cpu0": "balance_performance",
+    "perfil_plataforma": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 45.5,
+    "carga_1min": 1.328125,
+    "ufw_habilitado": false,
+    "politica": {
+      "boost_cpu": 0,
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 100,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "valida_para_campana": false,
+  "motivos_no_valida": [
+    "tipo piloto"
+  ],
+  "fallo": {
+    "nodo_fallado": "microk8s-node3",
+    "ip": "192.168.100.13",
+    "unidad": "snap.microk8s.daemon-kubelite",
+    "nodo_observador": "192.168.100.11",
+    "parametros": {
+      "fallo_en_s": 30,
+      "retener_s": 120,
+      "reinicio_automatico": "desactivado durante la retenci\u00f3n"
+    },
+    "pod_movido": null,
+    "reinicios_kube_vip": 0,
+    "parametros_efectivos": {
+      "argumentos_explicitos": [
+        "--eviction-hard=\"memory.available<100Mi,nodefs.available<1Gi,imagefs.available<1Gi\""
+      ],
+      "tolerancias_pod": [
+        {
+          "effect": "NoExecute",
+          "key": "node.kubernetes.io/not-ready",
+          "operator": "Exists",
+          "tolerationSeconds": 300
+        },
+        {
+          "effect": "NoExecute",
+          "key": "node.kubernetes.io/unreachable",
+          "operator": "Exists",
+          "tolerationSeconds": 300
+        }
+      ]
+    },
+    "eventos": {
+      "preparacion": [
+        0,
+        "Restart=no"
+      ],
+      "rc_inyeccion": 0,
+      "t_antes": 1793642165.106757,
+      "t_despues": 1793642166.8497858,
+      "t_restaura": 1793642286.851046,
+      "restauracion": [
+        0,
+        "active"
+      ],
+      "restauracion_final": [
+        0,
+        "active"
+      ],
+      "nodo_listo_al_final": true
+    },
+    "observador": "data/pilotos/2026-11-02_microk8s_fallo/metadatos/piloto_microk8s_media-fallo_r01.observador.json.gz",
+    "analisis": {
+      "t_fallo": 1793642165.978,
+      "cota_t_fallo_s": 0.872,
+      "api_vip": [
+        {
+          "desde_s": 1.1,
+          "hasta_s": 20.2
+        }
+      ],
+      "app_vip": [],
+      "titular_vip_cp": [
+        {
+          "t_s": -29.9,
+          "titular": "microk8s-node3"
+        },
+        {
+          "t_s": 19.2,
+          "titular": "microk8s-node1"
+        }
+      ],
+      "titular_vip_svc": [
+        {
+          "t_s": -29.9,
+          "titular": "microk8s-node3"
+        },
+        {
+          "t_s": 18.2,
+          "titular": "microk8s-node2"
+        }
+      ],
+      "nodo_notready_kubectl": {
+        "desde_s": 53.1,
+        "hasta_s": 129.3
+      },
+      "nodo_notready_ksm": {
+        "desde_s": 59.1,
+        "hasta_s": 139.1
+      },
+      "leases": [
+        {
+          "t_s": -60.9,
+          "kube-controller-manager": "microk8s-node1_fd4bd96c-3baf-46fd-aa95-6bd4f4d53563",
+          "kube-scheduler": "microk8s-node1_a762bf2b-fb8a-4b69-86b9-ecef9041f031",
+          "plndr-cp-lock": "microk8s-node3",
+          "plndr-svcs-lock": "microk8s-node3"
+        },
+        {
+          "t_s": 17.1,
+          "kube-controller-manager": "microk8s-node1_fd4bd96c-3baf-46fd-aa95-6bd4f4d53563",
+          "kube-scheduler": "microk8s-node1_a762bf2b-fb8a-4b69-86b9-ecef9041f031",
+          "plndr-cp-lock": "microk8s-node1",
+          "plndr-svcs-lock": "microk8s-node2"
+        }
+      ],
+      "k6": {
+        "fallidas_antes": 0,
+        "fallidas_despues": 0,
+        "total_antes": 20610,
+        "total_despues": 73889,
+        "descartadas_despues": 0,
+        "ultima_fallida_s": null
+      },
+      "tiempos_s": {
+        "lider_controller_manager_previo": "microk8s-node1",
+        "nodo_fallado_lideraba": false,
+        "notready": 53.1,
+        "migracion_vip_plano_control": 19.2,
+        "migracion_vip_servicio": 18.2,
+        "api_caida_desde": 1.1,
+        "api_restablecida": 20.2,
+        "restauracion": 120.9,
+        "ready_tras_restauracion": 8.4,
+        "fallidas_k6": 0
+      }
+    }
+  }
+}

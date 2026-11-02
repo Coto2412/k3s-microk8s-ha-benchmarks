@@ -1,0 +1,6 @@
+sesion,base,tipo,distribucion,repeticion,tasa,nodo_fallado,retener_s,pod_movido,lider_controller_manager_previo,nodo_fallado_lideraba,notready,migracion_vip_plano_control,migracion_vip_servicio,api_caida_desde,api_restablecida,restauracion,ready_tras_restauracion,fallidas_k6,escenario
+data/verificacion/2026-10-19_k3s,verif_k3s_media-fallo_r01,,k3s,1,100.0,k3s-node2,90,False,k3s-node3,False,51.7,,,0.7,93.7,90.3,7.4,0,media
+data/verificacion/2026-10-20_k3s,verif_k3s_media-fallo_r02,,k3s,2,100.0,k3s-node3,90,False,k3s-node3,True,69.6,18.7,16.7,0.6,19.7,90.4,7.2,0,media
+data/verificacion/2026-10-20_k3s,verif_k3s_media-fallo_r03,,k3s,3,100.0,k3s-node1,120,False,k3s-node1,True,74.0,22.7,22.7,0.6,23.7,120.4,7.6,0,media
+data/verificacion/2026-10-20_microk8s,verif_microk8s_media-fallo_r02,,microk8s,2,100.0,microk8s-node1,90,False,microk8s-node1,True,96.1,20.7,17.7,0.7,21.7,90.4,15.7,0,media
+data/verificacion/2026-10-20_microk8s,verif_microk8s_media-fallo_r03,,microk8s,3,100.0,microk8s-node2,120,True,microk8s-node2,True,111.9,20.7,17.7,0.7,21.7,120.3,5.6,0,media

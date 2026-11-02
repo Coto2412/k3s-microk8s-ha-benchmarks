@@ -8,7 +8,7 @@ import argparse, gzip, json, os, re, shutil, subprocess, sys, time
 import threading
 import urllib.parse, urllib.request
 
-from k6.lib import agregado, estado_host, fallo
+from k6.lib import agregado, estado_host, fallo, recursos
 from k6.lib.comun import RAIZ, RAPL, IP_VIP_CP, IP_VIP_SVC, IPS_NODOS, delta_rapl, estabilizar, leer_rapl, prom, sha256
 
 B_POR_SOLICITUD = 144  # bytes del .json.gz por solicitud: máximo de 4 corridas de humo (133 a 144)
@@ -134,6 +134,11 @@ def main():
                     help="piloto, calibración y verificación no son resultados finales; llevan prefijo en los archivos")
     ap.add_argument("--verificacion", action="store_const", const="verificacion", dest="tipo", help="alias de --tipo verificacion")
     ap.add_argument("--sesion", help="carpeta de sesión en data/<tipo>/ (por defecto: fecha local y distribución)")
+    ap.add_argument("--rtt", action="store_true",
+                    help="mide RTT con ping (host a VIP y nodos, y entre nodos) antes de la estabilización y al terminar, fuera de la fase estable")
+    ap.add_argument("--rtt-muestras", type=int, default=20)
+    ap.add_argument("--cgroup-cp", action="store_true",
+                    help="lee cpu.stat y memory.current de las unidades del plano de control justo antes y justo después de la ventana de RAPL")
     ap.add_argument("--sin-snapshot", action="store_true")
     ap.add_argument("--copiar-snapshot", action="store_true",
                     help="copia el snapshot a data/ (cada uno contiene los anteriores: copiar el último de cada bloque)")
@@ -142,6 +147,10 @@ def main():
         ap.error("--tasa es obligatoria en media y alta")
     if a.fallo and a.escenario != "media":
         ap.error("--fallo solo se define en el escenario media (protocolo, sección 4.4)")
+    if a.fallo and (a.rtt or a.cgroup_cp):
+        ap.error("--rtt y --cgroup-cp no se combinan con --fallo")
+    if a.rtt and a.rtt_muestras < 20:
+        ap.error("--rtt-muestras debe ser al menos 20")
 
     prefijo = {"definitiva": "", "piloto": "piloto_", "calibracion": "calib_", "verificacion": "verif_"}[a.tipo]
     base = prefijo + f"{a.distribucion}_{a.escenario}{'-fallo' if a.fallo else ''}_r{a.repeticion:02d}"
@@ -164,11 +173,17 @@ def main():
         if est > UMBRAL_AVISO * LIMITE_ARCHIVO:
             print(f"AVISO: el JSON de k6 estimaría {est / 1e6:.0f} MB (límite de GitHub 100 MB por archivo)", file=sys.stderr)
 
-    estabilizar(a.prometheus, a.distribucion, a.estabilizacion, a.objetivo)
     try:
         acc = fallo.acceso(RAIZ, a.distribucion)
     except (OSError, AttributeError):
         acc = None
+    red_virtual = recursos.red_virtual()
+    rtt_ini = None
+    if a.rtt:
+        if acc is None:
+            sys.exit(f"Falta el inventario de {a.distribucion} (lo genera Terraform): --rtt necesita SSH entre nodos")
+        rtt_ini = recursos.medir_rtt(acc, IPS_NODOS, IP_VIP_CP, IP_VIP_SVC, a.rtt_muestras)
+    estabilizar(a.prometheus, a.distribucion, a.estabilizacion, a.objetivo)
     if a.fallo and acc is None:
         sys.exit(f"Falta el inventario de {a.distribucion} (lo genera Terraform) para acceder por SSH")
     pol = estado_host.cargar_politica()
@@ -201,6 +216,7 @@ def main():
         nodo_f, ip_f, ip_s, movido, reinicios = plan
         ev["preparacion"] = fallo.preparar(a.distribucion, acc, ip_f)
         obs.iniciar()
+    recursos_ini = recursos.foto_host()
     t_lanzado = time.time()
     k6 = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -215,10 +231,16 @@ def main():
         if plan:
             hilo = threading.Thread(target=fallar)
             hilo.start()
+        cg_ini = cg_fin = None
+        if a.cgroup_cp:
+            time.sleep(max(0, t_lanzado + a.rampa - 5 - time.time()))
+            cg_ini = recursos.leer_cgroup_cp(a.distribucion, acc, IPS_NODOS)
         time.sleep(max(0, t_lanzado + a.rampa - time.time()))
         e0, ta0, tb0 = leer_rapl()
         time.sleep(max(0, t_lanzado + a.rampa + a.estable - time.time()))
         e1, ta1, tb1 = leer_rapl()
+        if a.cgroup_cp:
+            cg_fin = recursos.leer_cgroup_cp(a.distribucion, acc, IPS_NODOS)
         rc = k6.wait()
         t_fin_ejec = time.time()
     finally:
@@ -233,11 +255,19 @@ def main():
             ev["nodo_listo_al_final"] = obs.nodo_listo(nodo_f)
             obs.detener()
 
+    recursos_fin = recursos.foto_host()
+    rtt_fin = recursos.medir_rtt(acc, IPS_NODOS, IP_VIP_CP, IP_VIP_SVC, a.rtt_muestras) if a.rtt else None
     maximo = int(open(RAPL + "max_energy_range_uj").read())
     t_ini_v, t_fin_v = (ta0 + tb0) / 2, (ta1 + tb1) / 2
     d_uj = delta_rapl(e0, e1, maximo)
     tit_fin = titulares(a.prometheus, a.distribucion)
     snap = None if a.sin_snapshot else snapshot(a.prometheus, a.datos_prometheus, d_snap, a.copiar_snapshot)
+    try:
+        dur = int(time.time() - t_lanzado) + 1
+        mem_min = prom(a.prometheus, f'min_over_time(node_memory_MemAvailable_bytes{{job="node_exporter_host"}}[{dur}s])')
+        mem_min = round(float(mem_min[0]["value"][1]) / 2**20) if mem_min else None
+    except (OSError, ValueError, AssertionError):
+        mem_min = None
     ventana = exportar_ventana(a.prometheus, t_lanzado - 30, time.time(), f_ventana)
     ventana["archivo"] = os.path.relpath(f_ventana, RAIZ)
     filas = agregado.por_segundo(f_json) if os.path.exists(f_json) else []
@@ -263,6 +293,7 @@ def main():
             "observador": os.path.relpath(f_obs, RAIZ),
             "analisis": fallo.analizar(obs, ev["t_antes"], ev["t_despues"], nodo_f, ksm, f_json),
         }
+        bloque_fallo["analisis"]["tiempos_s"] = fallo.tiempos(bloque_fallo["analisis"], nodo_f, ev.get("t_restaura"))
     elif plan:
         bloque_fallo = {"error": "no se inyectó el fallo", "eventos": ev}
     primer_punto = None
@@ -292,6 +323,10 @@ def main():
                "resumen": os.path.relpath(f_res, RAIZ), "tamano_json_bytes": tam_json, "sha256_json": sha256(f_json) if tam_json else None,
                "por_segundo": os.path.relpath(f_seg, RAIZ), "primer_punto_json": primer_punto,
                "version": subprocess.run(["k6", "version"], capture_output=True, text=True).stdout.strip()},
+        "rtt": {"inicio": rtt_ini, "fin": rtt_fin} if a.rtt else None, "red_virtual": red_virtual,
+        "recursos_host": {"inicio": recursos_ini, "fin": recursos_fin,
+                          "resumen": recursos.resumen_host(recursos_ini, recursos_fin, mem_min)},
+        "cgroup_cp": {"unidades": recursos.UNIDADES_CP[a.distribucion], "inicio": cg_ini, "fin": cg_fin} if a.cgroup_cp else None,
         "snapshot": snap, "ventana_prometheus": ventana, "reloj_antes": reloj,
         "reloj_espera_s": espera_reloj, "estado_host": estado, "valida_para_campana": a.tipo == "definitiva" and not motivos_estado,
         "motivos_no_valida": motivos_estado + ([f"tipo {a.tipo}"] if a.tipo != "definitiva" else []), "fallo": bloque_fallo,

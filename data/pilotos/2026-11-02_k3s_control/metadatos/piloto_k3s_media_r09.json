@@ -1,0 +1,554 @@
+{
+  "esquema": 2,
+  "tipo": "piloto",
+  "verificacion": false,
+  "distribution": "k3s",
+  "escenario": "media",
+  "repeticion": 9,
+  "t_inicio": 1793648437.094,
+  "t_fin": 1793648617.093,
+  "t_ejecucion_inicio": 1793648407.085,
+  "t_ejecucion_fin": 1793648647.543,
+  "parametros": {
+    "tasa": 450.0,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 120,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 40506620942,
+    "energy_uj_fin": 41731099259,
+    "lectura_inicio_s": [
+      1793648437.085,
+      1793648437.103
+    ],
+    "lectura_fin_s": [
+      1793648617.085,
+      1793648617.102
+    ],
+    "desbordamiento": false,
+    "delta_uj": 1224478317,
+    "potencia_media_W": 6.803
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "k3s-node1",
+      "nodo_vip_servicio": "k3s-node1",
+      "nodo_pod": "k3s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "k3s-node1",
+      "nodo_vip_servicio": "k3s-node1",
+      "nodo_pod": "k3s-node2"
+    },
+    "cambiaron": false,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-crudo/pilotos/2026-11-02_k3s_control/piloto_k3s_media_r09.json.gz",
+    "resumen": "data/pilotos/2026-11-02_k3s_control/k6-resultados/piloto_k3s_media_r09.resumen.json",
+    "tamano_json_bytes": 12938345,
+    "sha256_json": "3d3ae58efc8945ed0d28cda3351dbfd68f830ba7cc74959d7fc1a9d47266d9de",
+    "por_segundo": "data/pilotos/2026-11-02_k3s_control/k6-resultados/piloto_k3s_media_r09.por_segundo.json.gz",
+    "primer_punto_json": "2026-11-02T16:40:07.535743444-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "rtt": {
+    "inicio": {
+      "muestras": 20,
+      "intervalo_s": 0.2,
+      "t_inicio": 1793648231.893,
+      "host": {
+        "vip_servicio": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.147,
+          "media_ms": 0.261,
+          "max_ms": 0.312,
+          "mdev_ms": 0.042
+        },
+        "vip_plano_control": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.137,
+          "media_ms": 0.238,
+          "max_ms": 0.299,
+          "mdev_ms": 0.038
+        },
+        "nodo_192.168.100.11": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.171,
+          "media_ms": 0.277,
+          "max_ms": 0.382,
+          "mdev_ms": 0.044
+        },
+        "nodo_192.168.100.12": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.165,
+          "media_ms": 0.267,
+          "max_ms": 0.322,
+          "mdev_ms": 0.038
+        },
+        "nodo_192.168.100.13": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.169,
+          "media_ms": 0.292,
+          "max_ms": 0.349,
+          "mdev_ms": 0.036
+        }
+      },
+      "entre_nodos": {
+        "192.168.100.11->192.168.100.12": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.185,
+          "media_ms": 0.412,
+          "max_ms": 0.57,
+          "mdev_ms": 0.098
+        },
+        "192.168.100.11->192.168.100.13": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.166,
+          "media_ms": 0.414,
+          "max_ms": 0.786,
+          "mdev_ms": 0.146
+        },
+        "192.168.100.12->192.168.100.11": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.171,
+          "media_ms": 0.437,
+          "max_ms": 0.848,
+          "mdev_ms": 0.124
+        },
+        "192.168.100.12->192.168.100.13": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.283,
+          "media_ms": 0.456,
+          "max_ms": 0.818,
+          "mdev_ms": 0.15
+        },
+        "192.168.100.13->192.168.100.11": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.216,
+          "media_ms": 0.449,
+          "max_ms": 0.961,
+          "mdev_ms": 0.148
+        },
+        "192.168.100.13->192.168.100.12": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.165,
+          "media_ms": 0.442,
+          "max_ms": 0.963,
+          "mdev_ms": 0.151
+        }
+      },
+      "t_fin": 1793648280.771
+    },
+    "fin": {
+      "muestras": 20,
+      "intervalo_s": 0.2,
+      "t_inicio": 1793648647.56,
+      "host": {
+        "vip_servicio": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.137,
+          "media_ms": 0.287,
+          "max_ms": 0.538,
+          "mdev_ms": 0.105
+        },
+        "vip_plano_control": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.132,
+          "media_ms": 0.28,
+          "max_ms": 0.364,
+          "mdev_ms": 0.056
+        },
+        "nodo_192.168.100.11": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.197,
+          "media_ms": 0.291,
+          "max_ms": 0.446,
+          "mdev_ms": 0.062
+        },
+        "nodo_192.168.100.12": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.178,
+          "media_ms": 0.278,
+          "max_ms": 0.342,
+          "mdev_ms": 0.039
+        },
+        "nodo_192.168.100.13": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.179,
+          "media_ms": 0.295,
+          "max_ms": 0.427,
+          "mdev_ms": 0.056
+        }
+      },
+      "entre_nodos": {
+        "192.168.100.11->192.168.100.12": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.177,
+          "media_ms": 0.415,
+          "max_ms": 0.763,
+          "mdev_ms": 0.137
+        },
+        "192.168.100.11->192.168.100.13": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.191,
+          "media_ms": 0.476,
+          "max_ms": 0.997,
+          "mdev_ms": 0.22
+        },
+        "192.168.100.12->192.168.100.11": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.184,
+          "media_ms": 0.441,
+          "max_ms": 0.876,
+          "mdev_ms": 0.141
+        },
+        "192.168.100.12->192.168.100.13": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.184,
+          "media_ms": 0.393,
+          "max_ms": 0.756,
+          "mdev_ms": 0.119
+        },
+        "192.168.100.13->192.168.100.11": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.197,
+          "media_ms": 0.423,
+          "max_ms": 0.728,
+          "mdev_ms": 0.103
+        },
+        "192.168.100.13->192.168.100.12": {
+          "enviados": 20,
+          "recibidos": 20,
+          "perdida_pct": 0.0,
+          "min_ms": 0.388,
+          "media_ms": 0.453,
+          "max_ms": 0.594,
+          "mdev_ms": 0.05
+        }
+      },
+      "t_fin": 1793648696.443
+    }
+  },
+  "red_virtual": {
+    "dominios": {
+      "k3s-node3": [
+        {
+          "interfaz": "vnet0",
+          "tipo": "network",
+          "red": "k3s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:10:00:03"
+        }
+      ],
+      "k3s-node1": [
+        {
+          "interfaz": "vnet1",
+          "tipo": "network",
+          "red": "k3s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:10:00:01"
+        }
+      ],
+      "k3s-node2": [
+        {
+          "interfaz": "vnet2",
+          "tipo": "network",
+          "red": "k3s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:10:00:02"
+        }
+      ]
+    },
+    "redes": {
+      "k3s-tesis": {
+        "forward": "nat",
+        "bridge": "virbr1",
+        "ip": "192.168.100.1",
+        "mascara": null
+      }
+    }
+  },
+  "recursos_host": {
+    "inicio": {
+      "t": 1793648407.067,
+      "memavailable_kb": 5845628,
+      "memtotal_kb": 15154248,
+      "swaptotal_kb": 2097148,
+      "swapfree_kb": 2097140,
+      "pswpin": 141974,
+      "pswpout": 364393,
+      "qemu": [
+        {
+          "dominio": "k3s-node1",
+          "pid": 80380,
+          "VmRSS": 3280388,
+          "RssAnon": 3254100,
+          "RssFile": 26288,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "k3s-node2",
+          "pid": 80397,
+          "VmRSS": 2403608,
+          "RssAnon": 2377468,
+          "RssFile": 26140,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "k3s-node3",
+          "pid": 80370,
+          "VmRSS": 2309128,
+          "RssAnon": 2283052,
+          "RssFile": 26076,
+          "RssShmem": 0
+        }
+      ]
+    },
+    "fin": {
+      "t": 1793648647.544,
+      "memavailable_kb": 5838452,
+      "memtotal_kb": 15154248,
+      "swaptotal_kb": 2097148,
+      "swapfree_kb": 2097140,
+      "pswpin": 141974,
+      "pswpout": 364393,
+      "qemu": [
+        {
+          "dominio": "k3s-node1",
+          "pid": 80380,
+          "VmRSS": 3280392,
+          "RssAnon": 3254104,
+          "RssFile": 26288,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "k3s-node2",
+          "pid": 80397,
+          "VmRSS": 2403608,
+          "RssAnon": 2377468,
+          "RssFile": 26140,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "k3s-node3",
+          "pid": 80370,
+          "VmRSS": 2309192,
+          "RssAnon": 2283116,
+          "RssFile": 26076,
+          "RssShmem": 0
+        }
+      ]
+    },
+    "resumen": {
+      "pswpin_paginas": 0,
+      "pswpout_paginas": 0,
+      "swap_usado_kb_inicio": 8,
+      "swap_usado_kb_fin": 8,
+      "memavailable_min_mb_prometheus": 5658
+    }
+  },
+  "cgroup_cp": null,
+  "snapshot": {
+    "nombre": "20261102T194456Z-27795a883ea9110a",
+    "copiado": true,
+    "destino": "data/prometheus-snapshots/20261102T194456Z-27795a883ea9110a"
+  },
+  "ventana_prometheus": {
+    "archivo": "data/pilotos/2026-11-02_k3s_control/prometheus-ventanas/piloto_k3s_media_r09.json.gz",
+    "series": 1770
+  },
+  "reloj_antes": {
+    "host": {
+      "Reference ID": "40B004D5 (ns-san.radel.com)",
+      "Stratum": "3",
+      "System time": "0.001951520 seconds slow of NTP time",
+      "Last offset": "+0.000413745 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000005038 seconds fast of NTP time",
+        "Last offset": "+0.000007783 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000005727 seconds fast of NTP time",
+        "Last offset": "+0.000007039 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000002947 seconds fast of NTP time",
+        "Last offset": "+0.000001940 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "reloj_espera_s": 4.8,
+  "estado_host": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "64764"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "procesos_top_cpu": [
+      [
+        "qemu-system-x86",
+        "33,7"
+      ],
+      [
+        "qemu-system-x86",
+        "25,7"
+      ],
+      [
+        "qemu-system-x86",
+        "24,8"
+      ],
+      [
+        "scaphandre",
+        "7,9"
+      ],
+      [
+        "kworker/3:3-mm_percpu_wq",
+        "1,0"
+      ],
+      [
+        "kworker/15:1-events",
+        "1,0"
+      ],
+      [
+        "prometheus",
+        "1,0"
+      ],
+      [
+        "kworker/12:2-events",
+        "1,0"
+      ],
+      [
+        "top",
+        "1,0"
+      ],
+      [
+        "systemd",
+        "0,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "boost_cpu": "0",
+    "memoria_disponible_mb": 5708,
+    "presion_memoria_some_avg60": "0.01",
+    "frecuencia_max_khz": "1901000",
+    "epp_cpu0": "balance_performance",
+    "perfil_plataforma": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 51.5,
+    "carga_1min": 0.51220703125,
+    "ufw_habilitado": false,
+    "politica": {
+      "boost_cpu": 0,
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 100,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "valida_para_campana": false,
+  "motivos_no_valida": [
+    "tipo piloto"
+  ],
+  "fallo": null
+}

@@ -11,7 +11,7 @@ Comparo K3s y MicroK8s en Alta Disponibilidad (3 nodos) sobre un único host fí
 
 - Etapas 1 (problema) y 2 (diseño) entregadas.
 - Etapa 3: ambos clústeres, la observabilidad, la aplicación de referencia, k6, la calibración y los pilotos están hechos. Resultados y anomalías en [`docs/evidencia/evidencia_T-20.md`](docs/evidencia/evidencia_T-20.md).
-- Etapa 4: campaña definitiva y análisis estadístico, pendientes. `analysis/` solo tiene scripts de verificación.
+- Etapa 4: campaña definitiva y análisis estadístico, pendientes. `analysis/` tiene scripts de verificación y el análisis preliminar de `recursos_latencia.py`.
 
 ## Arquitectura
 

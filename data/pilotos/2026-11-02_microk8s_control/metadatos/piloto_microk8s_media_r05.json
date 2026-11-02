@@ -1,0 +1,437 @@
+{
+  "esquema": 2,
+  "tipo": "piloto",
+  "verificacion": false,
+  "distribution": "microk8s",
+  "escenario": "media",
+  "repeticion": 5,
+  "t_inicio": 1793635344.723,
+  "t_fin": 1793635524.723,
+  "t_ejecucion_inicio": 1793635314.714,
+  "t_ejecucion_fin": 1793635555.334,
+  "parametros": {
+    "tasa": 450.0,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 120,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 37131378697,
+    "energy_uj_fin": 38023124756,
+    "lectura_inicio_s": [
+      1793635344.714,
+      1793635344.731
+    ],
+    "lectura_fin_s": [
+      1793635524.715,
+      1793635524.731
+    ],
+    "desbordamiento": false,
+    "delta_uj": 891746059,
+    "potencia_media_W": 4.954
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "cambiaron": false,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-crudo/pilotos/2026-11-02_microk8s_control/piloto_microk8s_media_r05.json.gz",
+    "resumen": "data/pilotos/2026-11-02_microk8s_control/k6-resultados/piloto_microk8s_media_r05.resumen.json",
+    "tamano_json_bytes": 13254256,
+    "sha256_json": "f1aeff391677bc61700dc2a7377d5aca09f5046a74fdfa19ab2c5f2c5fcf9e6b",
+    "por_segundo": "data/pilotos/2026-11-02_microk8s_control/k6-resultados/piloto_microk8s_media_r05.por_segundo.json.gz",
+    "primer_punto_json": "2026-11-02T13:01:55.16058345-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "rtt": null,
+  "red_virtual": {
+    "dominios": {
+      "microk8s-node1": [
+        {
+          "interfaz": "vnet7",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:01"
+        }
+      ],
+      "microk8s-node3": [
+        {
+          "interfaz": "vnet6",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:03"
+        }
+      ],
+      "microk8s-node2": [
+        {
+          "interfaz": "vnet8",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:02"
+        }
+      ]
+    },
+    "redes": {
+      "microk8s-tesis": {
+        "forward": "nat",
+        "bridge": "virbr1",
+        "ip": "192.168.100.1",
+        "mascara": null
+      }
+    }
+  },
+  "recursos_host": {
+    "inicio": {
+      "t": 1793635314.698,
+      "memavailable_kb": 1814452,
+      "memtotal_kb": 15154248,
+      "swaptotal_kb": 2097148,
+      "swapfree_kb": 2093184,
+      "pswpin": 99706,
+      "pswpout": 248952,
+      "qemu": [
+        {
+          "dominio": "microk8s-node1",
+          "pid": 50685,
+          "VmRSS": 4125588,
+          "RssAnon": 4111760,
+          "RssFile": 13828,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node2",
+          "pid": 50708,
+          "VmRSS": 3952440,
+          "RssAnon": 3938596,
+          "RssFile": 13844,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node3",
+          "pid": 50680,
+          "VmRSS": 3967636,
+          "RssAnon": 3954104,
+          "RssFile": 13532,
+          "RssShmem": 0
+        }
+      ]
+    },
+    "fin": {
+      "t": 1793635555.334,
+      "memavailable_kb": 1578288,
+      "memtotal_kb": 15154248,
+      "swaptotal_kb": 2097148,
+      "swapfree_kb": 2090872,
+      "pswpin": 99706,
+      "pswpout": 249442,
+      "qemu": [
+        {
+          "dominio": "microk8s-node1",
+          "pid": 50685,
+          "VmRSS": 4123992,
+          "RssAnon": 4110312,
+          "RssFile": 13680,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node2",
+          "pid": 50708,
+          "VmRSS": 4147064,
+          "RssAnon": 4133304,
+          "RssFile": 13760,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node3",
+          "pid": 50680,
+          "VmRSS": 3975520,
+          "RssAnon": 3962136,
+          "RssFile": 13384,
+          "RssShmem": 0
+        }
+      ]
+    },
+    "resumen": {
+      "pswpin_paginas": 0,
+      "pswpout_paginas": 490,
+      "swap_usado_kb_inicio": 3964,
+      "swap_usado_kb_fin": 6276,
+      "memavailable_min_mb_prometheus": 1488
+    }
+  },
+  "cgroup_cp": {
+    "unidades": [
+      "snap.microk8s.daemon-kubelite.service",
+      "snap.microk8s.daemon-k8s-dqlite.service",
+      "snap.microk8s.daemon-containerd.service"
+    ],
+    "inicio": {
+      "t_inicio": 1793635339.714,
+      "t_fin": 1793635340.81,
+      "nodos": {
+        "192.168.100.13": {
+          "snap.microk8s.daemon-kubelite.service": {
+            "usage_usec": 91598930,
+            "memory_current": 256380928
+          },
+          "snap.microk8s.daemon-k8s-dqlite.service": {
+            "usage_usec": 96673560,
+            "memory_current": 61882368
+          },
+          "snap.microk8s.daemon-containerd.service": {
+            "usage_usec": 49564911,
+            "memory_current": 1289068544
+          }
+        },
+        "192.168.100.11": {
+          "snap.microk8s.daemon-kubelite.service": {
+            "usage_usec": 162436449,
+            "memory_current": 340385792
+          },
+          "snap.microk8s.daemon-k8s-dqlite.service": {
+            "usage_usec": 96346295,
+            "memory_current": 62595072
+          },
+          "snap.microk8s.daemon-containerd.service": {
+            "usage_usec": 75430014,
+            "memory_current": 1453617152
+          }
+        },
+        "192.168.100.12": {
+          "snap.microk8s.daemon-kubelite.service": {
+            "usage_usec": 83664723,
+            "memory_current": 240386048
+          },
+          "snap.microk8s.daemon-k8s-dqlite.service": {
+            "usage_usec": 54980966,
+            "memory_current": 57618432
+          },
+          "snap.microk8s.daemon-containerd.service": {
+            "usage_usec": 50769062,
+            "memory_current": 1326190592
+          }
+        }
+      }
+    },
+    "fin": {
+      "t_inicio": 1793635524.731,
+      "t_fin": 1793635527.482,
+      "nodos": {
+        "192.168.100.11": {
+          "snap.microk8s.daemon-kubelite.service": {
+            "usage_usec": 172913625,
+            "memory_current": 340447232
+          },
+          "snap.microk8s.daemon-k8s-dqlite.service": {
+            "usage_usec": 101768616,
+            "memory_current": 62607360
+          },
+          "snap.microk8s.daemon-containerd.service": {
+            "usage_usec": 80310489,
+            "memory_current": 1453977600
+          }
+        },
+        "192.168.100.13": {
+          "snap.microk8s.daemon-kubelite.service": {
+            "usage_usec": 99907594,
+            "memory_current": 257085440
+          },
+          "snap.microk8s.daemon-k8s-dqlite.service": {
+            "usage_usec": 105295789,
+            "memory_current": 62709760
+          },
+          "snap.microk8s.daemon-containerd.service": {
+            "usage_usec": 52615439,
+            "memory_current": 1288634368
+          }
+        },
+        "192.168.100.12": {
+          "snap.microk8s.daemon-kubelite.service": {
+            "usage_usec": 91252120,
+            "memory_current": 244989952
+          },
+          "snap.microk8s.daemon-k8s-dqlite.service": {
+            "usage_usec": 59946585,
+            "memory_current": 57049088
+          },
+          "snap.microk8s.daemon-containerd.service": {
+            "usage_usec": 54169346,
+            "memory_current": 1326551040
+          }
+        }
+      }
+    }
+  },
+  "snapshot": {
+    "nombre": "20261102T160555Z-2874600e95d91627",
+    "copiado": false,
+    "motivo": "snapshot cumulativo: se copia solo con --copiar-snapshot"
+  },
+  "ventana_prometheus": {
+    "archivo": "data/pilotos/2026-11-02_microk8s_control/prometheus-ventanas/piloto_microk8s_media_r05.json.gz",
+    "series": 1692
+  },
+  "reloj_antes": {
+    "host": {
+      "Reference ID": "40B004D5 (ns-san.radel.com)",
+      "Stratum": "3",
+      "System time": "0.000923196 seconds fast of NTP time",
+      "Last offset": "+0.000476801 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000095353 seconds fast of NTP time",
+        "Last offset": "+0.000302894 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000276274 seconds fast of NTP time",
+        "Last offset": "+0.000294266 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000158263 seconds fast of NTP time",
+        "Last offset": "+0.000132037 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "reloj_espera_s": 4.4,
+  "estado_host": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "64764"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "procesos_top_cpu": [
+      [
+        "qemu-system-x86",
+        "36,3"
+      ],
+      [
+        "qemu-system-x86",
+        "36,3"
+      ],
+      [
+        "qemu-system-x86",
+        "18,6"
+      ],
+      [
+        "scaphandre",
+        "7,8"
+      ],
+      [
+        "rcu_preempt",
+        "1,0"
+      ],
+      [
+        "kworker/2:1H-kblockd",
+        "1,0"
+      ],
+      [
+        "irq/93-rtw89_pci",
+        "1,0"
+      ],
+      [
+        "kworker/14:0-mm_percpu_wq",
+        "1,0"
+      ],
+      [
+        "prometheus",
+        "1,0"
+      ],
+      [
+        "top",
+        "1,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "boost_cpu": "0",
+    "memoria_disponible_mb": 1771,
+    "presion_memoria_some_avg60": "0.00",
+    "frecuencia_max_khz": "1901000",
+    "epp_cpu0": "balance_performance",
+    "perfil_plataforma": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 45.1,
+    "carga_1min": 2.04345703125,
+    "ufw_habilitado": false,
+    "politica": {
+      "boost_cpu": 0,
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 100,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "valida_para_campana": false,
+  "motivos_no_valida": [
+    "tipo piloto"
+  ],
+  "fallo": null
+}

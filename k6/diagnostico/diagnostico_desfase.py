@@ -1,7 +1,7 @@
 """Diagnóstico del desfase de ≈ 1 W entre series con la misma carga (T-24.4).
 
 Mide potencia RAPL en ventanas de reposo (clúster arriba, sin k6) con los contadores de instrumentacion.py.
-Se lanza como usuario desde la consola de texto, con Claude Code cerrado y el modo medición activo:
+Se lanza como usuario desde la consola de texto, sin otras aplicaciones abiertas y con el modo medición activo:
 
   python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase serie                # ≈ 1 h sin intervenir
   python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase ciclos --ciclos 3    # salir/entrar entre ventanas

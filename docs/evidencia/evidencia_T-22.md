@@ -201,7 +201,7 @@ Dentro de las VM (mínimo de `MemAvailable` de 4096 MB asignados, desde Node Exp
 
 ## 8. Cómo se ejecuta y qué devolví
 
-Una distribución a la vez, con la herramienta de asistencia de línea de comandos cerrada y en la consola de texto, después del playbook de la etiqueta (`-e active_distribution=<dist>`) y de `salir` y `entrar`: `python3 -m k6.operacion.validacion --distribucion <dist> --solo-precondiciones` (≈ 6,4 s) y luego el mismo comando sin el flag. Al terminar, `salir`. Si el script se detiene, el clúster queda arriba y el resumen indica el comando para destruirlo.
+Una distribución a la vez, en la consola de texto, después del playbook de la etiqueta (`-e active_distribution=<dist>`) y de `salir` y `entrar`: `python3 -m k6.operacion.validacion --distribucion <dist> --solo-precondiciones` (≈ 6,4 s) y luego el mismo comando sin el flag. Al terminar, `salir`. Si el script se detiene, el clúster queda arriba y el resumen indica el comando para destruirlo.
 
 Archivos: `data/verificacion/2026-10-27_k3s_T-22/` y `data/verificacion/2026-10-27_microk8s_T-22/` (≈ 0,7 MB cada una) y las líneas de los ciclos 7 (K3s) y 6 (MicroK8s) de `data/despliegue/despliegue_<distribución>.jsonl`. El JSON crudo de k6 queda fuera del repositorio.
 

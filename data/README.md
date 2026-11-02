@@ -25,6 +25,8 @@ data/
 
 La sesión por defecto es la fecha local y la distribución (`2026-10-27_k3s`); `k6/medicion/orquestador.py --sesion` la cambia y `k6/medicion/secuencia_piloto.sh` la fija una vez para toda la secuencia.
 
+Las sesiones `<fecha>_<distribución>_control` (RTT y cgroups) y `<fecha>_<distribución>_fallo` (media con fallo) comparten la configuración definitiva y son `--tipo piloto`.
+
 Las sesiones `2026-10-27_*` son la configuración inicial de los pilotos (NGINX estático, límite `500m`, 900 y 1600 rps). Las `2026-10-28_*` son la configuración definitiva (SHA-256 ×300 con njs, límite `2000m`, 450 y 900 rps); ambas son `--tipo piloto` y ninguna entra en la campaña.
 
 ## Contenido de una sesión
@@ -54,6 +56,11 @@ Los escribe `k6/medicion/orquestador.py`. Las rutas que contienen apuntan a esta
 | `k6` | código de salida, CPU, `sha256_json`, rutas de los archivos, tamaño del crudo, versión |
 | `ventana_prometheus`, `snapshot` | archivo de la ventana y snapshot copiado (si hubo) |
 | `fallo` | solo con `--fallo`: nodo fallado, eventos, reinicios de kube-vip y análisis de caídas y migración de las VIP |
+| `fallo.analisis.tiempos_s` | solo con `--fallo` (corridas desde el 2-nov-2026): líder previo del `kube-controller-manager` y si era el nodo fallado, `notready`, migración de cada VIP, API restablecida, restauración, `ready_tras_restauracion` y fallidas de k6 |
+| `rtt` | solo con `--rtt`: `inicio` y `fin` (antes de la estabilización y después de k6, fuera de la fase estable) con min/media/máx/mdev/pérdida de ping del host a las VIP y a cada nodo y entre nodos |
+| `red_virtual` | NIC (tipo, red y modelo) de cada dominio activo y modo de la red de libvirt (`forward`, puente, dirección) |
+| `recursos_host` | `inicio` y `fin` (fuera de la ventana): `MemAvailable`, swap, contadores `pswpin`/`pswpout` y RSS de cada proceso QEMU; `resumen` con las páginas de swap movidas y el mínimo de `MemAvailable` de Prometheus en la ejecución completa |
+| `cgroup_cp` | solo con `--cgroup-cp`: `cpu.stat` (`usage_usec`) y `memory.current` de las unidades del plano de control de cada nodo, leídos justo antes y justo después de la ventana de RAPL |
 
 ## Tamaño
 

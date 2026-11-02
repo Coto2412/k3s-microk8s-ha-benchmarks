@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Uso: k6/medicion/secuencia_piloto.sh <k3s|microk8s> <tasa_media> <tasa_alta> [repeticiones=3] ["idle media alta"] [rep_inicial=1]
-# Corre los escenarios por repetición, sin supervisión; se detiene en el primer fallo. Con los tres escenarios, copia el último snapshot a data/.
+# ORQ_EXTRA añade opciones al orquestador (ej. ORQ_EXTRA="--rtt"). Corre los escenarios por repetición, sin supervisión; se detiene en el primer fallo. Con los tres escenarios, copia el último snapshot a data/.
 set -euo pipefail
 
 dist="${1:?uso: secuencia_piloto.sh <k3s|microk8s> <tasa_media> <tasa_alta> [repeticiones]}"
@@ -16,6 +16,8 @@ for r in $(seq "$desde" "$reps"); do
     args=(--distribucion "$dist" --escenario "$esc" --repeticion "$r" --tipo piloto --sesion "$sesion" --estabilizacion 120)
     [ "$esc" = media ] && args+=(--tasa "$media")
     [ "$esc" = alta ] && args+=(--tasa "$alta")
+    # shellcheck disable=SC2206
+    args+=(${ORQ_EXTRA:-})
     [ "$n" -eq "$total" ] && [ "$escenarios" = "idle media alta" ] && args+=(--copiar-snapshot)
     echo "[$(date +%H:%M:%S)] $n/$total $esc r$r" | tee -a "$log"
     (cd "$raiz" && python3 -m k6.medicion.orquestador "${args[@]}") >>"$log" 2>&1 || { echo "FALLÓ $esc r$r (ver $log)" | tee -a "$log"; exit 1; }

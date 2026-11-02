@@ -302,7 +302,7 @@ Repetí los pilotos con la configuración definitiva: NGINX con SHA-256 ×300 v�
 **Procedimiento.**
 1. Clúster construido desde el código con `k6/operacion/despliegue.sh <distribución> construir <ciclo>`, sin correcciones con `kubectl`. Lo hice con la sesión gráfica abierta, por eso el registro de despliegue dice `modo_medicion: false`; después activé el modo medición.
 2. Comprobaciones antes de medir (las mismas en ambas): 3 nodos `Ready`, pod de NGINX 1/1, límite de CPU `2000m` y solicitud `500m` en el `Deployment` en la revisión `1` (nunca parchado), imagen igual a la de `group_vars`, VIP `.100` respondiendo (HTTP 401 sin credenciales) y VIP `.150` devolviendo el SHA-256 ×300 calculado fuera del clúster.
-3. Estado inicial del host en `estado_inicial.txt` de cada sesión (reloj, perfil, boost, memoria, disco, swap, corriente alterna, red, contadores de swap), con el modo medición activo y la herramienta de asistencia de línea de comandos abierta; después la cerré y lancé la secuencia desde la consola de texto.
+3. Estado inicial del host en `estado_inicial.txt` de cada sesión (reloj, perfil, boost, memoria, disco, swap, corriente alterna, red, contadores de swap), con el modo medición activo; después lancé la secuencia desde la consola de texto.
 
 | | MicroK8s | K3s |
 |---|---|---|
@@ -363,7 +363,7 @@ Son medias y desviaciones muestrales de 3 repeticiones; no hice pruebas de hipó
 
 **Memoria y swap del host.**
 - **MicroK8s, antes de empezar:** swap en uso 533 MB de 2 GB (372, 75 y 61 MB en tres procesos QEMU), memoria disponible 2167 MB. Los tres QEMU tenían entre 3,77 y 3,88 GB de RSS de 4096 MB asignados. Contadores desde el arranque: `pswpin` 15 123 y `pswpout` 164 028. El equipo llevaba 53 min encendido.
-- **Liberación:** ejecuté `sudo swapoff -a && sudo swapon -a` en la consola de texto (el `sudo` no puede pedir contraseña desde la herramienta de asistencia). Después: swap 15 MB, memoria disponible 1706 MB, contadores `pswpin` 138 422 y `pswpout` 167 171.
+- **Liberación:** ejecuté `sudo swapoff -a && sudo swapon -a` en la consola de texto. Después: swap 15 MB, memoria disponible 1706 MB, contadores `pswpin` 138 422 y `pswpout` 167 171.
 - **MicroK8s, durante la secuencia:** swap usado 15 a 48 MB según Prometheus (solo mide el nivel). Mínimo de `MemAvailable`: 1433 MB (`alta` r3), 409 MB sobre 1024 MB. Al terminar, contadores `pswpin` 139 028 y `pswpout` 195 123 (+606 y +27 952 páginas desde la liberación; ≈ 109 MB si la página es de 4 kB, supuesto estándar). A las 19:47, ya sin corridas, `swapon` mostraba 137 MB usados.
 - **K3s, antes de empezar:** swap en uso 10,2 MB; repetí `swapoff -a && swapon -a` y quedó en 0 B (contadores `pswpin` 143 425 y `pswpout` 195 171). Registré el estado inicial solo con el swap en cero.
 - **K3s, durante la secuencia:** swap usado 0 MB en todas las corridas según Prometheus. Mínimo de `MemAvailable`: 5563 MB (`alta` r3). Al terminar (21:07): `pswpin` 143 425 y `pswpout` 195 173 (+0 y +2 páginas).

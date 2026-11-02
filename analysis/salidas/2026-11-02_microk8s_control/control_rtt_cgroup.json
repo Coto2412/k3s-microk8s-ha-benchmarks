@@ -1,0 +1,95 @@
+[
+ {
+  "distribucion": "microk8s",
+  "condicion": "base",
+  "n": 3,
+  "potencia_W": [
+   4.957,
+   0.01
+  ],
+  "cpu_host_pct": [
+   11.635,
+   0.47
+  ],
+  "cpu_vm_media": [
+   16.848,
+   0.058
+  ],
+  "ve_p95_ms": [
+   2.402,
+   0.043
+  ],
+  "ve_p99_ms": [
+   5.011,
+   0.304
+  ],
+  "ve_descartadas": [
+   0,
+   0.0
+  ],
+  "dif_potencia_W": 0.0,
+  "dif_p95_ms": 0.0
+ },
+ {
+  "distribucion": "microk8s",
+  "condicion": "rtt",
+  "n": 3,
+  "potencia_W": [
+   4.95,
+   0.004
+  ],
+  "cpu_host_pct": [
+   13.029,
+   2.434
+  ],
+  "cpu_vm_media": [
+   16.846,
+   0.072
+  ],
+  "ve_p95_ms": [
+   2.416,
+   0.014
+  ],
+  "ve_p99_ms": [
+   4.969,
+   0.206
+  ],
+  "ve_descartadas": [
+   0,
+   0.0
+  ],
+  "dif_potencia_W": -0.007,
+  "dif_p95_ms": 0.014
+ },
+ {
+  "distribucion": "microk8s",
+  "condicion": "cgroup",
+  "n": 3,
+  "potencia_W": [
+   4.954,
+   0.003
+  ],
+  "cpu_host_pct": [
+   11.83,
+   0.993
+  ],
+  "cpu_vm_media": [
+   16.947,
+   0.134
+  ],
+  "ve_p95_ms": [
+   2.478,
+   0.143
+  ],
+  "ve_p99_ms": [
+   5.395,
+   0.927
+  ],
+  "ve_descartadas": [
+   0,
+   0.0
+  ],
+  "dif_potencia_W": -0.003,
+  "dif_p95_ms": 0.076
+ }
+]

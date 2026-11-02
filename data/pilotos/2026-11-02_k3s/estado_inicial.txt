@@ -1,0 +1,53 @@
+# Estado inicial tomado tras swapoff -a && swapon -a (modo medición: activo; display-manager: inactive)
+## date
+lun 02 nov 2026 16:45:54 -03
+## chronyc tracking
+Reference ID    : 40B004D5 (ns-san.radel.com)
+Stratum         : 3
+Ref time (UTC)  : Mon Nov 02 19:44:50 2026
+System time     : 0.000788243 seconds slow of NTP time
+Last offset     : +0.001034759 seconds
+RMS offset      : 0.003477983 seconds
+Frequency       : 5.235 ppm slow
+Residual freq   : +0.012 ppm
+Skew            : 1.646 ppm
+Root delay      : 0.034597494 seconds
+Root dispersion : 0.017148526 seconds
+Update interval : 1027.2 seconds
+Leap status     : Normal
+## powerprofilesctl get
+balanced
+## boost
+0
+## free -m
+               total       usado       libre  compartido   búf/caché  disponible
+Mem:           14799        9102         503           3        5521        5696
+Inter:          2047           0        2047
+## df -h
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+/dev/nvme0n1p2   468G   136G  309G  31% /
+tmpfs            1,5G   3,4M  1,5G   1% /run
+## swapon --show
+NAME      TYPE SIZE USED PRIO
+/swapfile file   2G   0B   -1
+## AC online
+1
+## red activa
+JDelPino_wifi:802-11-wireless
+incusbr0:bridge
+lo:loopback
+br-89dbc5a81e81:bridge
+docker0:bridge
+virbr0:bridge
+virbr1:bridge
+virbr2:bridge
+vnet0:tun
+vnet1:tun
+vnet2:tun
+## /proc/vmstat pswpin pswpout (acumulados desde el arranque)
+pswpin 141974
+pswpout 364393
+## procesos qemu (VmRSS en kB)
+guest=k3s-node3 VmRSS:	 2309252 kB
+guest=k3s-node1 VmRSS:	 3280392 kB
+guest=k3s-node2 VmRSS:	 2403672 kB

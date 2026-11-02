@@ -1,0 +1,18 @@
+{
+	"ulid": "01M6ET41T78TKKERS9VMB764HG",
+	"minTime": 1793635200000,
+	"maxTime": 1793642400000,
+	"stats": {
+		"numSamples": 1763389,
+		"numFloatSamples": 1763389,
+		"numSeries": 2483,
+		"numChunks": 14708
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M6ET41T78TKKERS9VMB764HG"
+		]
+	},
+	"version": 1
+}
