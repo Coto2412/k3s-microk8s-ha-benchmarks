@@ -34,7 +34,7 @@ Las sesiones `2026-10-27_*` son la configuración inicial de los pilotos (NGINX 
 | Carpeta | Archivos |
 |---|---|
 | `k6-resultados/` | `<base>.por_segundo.json.gz` (`t`, `solicitudes`, `fallidas`, `descartadas`, `p50_ms`, `p95_ms`, `p99_ms`, `max_ms`) y `<base>.resumen.json` |
-| `metadatos/` | `<base>.json` con la ventana estable y el contexto de la medición; con fallo controlado, además `<base>.observador.json.gz` con las muestras del host |
+| `metadatos/` | `<base>.json` con la ventana estable y el contexto de la medición; con fallo controlado, además `<base>.observador.json.gz` con las muestras del host; desde el esquema 3, `<base>.muestreo.json.gz` con el muestreo local del host |
 | `prometheus-ventanas/` | `<base>.json.gz`: muestras de Prometheus de la ventana (host, VMs, Scaphandre, kube-state-metrics) |
 
 `<base>` es `<prefijo><distribución>_<escenario>_r<NN>`. El prefijo es `piloto_` o `verif_`; las corridas definitivas no llevan. Con fallo controlado el escenario es `media-fallo`. El `sha256` del crudo queda en los metadatos.
@@ -60,7 +60,10 @@ Los escribe `k6/medicion/orquestador.py`. Las rutas que contienen apuntan a esta
 | `rtt` | solo con `--rtt`: `inicio` y `fin` (antes de la estabilización y después de k6, fuera de la fase estable) con min/media/máx/mdev/pérdida de ping del host a las VIP y a cada nodo y entre nodos |
 | `red_virtual` | NIC (tipo, red y modelo) de cada dominio activo y modo de la red de libvirt (`forward`, puente, dirección) |
 | `recursos_host` | `inicio` y `fin` (fuera de la ventana): `MemAvailable`, swap, contadores `pswpin`/`pswpout` y RSS de cada proceso QEMU; `resumen` con las páginas de swap movidas y el mínimo de `MemAvailable` de Prometheus en la ejecución completa |
-| `cgroup_cp` | solo con `--cgroup-cp`: `cpu.stat` (`usage_usec`) y `memory.current` de las unidades del plano de control de cada nodo, leídos justo antes y justo después de la ventana de RAPL |
+| `cgroup_cp` | solo con `--cgroup-cp`: `cpu.stat` (`usage_usec`) y `memory.current` de las unidades del plano de control de cada nodo, leídos 5 s antes de la fase estable (rampa) y justo después de su término |
+| `estado` | desde el esquema 3: `completa` o `abortada_memoria` (MemAvailable < 512 MB; el orquestador termina k6 y sale con código 86) |
+| `instrumentacion` | desde el esquema 3: fotos del host 1 s antes de la lectura inicial de RAPL y justo después de la final (cpuidle, interrupciones, CPU por hilo de QEMU, KSM, halt polling, contadores de KVM de `tesis-kvm-stats`, temperatura, frecuencia) y de las VMs por SSH 10 s antes y 5 s después de la fase estable; con la hora real, la duración de cada foto y el intervalo que cubren los deltas |
+| `muestreo_host`, `memoria_bajo_umbral` | desde el esquema 3: muestras locales cada 2 s durante toda la corrida (`<base>.muestreo.json.gz`: MemAvailable, SwapFree, `pswpin`/`pswpout`, temperatura y frecuencia media) y su resumen por corrida y por fase estable; `memoria_bajo_umbral` es verdadero si MemAvailable bajó de 1024 MB (no excluye la corrida) |
 
 ## Tamaño
 

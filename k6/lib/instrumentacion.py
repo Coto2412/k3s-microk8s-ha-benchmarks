@@ -2,7 +2,7 @@
 
 leer() toma una foto; delta(a, b) calcula diferencias y tasas entre dos fotos. Un error al leer queda en el JSON y no detiene la corrida.
 """
-import glob, os, re, subprocess, threading, time
+import glob, json, os, re, subprocess, threading, time
 
 from k6.lib import fallo
 
@@ -46,8 +46,17 @@ def _clase(comm):
     return "emulador_io"
 
 
+def kvm_stats():
+    """Contadores de KVM en debugfs con el ayudante de root (E2); si no está, queda «no disponible» sin fallar."""
+    try:
+        r = subprocess.run(["sudo", "-n", "/usr/local/sbin/tesis-kvm-stats"], capture_output=True, text=True, timeout=10)
+        return json.loads(r.stdout) if r.returncode == 0 else {"disponible": False, "motivo": f"rc={r.returncode} {r.stderr.strip()[:200]}"}
+    except (OSError, subprocess.SubprocessError, ValueError) as e:
+        return {"disponible": False, "motivo": f"{type(e).__name__}: {e}"}
+
+
 def host():
-    h = {"cpuidle": {}, "irq": {}, "qemu": {}, "ksm": {}, "kvm_halt_poll": {}}
+    h = {"cpuidle": {}, "irq": {}, "qemu": {}, "ksm": {}, "kvm_halt_poll": {}, "kvm": kvm_stats()}
     for f in sorted(glob.glob(f"{SYS}/cpu[0-9]*/cpuidle/state*")):
         cpu = f.split("/")[-3]
         nombre = _txt(f + "/name")
@@ -105,7 +114,24 @@ def vm(acc, ip):
     return v
 
 
-def leer(acc, ips):
+def foto_host():
+    """Solo el host (lecturas locales): para tomarla junto a RAPL."""
+    t0 = time.time()
+    try:
+        h = host()
+    except Exception as e:
+        h = {"error": f"{type(e).__name__}: {e}"}
+    return {"t": t0, "dur_s": round(time.time() - t0, 3), "host": h, "vms": {}}
+
+
+def foto_vms(acc, ips):
+    """Solo las VMs, por SSH en paralelo: para la rampa y el descenso, nunca dentro de la fase estable."""
+    t0 = time.time()
+    f = leer(acc, ips, con_host=False)
+    return {"t": t0, "dur_s": round(time.time() - t0, 3), "vms": f["vms"]}
+
+
+def leer(acc, ips, con_host=True):
     f = {"t": time.time(), "vms": {}}
     hilos = []
     for ip in ips:
@@ -116,10 +142,11 @@ def leer(acc, ips):
                 f["vms"][ip] = {"error": type(e).__name__}
         hilos.append(threading.Thread(target=tarea))
         hilos[-1].start()
-    try:
-        f["host"] = host()
-    except Exception as e:
-        f["host"] = {"error": f"{type(e).__name__}: {e}"}
+    if con_host:
+        try:
+            f["host"] = host()
+        except Exception as e:
+            f["host"] = {"error": f"{type(e).__name__}: {e}"}
     for h in hilos:
         h.join()
     return f
@@ -129,12 +156,26 @@ def _dif(a, b):
     return None if a is None or b is None else int(b) - int(a)
 
 
+def delta_kvm(ka, kb):
+    """Diferencias de los contadores de KVM, globales y por VM (por nombre de dominio)."""
+    if not (ka.get("disponible") and kb.get("disponible")):
+        return {"disponible": False, "motivo": ka.get("motivo") or kb.get("motivo")}
+    ga, gb = ka["global"], kb["global"]
+    va = {v["nombre"]: v["contadores"] for v in ka.get("vms", {}).values() if "contadores" in v}
+    vb = {v["nombre"]: v["contadores"] for v in kb.get("vms", {}).values() if "contadores" in v}
+    return {"disponible": True, "global": {k: gb[k] - ga[k] for k in gb if k in ga},
+            "vms": {n: {k: c[k] - va[n][k] for k in c if k in va[n]} for n, c in vb.items() if n in va}}
+
+
 def delta(a, b, top=10):
-    """Diferencias y tasas entre dos fotos. Residencia de cpuidle como fracción de la ventana."""
+    """Diferencias y tasas entre dos fotos. Residencia de cpuidle como fracción de la ventana.
+    Una foto sin "host" (foto_vms) solo aporta la parte de las VMs."""
     dt = b["t"] - a["t"]
-    ha, hb = a["host"], b["host"]
-    r = {"dt_s": round(dt, 3)}
-    if "error" not in ha and "error" not in hb:
+    r = {"dt_s": round(dt, 3), "intervalo": [round(a["t"], 3), round(b["t"], 3)]}
+    ha, hb = a.get("host"), b.get("host")
+    if ha is None or hb is None:
+        pass
+    elif "error" not in ha and "error" not in hb:
         r["cpuidle_residencia"] = {cpu: {e: round(_dif(ha["cpuidle"][cpu][e][0], v[0]) / 1e6 / dt, 4)
                                          for e, v in estados.items()} for cpu, estados in hb["cpuidle"].items()}
         r["cpuidle_entradas"] = {cpu: {e: _dif(ha["cpuidle"][cpu][e][1], v[1]) for e, v in estados.items()}
@@ -155,6 +196,7 @@ def delta(a, b, top=10):
         r["kvm_halt_poll"] = hb["kvm_halt_poll"]
         r["temperatura_C"] = [None if x.get("temperatura_mC") is None else int(x["temperatura_mC"]) / 1000 for x in (ha, hb)]
         r["frecuencia_khz_fin"] = hb["frecuencia_khz"]
+        r["kvm"] = delta_kvm(ha.get("kvm", {}), hb.get("kvm", {}))
     else:
         r["host"] = {"error": ha.get("error") or hb.get("error")}
     r["vms"] = {}

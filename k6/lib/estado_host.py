@@ -68,6 +68,16 @@ def unidades_fuera_de_la_lista(pol):
     return sorted(u for u in unidades if not any(re.fullmatch(p, u) for p in pol["unidades_permitidas"]))
 
 
+def contenedores():
+    """Contenedores que la lista de unidades no ve: interfaces veth y monitores de LXC (incus) vivos."""
+    monitores = []
+    for c in glob.glob("/proc/[0-9]*/cmdline"):
+        cmd = (_leer(c) or "").replace("\0", " ")
+        if cmd.startswith("[lxc monitor]"):
+            monitores.append(cmd.split()[-1])
+    return {"veth": sorted(os.path.basename(v) for v in glob.glob("/sys/class/net/veth*")), "lxc_monitor": sorted(monitores)}
+
+
 def procesos_top(n=10):
     """Procesos con más CPU en la segunda muestra de top (la primera promedia desde el arranque)."""
     txt = subprocess.run(["top", "-b", "-n", "2", "-d", "1", "-w", "160"], capture_output=True, text=True).stdout
@@ -83,8 +93,9 @@ def _leer(ruta):
         return None
 
 
-def estado_host(pol):
-    """Estado del host y motivos por los que la corrida no sería válida para la campaña."""
+def estado_host(pol, memoria_invalida=True):
+    """Estado del host y motivos por los que la corrida no sería válida para la campaña.
+    memoria_invalida=False: la memoria baja no es motivo (el orquestador aplica la regla de memoria de E3 durante la corrida)."""
     m = []
     if pol is None:
         return {"politica": None}, ["política de mediciones no instalada: correr el playbook del host (rol host_mediciones)"]
@@ -100,6 +111,9 @@ def estado_host(pol):
     falta = [u for u in pol["servicios_requeridos"] if not activo(u)]
     if falta:
         m.append(f"servicios requeridos inactivos: {falta}")
+    cont = contenedores()
+    if cont["veth"] or cont["lxc_monitor"]:
+        m.append(f"contenedores corriendo en el host: {cont}")
     perfil = subprocess.run(["powerprofilesctl", "get"], capture_output=True, text=True).stdout.strip() or None
     if perfil != pol["perfil_energia"]:
         m.append(f"perfil de energía {perfil}, la política pide {pol['perfil_energia']}")
@@ -107,7 +121,7 @@ def estado_host(pol):
     if boost != str(pol["boost_cpu"]):
         m.append(f"boost de CPU en {boost}, la política pide {pol['boost_cpu']}")
     mem = next((int(l.split()[1]) // 1024 for l in open("/proc/meminfo") if l.startswith("MemAvailable")), None)
-    if mem is not None and mem < MEM_MIN_MB:
+    if memoria_invalida and mem is not None and mem < MEM_MIN_MB:
         m.append(f"memoria disponible {mem} MB (< {MEM_MIN_MB} MB): riesgo de presión de memoria")
     ac = [_leer(f) for f in glob.glob("/sys/class/power_supply/AC*/online")]
     if ac != ["1"]:
@@ -119,7 +133,7 @@ def estado_host(pol):
     brillo = [(_leer(d + "/brightness"), _leer(d + "/max_brightness")) for d in sorted(glob.glob("/sys/class/backlight/*"))]
     estado = {
         "brillo_pantalla": brillo, "sesion_grafica_activa": gui, "modo_medicion": modo,
-        "unidades_fuera_de_la_lista": fuera, "procesos_top_cpu": procesos_top(), "perfil_energia": perfil, "boost_cpu": boost, "memoria_disponible_mb": mem,
+        "unidades_fuera_de_la_lista": fuera, "contenedores": cont, "procesos_top_cpu": procesos_top(), "perfil_energia": perfil, "boost_cpu": boost, "memoria_disponible_mb": mem,
         "presion_memoria_some_avg60": (re.search(r"some avg10=\S+ avg60=(\S+)", _leer("/proc/pressure/memory") or "") or [None, None])[1],
         "frecuencia_max_khz": _leer("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"),
         "epp_cpu0": _leer("/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"),

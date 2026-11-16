@@ -104,6 +104,85 @@ def resumen_host(ini, fin, memavailable_min_mb=None):
             "memavailable_min_mb_prometheus": memavailable_min_mb}
 
 
+MEM_ABORTO_MB = 512  # umbral mío: bajo esto el orquestador termina la corrida (estado abortada_memoria)
+
+
+def _temp_c():
+    for hw in glob.glob("/sys/class/hwmon/hwmon*"):
+        try:
+            if open(hw + "/name").read().strip() == "k10temp":
+                return int(open(hw + "/temp1_input").read()) / 1000
+        except (OSError, ValueError):
+            pass
+    return None
+
+
+def _frec_mhz():
+    f = []
+    for ruta in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq"):
+        try:
+            f.append(int(open(ruta).read()))
+        except (OSError, ValueError):
+            pass
+    return round(sum(f) / len(f) / 1000, 1) if f else None
+
+
+def muestra_host():
+    """Una muestra local y barata: solo /proc y /sys, sin SSH."""
+    m, v = _meminfo(), _vmstat()
+    return {"t": round(time.time(), 3), "memavailable_mb": m["MemAvailable"] // 1024, "swapfree_mb": m["SwapFree"] // 1024,
+            "pswpin": v.get("pswpin"), "pswpout": v.get("pswpout"), "temperatura_C": _temp_c(), "frecuencia_mhz": _frec_mhz()}
+
+
+class Muestreador(threading.Thread):
+    """Muestrea el host cada `periodo` s durante toda la corrida. Si MemAvailable baja de `aborto_mb`, llama una vez a `al_abortar`."""
+
+    def __init__(self, periodo=2.0, aborto_mb=MEM_ABORTO_MB, al_abortar=None):
+        super().__init__(daemon=True)
+        self.periodo, self.aborto_mb, self.al_abortar = periodo, aborto_mb, al_abortar
+        self.muestras, self.errores, self.t_aborto = [], 0, None
+        self._fin = threading.Event()
+
+    def run(self):
+        while not self._fin.is_set():
+            try:
+                s = muestra_host()
+                self.muestras.append(s)
+                if self.t_aborto is None and s["memavailable_mb"] < self.aborto_mb:
+                    self.t_aborto = s["t"]
+                    if self.al_abortar:
+                        self.al_abortar()
+            except (OSError, KeyError):
+                self.errores += 1
+            self._fin.wait(self.periodo)
+
+    def detener(self):
+        self._fin.set()
+        self.join(timeout=10)
+
+
+def resumen_muestreo(muestras, t0, t1, umbral_mb):
+    """Corrida completa: mínimo de MemAvailable y si bajó del umbral. Fase estable [t0, t1]: mínimo de MemAvailable,
+    páginas de swap movidas, temperatura media y máxima, y frecuencia media."""
+    def med(xs):
+        xs = [x for x in xs if x is not None]
+        return round(sum(xs) / len(xs), 2) if xs else None
+    if not muestras:
+        return {"error": "sin muestras"}
+    est = [s for s in muestras if t0 is not None and t1 is not None and t0 <= s["t"] <= t1]
+    minimo = min(s["memavailable_mb"] for s in muestras)
+    r = {"muestras": len(muestras), "memavailable_min_mb": minimo, "memoria_bajo_umbral": minimo < umbral_mb, "umbral_mb": umbral_mb,
+         "fase_estable": None}
+    if est:
+        r["fase_estable"] = {
+            "muestras": len(est), "memavailable_min_mb": min(s["memavailable_mb"] for s in est),
+            "pswpin_paginas": est[-1]["pswpin"] - est[0]["pswpin"], "pswpout_paginas": est[-1]["pswpout"] - est[0]["pswpout"],
+            "temperatura_media_C": med(s["temperatura_C"] for s in est),
+            "temperatura_max_C": max((s["temperatura_C"] for s in est if s["temperatura_C"] is not None), default=None),
+            "frecuencia_media_mhz": med(s["frecuencia_mhz"] for s in est)}
+    return r
+
+
 def parsear_cgroup(txt):
     """'unidad usage_usec memory_current' por línea; None si el cgroup no existe."""
     d = {}
@@ -162,6 +241,19 @@ def autotest():
     r = resumen_host({"pswpin": 1, "pswpout": 5, "swaptotal_kb": 10, "swapfree_kb": 10},
                      {"pswpin": 4, "pswpout": 5, "swaptotal_kb": 10, "swapfree_kb": 7})
     assert r["pswpin_paginas"] == 3 and r["swap_usado_kb_fin"] == 3
+    ms = [{"t": 0, "memavailable_mb": 2000, "pswpin": 5, "pswpout": 1, "temperatura_C": 50, "frecuencia_mhz": 1800},
+          {"t": 10, "memavailable_mb": 900, "pswpin": 8, "pswpout": 1, "temperatura_C": 52, "frecuencia_mhz": 1900},
+          {"t": 20, "memavailable_mb": 1500, "pswpin": 9, "pswpout": 4, "temperatura_C": None, "frecuencia_mhz": None}]
+    r = resumen_muestreo(ms, 10, 20, 1024)
+    assert r["memoria_bajo_umbral"] and r["memavailable_min_mb"] == 900, r
+    assert r["fase_estable"] == {"muestras": 2, "memavailable_min_mb": 900, "pswpin_paginas": 1, "pswpout_paginas": 3,
+                                 "temperatura_media_C": 52, "temperatura_max_C": 52, "frecuencia_media_mhz": 1900}, r
+    avisos = []
+    mu = Muestreador(0.2, aborto_mb=10**9, al_abortar=lambda: avisos.append(1))
+    mu.start()
+    time.sleep(0.7)
+    mu.detener()
+    assert avisos == [1] and mu.t_aborto and len(mu.muestras) >= 3, (avisos, len(mu.muestras))
     f = foto_host()
     assert "error" not in f and f["memavailable_kb"] > 0, f
     p = ping_local("127.0.0.1", 3, 0.2)

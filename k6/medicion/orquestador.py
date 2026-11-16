@@ -8,11 +8,13 @@ import argparse, gzip, json, os, re, shutil, subprocess, sys, time
 import threading
 import urllib.parse, urllib.request
 
-from k6.lib import agregado, estado_host, fallo, recursos
+from k6.lib import agregado, estado_host, fallo, instrumentacion, recursos
 from k6.lib.comun import RAIZ, RAPL, IP_VIP_CP, IP_VIP_SVC, IPS_NODOS, delta_rapl, estabilizar, leer_rapl, prom, sha256
 
 B_POR_SOLICITUD = 144  # bytes del .json.gz por solicitud: máximo de 4 corridas de humo (133 a 144)
 LIMITE_ARCHIVO, UMBRAL_AVISO = 100_000_000, 0.8  # GitHub rechaza archivos > 100 MB
+CODIGO_ABORTO_MEMORIA = 86  # MemAvailable < recursos.MEM_ABORTO_MB; el ejecutor (E5) aborta el tramo (no lo usa k6)
+PERIODO_MUESTREO_S = 2
 
 
 def mac_de(ip):
@@ -133,7 +135,8 @@ def main():
     ap.add_argument("--tipo", default="definitiva", choices=["definitiva", "piloto", "calibracion", "verificacion"],
                     help="piloto, calibración y verificación no son resultados finales; llevan prefijo en los archivos")
     ap.add_argument("--verificacion", action="store_const", const="verificacion", dest="tipo", help="alias de --tipo verificacion")
-    ap.add_argument("--sesion", help="carpeta de sesión en data/<tipo>/ (por defecto: fecha local y distribución)")
+    ap.add_argument("--sesion", help="carpeta de sesión en <datos>/<tipo>/ (por defecto: fecha local y distribución)")
+    ap.add_argument("--datos", default="data", help="raíz de los datos relativa al repositorio (el simulacro usa data/campana_simulacro)")
     ap.add_argument("--rtt", action="store_true",
                     help="mide RTT con ping (host a VIP y nodos, y entre nodos) antes de la estabilización y al terminar, fuera de la fase estable")
     ap.add_argument("--rtt-muestras", type=int, default=20)
@@ -156,13 +159,14 @@ def main():
     base = prefijo + f"{a.distribucion}_{a.escenario}{'-fallo' if a.fallo else ''}_r{a.repeticion:02d}"
     tipo_dir = {"definitiva": "campana", "piloto": "pilotos", "calibracion": "calibracion", "verificacion": "verificacion"}[a.tipo]
     sesion = a.sesion or f"{time.strftime('%Y-%m-%d')}_{a.distribucion}"
-    d_k6, d_meta, d_ventana = (os.path.join(RAIZ, "data", tipo_dir, sesion, x) for x in (
+    d_k6, d_meta, d_ventana = (os.path.join(RAIZ, a.datos, tipo_dir, sesion, x) for x in (
         "k6-resultados", "metadatos", "prometheus-ventanas"))
-    d_snap, d_crudo = os.path.join(RAIZ, "data", "prometheus-snapshots"), os.path.join(RAIZ, "data", "k6-crudo", tipo_dir, sesion)
+    d_snap, d_crudo = os.path.join(RAIZ, a.datos, "prometheus-snapshots"), os.path.join(RAIZ, a.datos, "k6-crudo", tipo_dir, sesion)
     f_json, f_res, f_meta = (os.path.join(d_crudo, base + ".json.gz"), os.path.join(d_k6, base + ".resumen.json"),
                              os.path.join(d_meta, base + ".json"))
     f_seg, f_ventana = os.path.join(d_k6, base + ".por_segundo.json.gz"), os.path.join(d_ventana, base + ".json.gz")
-    for f in (f_json, f_res, f_meta, f_seg, f_ventana):
+    f_muestreo = os.path.join(d_meta, base + ".muestreo.json.gz")
+    for f in (f_json, f_res, f_meta, f_seg, f_ventana, f_muestreo):
         if os.path.exists(f):
             sys.exit(f"Ya existe {f}; no se sobrescribe")
     for d in (d_k6, d_meta, d_snap, d_crudo, d_ventana):
@@ -183,7 +187,19 @@ def main():
         if acc is None:
             sys.exit(f"Falta el inventario de {a.distribucion} (lo genera Terraform): --rtt necesita SSH entre nodos")
         rtt_ini = recursos.medir_rtt(acc, IPS_NODOS, IP_VIP_CP, IP_VIP_SVC, a.rtt_muestras)
+    abortar_ev, proc = threading.Event(), {}
+
+    def abortar():
+        abortar_ev.set()
+        if proc.get("k6") and proc["k6"].poll() is None:
+            proc["k6"].terminate()
+
+    mu = recursos.Muestreador(PERIODO_MUESTREO_S, aborto_mb=recursos.MEM_ABORTO_MB, al_abortar=abortar)
+    mu.start()
     estabilizar(a.prometheus, a.distribucion, a.estabilizacion, a.objetivo)
+    if abortar_ev.is_set():
+        print(f"MemAvailable < {recursos.MEM_ABORTO_MB} MB antes de lanzar k6: corrida abortada_memoria", file=sys.stderr)
+        sys.exit(CODIGO_ABORTO_MEMORIA)
     if a.fallo and acc is None:
         sys.exit(f"Falta el inventario de {a.distribucion} (lo genera Terraform) para acceder por SSH")
     pol = estado_host.cargar_politica()
@@ -194,7 +210,7 @@ def main():
     reloj, motivos_reloj, espera_reloj = estado_host.esperar_reloj(lambda: fallo.reloj(acc, IPS_NODOS), pol)
     if motivos_reloj:
         sys.exit(f"Reloj sin converger tras {espera_reloj} s, no se lanza k6: {motivos_reloj}")
-    estado, motivos_estado = estado_host.estado_host(pol)
+    estado, motivos_estado = estado_host.estado_host(pol, memoria_invalida=False)  # la memoria se juzga durante la corrida
     tit_ini = titulares(a.prometheus, a.distribucion)
     plan = None
     if a.fallo:
@@ -218,7 +234,7 @@ def main():
         obs.iniciar()
     recursos_ini = recursos.foto_host()
     t_lanzado = time.time()
-    k6 = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    k6 = proc["k6"] = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def fallar():
         time.sleep(max(0, t_lanzado + a.rampa + a.fallo_en - time.time()))
@@ -227,20 +243,39 @@ def main():
         ev["t_restaura"] = time.time()
         ev["restauracion"] = fallo.restaurar(a.distribucion, acc, ip_f)
 
+    def hasta(t):
+        """Espera hasta t; False si la corrida se abortó por memoria."""
+        abortar_ev.wait(max(0, t - time.time()))
+        return not abortar_ev.is_set()
+
+    t_est, t_fin_est = t_lanzado + a.rampa, t_lanzado + a.rampa + a.estable
+    e0 = e1 = h_ini = h_fin = vm_fin = None
+    vm_ini = {}
     try:
         if plan:
             hilo = threading.Thread(target=fallar)
             hilo.start()
         cg_ini = cg_fin = None
-        if a.cgroup_cp:
-            time.sleep(max(0, t_lanzado + a.rampa - 5 - time.time()))
+        # foto de las VMs por SSH en la rampa, en un hilo: si tarda, no retrasa la lectura de RAPL
+        hilo_vm = threading.Thread(target=lambda: vm_ini.update(instrumentacion.foto_vms(acc, IPS_NODOS), t_fin=time.time()))
+        if hasta(t_est - 10):
+            hilo_vm.start()
+        if a.cgroup_cp and hasta(t_est - 5):
             cg_ini = recursos.leer_cgroup_cp(a.distribucion, acc, IPS_NODOS)
-        time.sleep(max(0, t_lanzado + a.rampa - time.time()))
-        e0, ta0, tb0 = leer_rapl()
-        time.sleep(max(0, t_lanzado + a.rampa + a.estable - time.time()))
-        e1, ta1, tb1 = leer_rapl()
-        if a.cgroup_cp:
-            cg_fin = recursos.leer_cgroup_cp(a.distribucion, acc, IPS_NODOS)
+        if hasta(t_est - 1):
+            h_ini = instrumentacion.foto_host()  # local (≈ 0,06 s), justo antes de la lectura inicial de RAPL
+        if hasta(t_est):
+            e0, ta0, tb0 = leer_rapl()
+        if hasta(t_fin_est):
+            e1, ta1, tb1 = leer_rapl()
+            h_fin = instrumentacion.foto_host()
+            if a.cgroup_cp:
+                cg_fin = recursos.leer_cgroup_cp(a.distribucion, acc, IPS_NODOS)
+        if hilo_vm.ident:
+            hilo_vm.join()
+        if hasta(t_fin_est + 5):
+            vm_fin = instrumentacion.foto_vms(acc, IPS_NODOS)
+            vm_fin["t_fin"] = time.time()
         rc = k6.wait()
         t_fin_ejec = time.time()
     finally:
@@ -255,11 +290,13 @@ def main():
             ev["nodo_listo_al_final"] = obs.nodo_listo(nodo_f)
             obs.detener()
 
+    mu.detener()
     recursos_fin = recursos.foto_host()
     rtt_fin = recursos.medir_rtt(acc, IPS_NODOS, IP_VIP_CP, IP_VIP_SVC, a.rtt_muestras) if a.rtt else None
     maximo = int(open(RAPL + "max_energy_range_uj").read())
-    t_ini_v, t_fin_v = (ta0 + tb0) / 2, (ta1 + tb1) / 2
-    d_uj = delta_rapl(e0, e1, maximo)
+    completa = e0 is not None and e1 is not None
+    t_ini_v, t_fin_v = ((ta0 + tb0) / 2, (ta1 + tb1) / 2) if completa else (None, None)
+    d_uj = delta_rapl(e0, e1, maximo) if completa else None
     tit_fin = titulares(a.prometheus, a.distribucion)
     snap = None if a.sin_snapshot else snapshot(a.prometheus, a.datos_prometheus, d_snap, a.copiar_snapshot)
     try:
@@ -304,18 +341,34 @@ def main():
                 if m:
                     primer_punto = m.group(1)
                     break
+    with gzip.open(f_muestreo, "wt") as fh:
+        json.dump({"periodo_s": PERIODO_MUESTREO_S, "muestras": mu.muestras}, fh)
+    res_mu = recursos.resumen_muestreo(mu.muestras, t_ini_v, t_fin_v, estado_host.MEM_MIN_MB)
+    motivos = motivos_estado + (["abortada_memoria"] if mu.t_aborto else []) + (["fase estable incompleta"] if not completa else [])
+
+    def resumen_foto(f):
+        return None if not f else {k: f.get(k) for k in ("t", "dur_s", "t_fin") if k in f}
+    vm_ini = vm_ini or None
+    instr = {"esquema": 1,
+             "host": {"foto_inicio": resumen_foto(h_ini), "foto_fin": resumen_foto(h_fin),
+                      "delta": instrumentacion.delta(h_ini, h_fin) if h_ini and h_fin else None},
+             "vms": {"foto_inicio": resumen_foto(vm_ini), "foto_fin": resumen_foto(vm_fin),
+                     "foto_inicio_antes_de_fase_estable": bool(vm_ini) and vm_ini["t_fin"] <= t_est,
+                     "delta": instrumentacion.delta(vm_ini, vm_fin) if vm_ini and vm_fin else None}}
+    rapl = ({"dominio": "package-0", "max_energy_range_uj": maximo, "energy_uj_inicio": e0, "energy_uj_fin": e1,
+             "lectura_inicio_s": [round(ta0, 3), round(tb0, 3)], "lectura_fin_s": [round(ta1, 3), round(tb1, 3)],
+             "desbordamiento": e1 < e0, "delta_uj": d_uj,
+             "potencia_media_W": round(d_uj / 1e6 / (t_fin_v - t_ini_v), 3)}
+            if completa else {"dominio": "package-0", "error": "fase estable incompleta (corrida abortada)", "energy_uj_inicio": e0})
     meta = {
-        "esquema": 2, "tipo": a.tipo, "verificacion": a.tipo == "verificacion", "distribution": a.distribucion,
+        "esquema": 3, "tipo": a.tipo, "estado": "abortada_memoria" if mu.t_aborto else "completa", "verificacion": a.tipo == "verificacion", "distribution": a.distribucion,
         "escenario": a.escenario, "repeticion": a.repeticion,
-        "t_inicio": round(t_ini_v, 3), "t_fin": round(t_fin_v, 3),
+        "t_inicio": t_ini_v and round(t_ini_v, 3), "t_fin": t_fin_v and round(t_fin_v, 3),
         "t_ejecucion_inicio": round(t_lanzado, 3), "t_ejecucion_fin": round(t_fin_ejec, 3),
         "parametros": {"tasa": a.tasa, "rampa_s": a.rampa, "estable_s": a.estable, "descenso_s": a.descenso,
                        "pre_vus": a.pre_vus, "max_vus": a.max_vus, "estabilizacion_s": a.estabilizacion,
                        "objetivo": a.objetivo},
-        "rapl": {"dominio": "package-0", "max_energy_range_uj": maximo, "energy_uj_inicio": e0, "energy_uj_fin": e1,
-                 "lectura_inicio_s": [round(ta0, 3), round(tb0, 3)], "lectura_fin_s": [round(ta1, 3), round(tb1, 3)],
-                 "desbordamiento": e1 < e0, "delta_uj": d_uj,
-                 "potencia_media_W": round(d_uj / 1e6 / (t_fin_v - t_ini_v), 3)},
+        "rapl": rapl,
         "titulares": {"inicio": tit_ini, "fin": tit_fin, "cambiaron": tit_ini != tit_fin,
                       "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; "
                                 "pod: kube_pod_info de kube-state-metrics vía Prometheus"},
@@ -327,14 +380,18 @@ def main():
         "recursos_host": {"inicio": recursos_ini, "fin": recursos_fin,
                           "resumen": recursos.resumen_host(recursos_ini, recursos_fin, mem_min)},
         "cgroup_cp": {"unidades": recursos.UNIDADES_CP[a.distribucion], "inicio": cg_ini, "fin": cg_fin} if a.cgroup_cp else None,
+        "instrumentacion": instr,
+        "muestreo_host": {"periodo_s": PERIODO_MUESTREO_S, "archivo": os.path.relpath(f_muestreo, RAIZ), "errores": mu.errores,
+                          "aborto_mb": recursos.MEM_ABORTO_MB, "t_aborto": mu.t_aborto, "resumen": res_mu},
+        "memoria_bajo_umbral": res_mu.get("memoria_bajo_umbral"),
         "snapshot": snap, "ventana_prometheus": ventana, "reloj_antes": reloj,
-        "reloj_espera_s": espera_reloj, "estado_host": estado, "valida_para_campana": a.tipo == "definitiva" and not motivos_estado,
-        "motivos_no_valida": motivos_estado + ([f"tipo {a.tipo}"] if a.tipo != "definitiva" else []), "fallo": bloque_fallo,
+        "reloj_espera_s": espera_reloj, "estado_host": estado, "valida_para_campana": a.tipo == "definitiva" and not motivos,
+        "motivos_no_valida": motivos + ([f"tipo {a.tipo}"] if a.tipo != "definitiva" else []), "fallo": bloque_fallo,
     }
     json.dump(meta, open(f_meta, "w"), indent=2)
-    print(json.dumps({k: meta[k] for k in ("t_inicio", "t_fin", "titulares", "snapshot")} | {"k6_rc": rc,
-          "rapl_W": meta["rapl"]["potencia_media_W"], "meta": os.path.relpath(f_meta, RAIZ)}, indent=2))
-    return rc
+    print(json.dumps({k: meta[k] for k in ("estado", "t_inicio", "t_fin", "titulares", "snapshot", "memoria_bajo_umbral")} | {"k6_rc": rc,
+          "rapl_W": meta["rapl"].get("potencia_media_W"), "meta": os.path.relpath(f_meta, RAIZ)}, indent=2))
+    return CODIGO_ABORTO_MEMORIA if mu.t_aborto else rc
 
 
 if __name__ == "__main__":

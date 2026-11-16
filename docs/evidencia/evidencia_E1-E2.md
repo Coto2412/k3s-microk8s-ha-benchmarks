@@ -76,7 +76,7 @@ El usuario aplicó el playbook del host fuera del modo medición. Luego constru�
 - Sin VMs, `halt_poll_fail_hist` se leía como un número y entraba en el JSON. Ahora los `*_hist` se omiten siempre, para que las claves no cambien entre fotos.
 - Los `vcpuN/` no traen contadores `halt_*`, así que la versión por vCPU quedaba vacía. Ahora se leen los contadores escalares de `<pid>-<fd>/`. Según el código del núcleo (`virt/kvm/kvm_main.c`), ese directorio suma los contadores de las vCPU de la VM; no lo verifiqué contra la suma de los globales.
 
-**Pendiente:** las dos últimas correcciones de `tesis-kvm-stats` están en el repositorio, pero no instaladas. Se instalan con la próxima aplicación del playbook del host, que E3 o E6 van a requerir. Hasta entonces, la salida por VM no está verificada.
+**Instalado y verificado (16-nov):** el usuario volvió a aplicar el playbook del host con las dos correcciones. Con las VMs de K3s encendidas, `tesis-kvm-stats` entregó los contadores de las 3 VMs con su nombre (`evidencia_E3.md`, sección 4).
 
 ## 4. Límites
 

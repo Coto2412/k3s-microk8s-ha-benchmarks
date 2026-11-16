@@ -88,7 +88,7 @@ Instala Scaphandre, Node Exporter, Prometheus, k6 y chrony en el host. Los objet
 python3 -m k6.operacion.etiqueta --distribucion <k3s|microk8s>
 ```
 
-El playbook también instala dos ayudantes de root con su regla de `sudo` sin contraseña y sin argumentos: `tesis-preparar-memoria` (libera el swap y vacía la caché de páginas) y `tesis-kvm-stats` (estadísticas de KVM en debugfs, solo lectura). También instala `tesis-modo-medicion`, que deja al host en estado de medición: sin sesión gráfica, solo las unidades permitidas, perfil `balanced` y CPU boost apagado. El estado vive en `/run`, así que se pierde al reiniciar. Tras cada corrida del playbook hay que repetir `salir` y `entrar`:
+El playbook también instala dos ayudantes de root con su regla de `sudo` sin contraseña y sin argumentos: `tesis-preparar-memoria` (libera el swap y vacía la caché de páginas) y `tesis-kvm-stats` (estadísticas de KVM en debugfs, solo lectura). También instala `tesis-modo-medicion`, que deja al host en estado de medición: sin sesión gráfica, solo las unidades permitidas, sin contenedores de incus (los detiene y `salir` los vuelve a iniciar), perfil `balanced` y CPU boost apagado. El estado vive en `/run`, así que se pierde al reiniciar. Tras cada corrida del playbook hay que repetir `salir` y `entrar`:
 
 ```bash
 sudo /usr/local/sbin/tesis-modo-medicion entrar      # y `salir` al terminar

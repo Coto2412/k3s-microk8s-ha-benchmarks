@@ -19,6 +19,13 @@ case "${1:-}" in
     [ -e "$ESTADO" ] && { echo "ya está en modo medición" >&2; exit 1; }
     systemctl is-active --quiet display-manager.service && { echo "cerrar antes la sesión gráfica: systemctl isolate multi-user.target" >&2; exit 1; }
     echo "perfil:$(powerprofilesctl get)" > "$ESTADO"
+    # Los contenedores de incus siguen corriendo aunque se detenga incus.service: se detienen antes y se registran para `salir`
+    if command -v incus >/dev/null; then
+      for c in $(incus list --format csv -c ns 2>/dev/null | awk -F, '$2=="RUNNING"{print $1}'); do
+        echo "contenedor:$c" >> "$ESTADO"
+        incus stop "$c" --timeout 30 || incus stop "$c" --force || echo "no pude detener el contenedor $c" >&2
+      done
+    fi
     for pasada in 1 2 3; do
       pendientes=$(fuera_de_la_lista)
       [ -z "$pendientes" ] && break
@@ -36,6 +43,7 @@ case "${1:-}" in
     tac "$ESTADO" | while IFS=: read -r tipo valor; do
       case "$tipo" in
         unidad) systemctl start "$valor" || echo "no pude iniciar $valor" >&2 ;;
+        contenedor) incus start "$valor" || echo "no pude iniciar el contenedor $valor" >&2 ;;
         boost) echo "$valor" > "$BOOST" ;;
         perfil) powerprofilesctl set "$valor" ;;
       esac
