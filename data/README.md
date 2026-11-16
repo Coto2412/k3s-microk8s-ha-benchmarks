@@ -9,7 +9,12 @@ data/
 ├── calibracion/<fecha>_<distribución>/     calib_<distribución>_<fecha>.json (una por calibración)
 ├── pilotos/<fecha>_<distribución>/         una carpeta por secuencia de pilotos
 ├── campana/plan_campana_v1.json            plan de la campaña (borrador sin fijar; lo genera k6/medicion/plan_campana.py)
-├── campana/<sesión>/                       corridas definitivas (aún no hay)
+├── campana/bNN_<distribución>/             un tramo de la campaña (k6/medicion/campana.py): las carpetas de una sesión,
+│                                           más tramo.json (mediciones del tramo) y registros/ (logs del orquestador y del despliegue);
+│                                           bNNr_ en el día de reserva; <sesión>_interrumpido_<hora> si se reanudó
+├── campana/diario/                         jornada_<n>.jsonl y .log (un paso por línea) y estado_actual.json
+├── campana/despliegue_<distribución>.jsonl registro de despliegue de la campaña (ciclo = 100 + bloque; 200 + bloque en la reserva)
+├── pilotos/bNN_<distribución>/             bloque 0 de ensayo (--tipo piloto), mismo formato
 ├── verificacion/<fecha>_<distribución>/    verificaciones del orquestador, fallos controlados y pilotos de T-17.4
 │     las sesiones `<fecha>_<distribución>_T-22` añaden `validacion/` (salida de k6/operacion/validacion.py)
 │     cada carpeta de sesión lleva:  k6-resultados/  metadatos/  prometheus-ventanas/
@@ -18,7 +23,7 @@ data/
 ├── reposo/                                 potencia del host sin VMs (reposo_host_s<NN>.json)
 ├── despliegue/                             tiempos de construcción y destrucción (despliegue_<distribución>.jsonl)
 ├── humo/                                   pruebas de humo de k6 (k6/medicion/correr.sh)
-├── diagnostico/<fecha>/                    salidas de k6/diagnostico/diagnostico_desfase.py (T-24.4)
+├── diagnostico/<fecha>/                    salidas de k6/diagnostico/diagnostico_desfase.py (T-24.4); despliegue_k3s.jsonl con ciclo 300 + n
 ├── prometheus-snapshots/                   snapshots de la TSDB copiados con --copiar-snapshot
 └── k6-crudo/<tipo>/<sesión>/               JSON crudo de k6, ignorado por git
 ```
@@ -39,7 +44,7 @@ Las sesiones `2026-10-27_*` son la configuración inicial de los pilotos (NGINX 
 
 `<base>` es `<prefijo><distribución>_<escenario>_r<NN>`. El prefijo es `piloto_` o `verif_`; las corridas definitivas no llevan. Con fallo controlado el escenario es `media-fallo`. El `sha256` del crudo queda en los metadatos.
 
-Los snapshots de Prometheus son acumulativos: cada uno contiene a los anteriores, así que se conserva el último de cada bloque.
+Los snapshots de Prometheus son acumulativos: cada uno contiene a los anteriores, así que se conserva el último de cada bloque. En la campaña, el ejecutor toma uno al final de cada bloque y lo guarda en `~/tesis_respaldo/prometheus/` (fuera del repositorio) con su SHA-256 en el diario; las corridas usan `--sin-snapshot`. El JSON crudo de k6 se copia también a `~/tesis_respaldo/k6-crudo/`.
 
 ## Metadatos de una repetición
 

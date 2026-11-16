@@ -92,3 +92,108 @@ No basta para explicar el nivel: J1 K3s `idle` estuvo en el nivel 3 sin contened
 - La temperatura y los procesos son una foto antes de la corrida, no una medida de la fase estable.
 - La asignación de J4c al nivel de J4 es un supuesto (mismo clúster, mismo día, una hora antes, y potencia de `media` igual: 6,827 y 6,830 W en K3s).
 - No hay reposo del host por sesión: no separo cuánto del nivel es del host y cuánto de las VMs.
+
+## 2. Capa 3 · Diagnóstico dirigido
+
+### 2.1 Qué cambió
+
+| Archivo | Cambio |
+|---|---|
+| `k6/diagnostico/diagnostico_desfase.py` | Cada ventana guarda también el resumen del muestreador local (memoria, swap, temperatura, frecuencia). La foto del host ya incluía `tesis-kvm-stats` desde E3. Modos nuevos `reconstruccion`, `reinicio` y `confirmacion` (sección 2.2). Ciclos por defecto según el modo (los del plan). |
+| `k3sHA/terraform/` y `microk8sHA/terraform/` | Variable `emulatorpin`, vacía por defecto. Con un valor, la misma plantilla XSLT que inyecta `vcpupin` agrega `<emulatorpin cpuset="…"/>`. Vacía, la plantilla genera el mismo texto que antes (comparado con `terraform console`). Se activa con `TF_VAR_emulatorpin=8-15`. |
+| `k6/medicion/tramo.py` | Si el diagnóstico corre con `sudo` (factores que escriben en `/sys`), `despliegue.sh` corre como el operador (`sudo -u $SUDO_USER`), así que Terraform y Ansible nunca corren como root. |
+| `analysis/diagnostico.py` | Regla de decisión fijada (sección 2.3). |
+
+### 2.2 Modos
+
+| Modo | Qué hace | Clúster |
+|---|---|---|
+| `reconstruccion` | por ciclo: ventana de referencia del host (120 + 180 s, sin VMs), construcción, verificación, calentamiento de 120 s, 3 ventanas idle y destrucción | destruye el que esté arriba y lo deja destruido |
+| `reinicio` | `virsh shutdown` de las 3 VMs, espera a que se apaguen, `virsh start`, espera a la verificación (hasta 600 s), calentamiento y 3 ventanas idle | necesita uno arriba |
+| `confirmacion` | igual a `reconstruccion`, con el factor en su estado B durante todo el ciclo. `emulatorpin` usa la versión persistente (Terraform); `ksm`, `haltpoll` y `cstates` se aplican antes del primer ciclo y se restauran al final | igual a `reconstruccion` |
+
+El campo `ciclo` del registro de despliegue del diagnóstico es 300 + ciclo, en `data/diagnostico/<fecha>/despliegue_k3s.jsonl`.
+
+### 2.3 Regla de decisión (`analysis/diagnostico.py`)
+
+En `abab`, la media de cada condición (A1, B1, A2, B2) sale de sus 3 ventanas.
+- **Mueve el nivel:** |B − A| ≥ 0,3 W en ambos pares, con |A1 − A2| ≤ 0,05 W y |B1 − B2| ≤ 0,05 W.
+- **Descartado:** |B − A| < 0,1 W en ambos pares.
+- **No concluyente:** cualquier otro caso.
+
+Si varios factores mueven el nivel, se elige el de mayor |B − A| medio. Si hubo confirmación, el rango de las medias por construcción con el factor debe ser menor o igual que el de `reconstruccion` sin factor. Salidas: `condiciones.csv`, `veredictos.csv` y `decision.json`. La decisión final la toma el usuario.
+
+### 2.4 Qué probé (16-nov, `--simulacro`, ventanas de 10 s, fuera del modo medición, K3s)
+
+| Prueba | Resultado |
+|---|---|
+| `reconstruccion --ciclos 1` | referencia, construcción (5 min), verificación, 3 ventanas, destrucción; sin VMs al terminar |
+| Construcción con `TF_VAR_emulatorpin=8-15` | las 3 VMs con `<emulatorpin cpuset='8-15'/>` en `dumpxml` y en `virsh emulatorpin`, junto a los `vcpupin` de siempre |
+| `reinicio` | shutdown, start, verificación y 3 ventanas, sin errores (corrió 3 reinicios: el valor por defecto era 3; ahora es 1) |
+| `abab --factor emulatorpin` | 4 condiciones; restauró el valor original. En esta prueba A y B coincidían, porque el clúster ya se había construido con el emulador fijado |
+| `confirmacion --factor emulatorpin --ciclos 1` | referencia, construcción con la variable, 3 ventanas y destrucción |
+| `analysis.diagnostico` sobre esos archivos | tabla por condición y veredicto «no concluyente» para `emulatorpin` (como era de esperar) |
+| Autotest de `analysis.diagnostico` | regla en sus tres casos, elección por mayor diferencia, confirmación |
+| Camino con `sudo` (lo corrió el usuario, 16-nov): `sudo … --fase confirmacion --factor haltpoll --ciclos 1 --simulacro` | sin abortar; `halt_poll_ns` en 0 durante las ventanas (instrumentación) y de vuelta en 200000 al final; registro y logs del despliegue a nombre del operador; sin VMs al terminar. Un intento anterior, interrumpido con Ctrl+C a los 8 s, también restauró el factor |
+| `sudo … --fase abab --factor ksm --simulacro` (usuario, 16-nov) | `ksm/run` 1 en A y 0 en B según la instrumentación de cada condición; restaurado en 1 |
+| `sudo … --fase abab --factor cstates --simulacro` (usuario, 16-nov) | 32 archivos (C2 y C3 de 16 hilos); residencia de cpu0 en C3 de 0,915 en A y 0 en B (pasa a C1, 0,98); restaurados (0 archivos desactivados al final). Una ventana de 9,7 W en B2: actividad de la sesión gráfica, sin significado en simulacro |
+
+**Corrección:** el estado B de `ksm` alternaba el valor original (0 ↔ 1). Ahora es siempre 0 (KSM en pausa), como define el plan. Fuera del modo medición, y también dentro (el modo no toca KSM), `run` vale 1.
+
+### 2.5 Procedimiento del jueves 19 (lo ejecuta el usuario)
+
+**Paso previo (hecho el 16-nov, sección 2.4):** prueba del camino con `sudo`.
+
+```
+cd ~/universidad/5to_año/tesis
+sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase confirmacion --factor haltpoll --ciclos 1 --simulacro
+cat /sys/module/kvm/parameters/halt_poll_ns        # debe volver al valor original
+virsh -c qemu:///system list --name                # sin VMs
+```
+Si falla, devolver la salida completa.
+
+**Jueves, desde la consola de texto, sin sesión gráfica, con corriente alterna.** Desde la raíz del repositorio:
+
+```
+sudo /usr/local/sbin/tesis-modo-medicion entrar
+F=data/diagnostico/$(date +%F)
+mkdir -p $F
+
+# 0. Clúster K3s y etiqueta (≈ 6 min)
+DESPLIEGUE_REGISTRO=$F/despliegue_k3s.jsonl DESPLIEGUE_LOG=$F k6/operacion/despliegue.sh k3s construir 300
+python3 -m k6.operacion.etiqueta --distribucion k3s
+
+# 1. Serie: 20 ventanas sin intervenir (≈ 62 min)
+python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase serie
+
+# 2. ABAB de los cuatro factores (≈ 44 min cada uno); los tres primeros piden la contraseña
+sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase abab --factor ksm
+sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase abab --factor haltpoll
+sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase abab --factor cstates
+python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase abab --factor emulatorpin
+
+# 3. Ciclos de salir/entrar (≈ 46 min)
+python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase ciclos
+
+# 4. Reconstrucción: 2 ciclos; destruye el clúster del paso 0 (≈ 45 min)
+python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase reconstruccion
+
+# 5. Reinicio: necesita un clúster, se construye de nuevo (≈ 6 + 15 min)
+DESPLIEGUE_REGISTRO=$F/despliegue_k3s.jsonl DESPLIEGUE_LOG=$F k6/operacion/despliegue.sh k3s construir 310
+python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase reinicio
+
+# 6. ¿Hay candidato? Si la última línea nombra un factor, confirmarlo (≈ 45 min); si no, saltar al cierre
+python3 -m analysis.diagnostico --datos $F --salida /tmp/diagnostico
+sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase confirmacion --factor <factor>   # sin sudo si es emulatorpin
+
+# Cierre
+DESPLIEGUE_REGISTRO=$F/despliegue_k3s.jsonl k6/operacion/despliegue.sh k3s destruir 310   # solo si quedó arriba (sin confirmación)
+sudo /usr/local/sbin/tesis-modo-medicion salir
+```
+
+- **Total:** ≈ 6 h 10 min sin confirmación y ≈ 7 h con ella.
+- El límite es el término del jueves. Lo que no alcance no se hace, en este orden de descarte: confirmación, reinicio, reconstrucción.
+- Si un paso termina con `ABORTADA`, anotar el motivo y seguir con el siguiente. Si quedó un factor sin restaurar (`ERROR al restaurar`), no seguir y avisar.
+- Al iniciar, `entrar` debe mostrar la detención de los contenedores de incus (`ssh-client` y `ssh-server`). Al final, `salir` los vuelve a iniciar: comprobarlo con `incus list`.
+
+**Qué devolver:** la carpeta `data/diagnostico/<fecha>/` completa (JSON por fase, registro de despliegue y `registros/`) y la salida en pantalla de los pasos que hayan fallado. El veredicto lo calculo el viernes con `analysis.diagnostico`.

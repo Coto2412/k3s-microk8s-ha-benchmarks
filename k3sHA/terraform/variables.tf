@@ -93,3 +93,10 @@ variable "vm_ips" {
   type        = list(string)
   default     = ["192.168.100.11", "192.168.100.12", "192.168.100.13"]
 }
+
+# Diagnóstico del desfase (Etapa 4, E6): fija los hilos del emulador QEMU. Vacío = sin fijar (infraestructura por defecto).
+variable "emulatorpin" {
+  description = "cpuset del emulador QEMU (por ejemplo \"8-15\"); vacío no lo fija"
+  type        = string
+  default     = ""
+}

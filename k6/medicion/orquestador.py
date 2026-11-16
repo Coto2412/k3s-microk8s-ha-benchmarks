@@ -4,7 +4,7 @@ Ejemplo (verificación corta, no es una repetición válida):
   python3 -m k6.medicion.orquestador --distribucion k3s --escenario media --repeticion 0 --tasa 50 \
       --rampa 5 --estable 20 --descenso 5 --estabilizacion 10 --verificacion
 """
-import argparse, gzip, json, os, re, shutil, subprocess, sys, time
+import argparse, gzip, json, os, re, shutil, signal, subprocess, sys, time
 import threading
 import urllib.parse, urllib.request
 
@@ -146,6 +146,7 @@ def main():
     ap.add_argument("--copiar-snapshot", action="store_true",
                     help="copia el snapshot a data/ (cada uno contiene los anteriores: copiar el último de cada bloque)")
     a = ap.parse_args()
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     if a.escenario != "idle" and a.tasa is None:
         ap.error("--tasa es obligatoria en media y alta")
     if a.fallo and a.escenario != "media":
@@ -237,9 +238,10 @@ def main():
     k6 = proc["k6"] = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def fallar():
-        time.sleep(max(0, t_lanzado + a.rampa + a.fallo_en - time.time()))
+        if abortar_ev.wait(max(0, t_lanzado + a.rampa + a.fallo_en - time.time())):
+            return  # interrupción o aborto antes de inyectar: no se inyecta
         ev["rc_inyeccion"], ev["t_antes"], ev["t_despues"] = fallo.inyectar(RAIZ, a.distribucion, acc, ip_f)
-        time.sleep(a.fallo_retener)
+        abortar_ev.wait(a.fallo_retener)  # una interrupción acorta la retención
         ev["t_restaura"] = time.time()
         ev["restauracion"] = fallo.restaurar(a.distribucion, acc, ip_f)
 
@@ -278,6 +280,13 @@ def main():
             vm_fin["t_fin"] = time.time()
         rc = k6.wait()
         t_fin_ejec = time.time()
+    except KeyboardInterrupt:  # Ctrl+C o SIGTERM del ejecutor: termina k6 y restaura el fallo en el finally
+        for sig in (signal.SIGINT, signal.SIGTERM):  # una segunda señal no debe cortar la restauración
+            signal.signal(sig, signal.SIG_IGN)
+        abortar_ev.set()
+        if k6.poll() is None:
+            k6.terminate()
+        raise
     finally:
         if plan:
             if hilo:

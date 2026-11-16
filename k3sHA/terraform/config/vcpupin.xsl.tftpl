@@ -11,6 +11,9 @@
     <cputune>
       <vcpupin vcpu="0" cpuset="${cpu0}"/>
       <vcpupin vcpu="1" cpuset="${cpu1}"/>
+%{ if emulatorpin != "" ~}
+      <emulatorpin cpuset="${emulatorpin}"/>
+%{ endif ~}
     </cputune>
   </xsl:template>
 </xsl:stylesheet>

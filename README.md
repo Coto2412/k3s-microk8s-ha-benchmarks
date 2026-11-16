@@ -107,6 +107,33 @@ k6/medicion/secuencia_piloto.sh <dist> <tasa_media> <tasa_alta> [repeticiones]
 - Las corridas de medición las lanzo desde la consola de texto, con la sesión gráfica cerrada.
 - Fallo controlado: `python3 -m k6.medicion.orquestador --fallo` mata el proceso de orquestación (`k3s` o `snap.microk8s.daemon-kubelite`) en el nodo que sostiene las VIP, durante carga media.
 
+### 4. Campaña
+
+El ejecutor recorre los tramos de una jornada según el plan fijado. En cada tramo:
+
+1. Cambia la etiqueta de Prometheus y libera la memoria.
+2. Mide la ventana de referencia sin VMs.
+3. Construye el clúster midiendo energía y red, y lo verifica.
+4. Mide el RTT y lista los procesos del plano de control.
+5. Hace las 6 corridas y repite una vez las no válidas.
+6. Mide el almacenamiento y hace la corrida con fallo.
+7. Destruye el clúster y respalda los datos fuera del repositorio.
+
+Todo queda en `data/campana/diario/`.
+
+Se lanza desde la consola de texto, con el modo medición activo, dentro de `tmux` para que sobreviva al cierre de la consola:
+
+```bash
+tmux new -s campana
+python3 -m k6.medicion.campana --plan data/campana/plan_campana_v1.json --jornada <n> --bloques <i>-<j>
+# Ctrl+B y luego D para dejarlo corriendo; `tmux attach -t campana` para volver
+cat data/campana/diario/estado_actual.json                # avance sin entrar a tmux
+```
+
+- `--simulacro` hace lo mismo con ventanas cortas, sin exigir el modo medición, y escribe en `data/campana_simulacro/` (no versionado).
+- `--reanudar` retoma desde el inicio del tramo interrumpido, según el diario. Un bloque que quedó a medias en otra jornada se rehace desde su primer tramo.
+- Ctrl+C detiene k6 y restaura el fallo si estaba inyectado. No borra datos ni destruye el clúster: antes de `--reanudar` hay que destruirlo con `DESPLIEGUE_REGISTRO=data/campana/despliegue_<dist>.jsonl k6/operacion/despliegue.sh <dist> destruir <ciclo>`, donde el ciclo es 100 + bloque. El ejecutor no arranca si hay VMs encendidas.
+
 ## Protocolo experimental (diseño)
 
 - Carga abierta (`ramping-arrival-rate`) generada por k6 en el host: ascenso 30 s, fase estable 3 min (única ventana de medición), descenso 30 s.

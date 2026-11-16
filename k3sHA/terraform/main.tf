@@ -111,8 +111,9 @@ resource "libvirt_domain" "k3s_node" {
   # vía XSLT sobre el XML generado).
   xml {
     xslt = templatefile("${path.module}/config/vcpupin.xsl.tftpl", {
-      cpu0 = local.vm_cpusets[count.index][0]
-      cpu1 = local.vm_cpusets[count.index][1]
+      cpu0        = local.vm_cpusets[count.index][0]
+      cpu1        = local.vm_cpusets[count.index][1]
+      emulatorpin = var.emulatorpin
     })
   }
 
