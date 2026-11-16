@@ -52,3 +52,23 @@
     group: root
     mode: '0440'
     validate: /usr/sbin/visudo -cf %s
+
+- name: Instalar los ayudantes de root de la campaña (memoria y estadísticas de KVM)
+  copy:
+    src: "{{ item }}"
+    dest: "/usr/local/sbin/{{ item }}"
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - tesis-preparar-memoria
+    - tesis-kvm-stats
+
+- name: Permitir los ayudantes con sudo sin contraseña (solo esas rutas y sin argumentos)
+  copy:
+    dest: /etc/sudoers.d/tesis-operador
+    content: "{{ operador_host }} ALL=(root) NOPASSWD: /usr/local/sbin/tesis-preparar-memoria \"\", /usr/local/sbin/tesis-kvm-stats \"\"\n"
+    owner: root
+    group: root
+    mode: '0440'
+    validate: /usr/sbin/visudo -cf %s

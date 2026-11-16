@@ -39,7 +39,7 @@ def estabilizar(url, distribucion, segundos, objetivo):
     distros = {x["metric"].get("distribution") for x in up}
     if distros != {distribucion}:
         sys.exit(f"Prometheus etiqueta {sorted(map(str, distros))} y se pidió '{distribucion}': "
-                 "correr el playbook del host con -e active_distribution=" + distribucion)
+                 "correr python3 -m k6.operacion.etiqueta --distribucion " + distribucion)
     caidos = [x["metric"]["job"] + "/" + x["metric"]["instance"] for x in up if x["value"][1] != "1"]
     if len(up) != OBJETIVOS_ESPERADOS or caidos:
         sys.exit(f"Targets: {len(up)} (esperados {OBJETIVOS_ESPERADOS}), caídos: {caidos}")

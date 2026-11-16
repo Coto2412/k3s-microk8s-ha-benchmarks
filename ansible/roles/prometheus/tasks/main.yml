@@ -8,14 +8,34 @@
 
 - name: Crear directorios de Prometheus
   file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     state: directory
     owner: prometheus
     group: prometheus
-    mode: '0750'
+    mode: "{{ item.mode }}"
   loop:
-    - /etc/prometheus
-    - "{{ prometheus_data_dir }}"
+    # 0751: el operador atraviesa /etc/prometheus hasta los objetivos sin poder listar ni leer prometheus.yml
+    - {path: /etc/prometheus, mode: '0751'}
+    - {path: "{{ prometheus_data_dir }}", mode: '0750'}
+
+- name: Crear el directorio de objetivos, escribible por el operador y legible por el grupo prometheus
+  file:
+    path: "{{ prometheus_objetivos_dir }}"
+    state: directory
+    owner: "{{ operador_host }}"
+    group: prometheus
+    mode: '2750'  # setgid: los archivos que cree el operador heredan el grupo prometheus
+
+- name: Escribir los archivos de objetivos con la distribución inicial
+  copy:
+    dest: "{{ prometheus_objetivos_dir }}/{{ item.job }}.json"
+    content: "{{ [{'targets': item.targets, 'labels': item.labels | combine({'distribution': active_distribution})}] | to_nice_json }}\n"
+    owner: "{{ operador_host }}"
+    group: prometheus
+    mode: '0640'
+  loop: "{{ prometheus_trabajos }}"
+  loop_control:
+    label: "{{ item.job }}"
 
 - name: Descargar Prometheus con checksum fijado
   get_url:

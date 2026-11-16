@@ -1,0 +1,49 @@
+#!/usr/bin/python3 -I
+"""Lee (solo lectura) las estadísticas de KVM en debugfs e imprime un JSON.
+
+Globales: todos los contadores escalares de /sys/kernel/debug/kvm. Por VM (<pid>-<fd>): los mismos, sumados sobre sus vCPU.
+Si debugfs no expone KVM, informa disponible=false y sale con 0. Se llama sin argumentos con sudo.
+"""
+import glob, json, os, re, sys, time
+
+BASE = "/sys/kernel/debug/kvm"
+
+
+def escalares(directorio, prefijo=""):
+    r = {}
+    for f in sorted(os.listdir(directorio)):
+        ruta = os.path.join(directorio, f)
+        # *_hist se omite siempre: sin VMs trae un solo número y con VMs una lista, y las claves cambiarían entre fotos
+        if f.startswith(prefijo) and not f.endswith("_hist") and os.path.isfile(ruta):
+            try:
+                r[f] = int(open(ruta).read().strip())
+            except (ValueError, OSError):
+                pass  # histogramas (*_hist) y archivos no numéricos
+    return r
+
+
+def nombre_vm(pid):
+    try:
+        args = open(f"/proc/{pid}/cmdline").read().split("\0")
+        m = re.search(r"guest=([^,]+)", args[args.index("-name") + 1])
+        return m.group(1) if m else None
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+if len(sys.argv) > 1:
+    sys.exit("tesis-kvm-stats no recibe argumentos")
+r = {"t": time.time(), "disponible": os.path.isdir(BASE)}
+if not r["disponible"]:
+    r["motivo"] = f"{BASE} no existe o no es legible (sin root, debugfs sin montar o módulo kvm sin cargar)"
+else:
+    r["global"] = escalares(BASE)
+    r["disponible"] = bool(r["global"])
+    r["vms"] = {}
+    for d in sorted(glob.glob(os.path.join(BASE, "*-*"))):
+        if not os.path.isdir(d):
+            continue
+        # el núcleo suma en <pid>-<fd>/ los contadores de las vCPU de esa VM; vcpuN/ no trae contadores halt_*
+        clave = os.path.basename(d)
+        r["vms"][clave] = {"nombre": nombre_vm(clave.split("-")[0]), "contadores": escalares(d)}
+print(json.dumps(r))

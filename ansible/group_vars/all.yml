@@ -28,7 +28,27 @@ prometheus_scrape_interval: 10s
 prometheus_retention: 90d
 prometheus_data_dir: /var/lib/prometheus/data
 
+# Etiqueta inicial de los archivos de objetivos; entre tramos la cambia `python3 -m k6.operacion.etiqueta`.
 active_distribution: k3s
+prometheus_objetivos_dir: /etc/prometheus/objetivos
+prometheus_trabajos:
+  - job: node_exporter_host
+    targets: ["{{ node_exporter_bind }}:{{ node_exporter_port }}"]
+    labels: {role: host}
+  - job: node_exporter_vms
+    targets: "{{ vm_ips | map('regex_replace', '$', ':' ~ node_exporter_port) | list }}"
+    labels: {role: node}
+  - job: scaphandre
+    targets: ["{{ scaphandre_exporter_bind }}:{{ scaphandre_exporter_port }}"]
+    labels: {}
+    keep: 'scaph_(host|socket|self)_.*'
+  - job: kube_state_metrics
+    targets: ["{{ cluster_vip }}:{{ kube_state_metrics_nodeport }}"]
+    labels: {}
+  - job: prometheus
+    targets: ["{{ prometheus_bind }}:{{ prometheus_port }}"]
+    labels: {}
+    keep: 'process_resident_memory_bytes|process_cpu_seconds_total|prometheus_tsdb_head_series'
 
 vm_ips:
   - 192.168.100.11

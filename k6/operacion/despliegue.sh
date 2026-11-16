@@ -8,7 +8,8 @@ accion="${2:?falta acción}"; ciclo="${3:?falta ciclo}"
 raiz="$(cd "$(dirname "$0")/../.." && pwd)"
 base="${raiz}/${dist}HA"
 [ -d "$base" ] || { echo "distribución inválida: $dist" >&2; exit 2; }
-registro="${raiz}/data/despliegue/despliegue_${dist}.jsonl"
+# DESPLIEGUE_REGISTRO: la campaña y las pruebas escriben fuera del registro versionado de la Etapa 3
+registro="${DESPLIEGUE_REGISTRO:-${raiz}/data/despliegue/despliegue_${dist}.jsonl}"
 modo=false; [ -e /run/tesis-medicion.estado ] && modo=true
 fases=""
 fase() {

@@ -179,7 +179,7 @@ def precondiciones(a):
     try:
         distros = {x["metric"].get("distribution") for x in prom(a.prometheus, "last_over_time(up[30s])")}
         if distros != {a.distribucion}:
-            m.append(f"Prometheus etiqueta {sorted(map(str, distros))}; correr el playbook del host con -e active_distribution={a.distribucion}")
+            m.append(f"Prometheus etiqueta {sorted(map(str, distros))}; correr python3 -m k6.operacion.etiqueta --distribucion {a.distribucion}")
     except Exception as e:
         m.append(f"Prometheus no responde en {a.prometheus}: {type(e).__name__}")
     vivos = [ip for ip in IPS_NODOS + [IP_VIP_CP, IP_VIP_SVC] if subprocess.run(["ping", "-c1", "-W1", ip], capture_output=True).returncode == 0]

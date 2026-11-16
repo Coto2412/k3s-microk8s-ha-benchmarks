@@ -6,6 +6,12 @@ Terraform + Ansible para un clúster K3s de 3 nodos (todos plano de control, etc
 
 ![K3s HA](../docs/img/k3s.png)
 
+Topología común a ambas distribuciones (VMs, `vcpupin`, VIP `.100` y `.150`):
+
+![Topología de red](../docs/img/topologia.png)
+
+Arquitectura general del laboratorio y observabilidad en el [README raíz](../README.md#arquitectura).
+
 ## Estructura
 
 ```

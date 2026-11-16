@@ -1,49 +1,22 @@
 global:
   scrape_interval: {{ prometheus_scrape_interval }}
-  external_labels:
-    distribution: {{ active_distribution }}
 
+# Los objetivos y sus etiquetas (incluida distribution) viven en archivos que el operador reescribe
+# con `python3 -m k6.operacion.etiqueta`; Prometheus los relee sin reiniciar (E1, Etapa 4).
 scrape_configs:
-  - job_name: node_exporter_host
-    static_configs:
-      - targets: ["{{ node_exporter_bind }}:{{ node_exporter_port }}"]
-        labels:
-          role: host
-          distribution: {{ active_distribution }}
-
-  - job_name: node_exporter_vms
-    static_configs:
-      - targets:
-{% for ip in vm_ips %}
-          - "{{ ip }}:{{ node_exporter_port }}"
-{% endfor %}
-        labels:
-          role: node
-          distribution: {{ active_distribution }}
-
-  - job_name: scaphandre
+{% for trabajo in prometheus_trabajos %}
+  - job_name: {{ trabajo.job }}
+{% if trabajo.job == 'scaphandre' %}
     fallback_scrape_protocol: PrometheusText0.0.4
-    static_configs:
-      - targets: ["{{ scaphandre_exporter_bind }}:{{ scaphandre_exporter_port }}"]
-        labels:
-          distribution: {{ active_distribution }}
+{% endif %}
+    file_sd_configs:
+      - files: ["{{ prometheus_objetivos_dir }}/{{ trabajo.job }}.json"]
+        refresh_interval: 30s
+{% if trabajo.keep is defined %}
     metric_relabel_configs:
       - source_labels: [__name__]
-        regex: 'scaph_(host|socket|self)_.*'
+        regex: '{{ trabajo.keep }}'
         action: keep
+{% endif %}
 
-  - job_name: kube_state_metrics
-    static_configs:
-      - targets: ["{{ cluster_vip }}:{{ kube_state_metrics_nodeport }}"]
-        labels:
-          distribution: {{ active_distribution }}
-
-  - job_name: prometheus
-    static_configs:
-      - targets: ["{{ prometheus_bind }}:{{ prometheus_port }}"]
-        labels:
-          distribution: {{ active_distribution }}
-    metric_relabel_configs:
-      - source_labels: [__name__]
-        regex: 'process_resident_memory_bytes|process_cpu_seconds_total|prometheus_tsdb_head_series'
-        action: keep
+{% endfor %}

@@ -9,9 +9,8 @@ Comparo K3s y MicroK8s en Alta Disponibilidad (3 nodos) sobre un único host fí
 
 ## Estado
 
-- Etapas 1 (problema) y 2 (diseño) entregadas.
-- Etapa 3: ambos clústeres, la observabilidad, la aplicación de referencia, k6, la calibración y los pilotos están hechos. Resultados y anomalías en [`docs/evidencia/evidencia_T-20.md`](docs/evidencia/evidencia_T-20.md).
-- Etapa 4: campaña definitiva y análisis estadístico, pendientes. `analysis/` tiene scripts de verificación y el análisis preliminar de `recursos_latencia.py`.
+- Etapas 1 (problema), 2 (diseño) y 3 (implementación) entregadas. Resultados y anomalías de la Etapa 3 en [`docs/evidencia/`](docs/evidencia/), en especial [`evidencia_T-20.md`](docs/evidencia/evidencia_T-20.md) y [`evidencia_T-22.md`](docs/evidencia/evidencia_T-22.md).
+- Etapa 4 (en curso): preparación de la campaña definitiva. Hecho: etiqueta `distribution` sin playbook entre tramos y ayudantes de root ([`evidencia_E1-E2.md`](docs/evidencia/evidencia_E1-E2.md)). Pendiente: instrumentación integrada, ejecutor de campaña, diagnóstico del desfase, pre-registro, campaña y análisis.
 
 ## Arquitectura
 
@@ -19,7 +18,15 @@ Comparo K3s y MicroK8s en Alta Disponibilidad (3 nodos) sobre un único host fí
 
 Cada nodo corre kube-vip como DaemonSet en modo ARP. El pod que gana el *lease* asume la VIP `.100` (plano de control) y la `.150` (Service LoadBalancer de NGINX). El puerto de la API depende de la distribución: `6443` en K3s, `16443` en MicroK8s.
 
-Más diagramas: [topología de red](docs/img/topologia.png) · [observabilidad](docs/img/observabilidad.png).
+### Topología de red
+
+![Topología de red](docs/img/topologia.png)
+
+### Observabilidad
+
+![Observabilidad](docs/img/observabilidad.png)
+
+Los objetivos de Prometheus y su etiqueta `distribution` viven en `/etc/prometheus/objetivos/*.json`; entre tramos se cambia con `python3 -m k6.operacion.etiqueta` (ver «Preparar el host»).
 
 ## Laboratorio
 
@@ -35,7 +42,7 @@ Más diagramas: [topología de red](docs/img/topologia.png) · [observabilidad](
 | App de referencia | `nginx:1.30.6` con njs: SHA-256 repetido 300 veces por solicitud, 1 réplica, CPU request `500m` / límite `2000m`, `.150:80` |
 | Scaphandre | `v1.0.3` en el host, exportador Prometheus en `127.0.0.1:8080`, dominio `package` |
 | Node Exporter | `1.12.1` en host y VMs, 6 colectores, puerto 9100 |
-| Prometheus | `3.15.0` nativo en el host (systemd), scrape 10 s, etiqueta `distribution` |
+| Prometheus | `3.15.0` nativo en el host (systemd), scrape 10 s, objetivos por `file_sd_configs` con etiqueta `distribution` |
 | kube-state-metrics | `v2.20.0`, NodePort 30080/30081 |
 | k6 | `v2.3.0` en el host, ejecutor `ramping-arrival-rate` |
 | chrony | host como servidor NTP, VMs como clientes solo de `192.168.100.1` |
@@ -49,7 +56,7 @@ Más diagramas: [topología de red](docs/img/topologia.png) · [observabilidad](
 ├── k8s/                   Plantillas de NGINX, Service y kube-state-metrics
 ├── k6/                    Paquete Python y scripts, por función:
 │     escenarios/ (k6 JS)  lib/ (módulos compartidos)  medicion/ (orquestador, plan, pilotos)
-│     calibracion/  diagnostico/ (reposo del host, desfase de potencia)  operacion/ (despliegue, fallo manual)
+│     calibracion/  diagnostico/ (reposo del host, desfase de potencia)  operacion/ (despliegue, etiqueta de Prometheus, fallo manual)
 ├── analysis/verificacion/ Scripts de verificación sobre Prometheus
 ├── data/                  Resultados versionados (ver data/README.md)
 └── docs/                  Entregables, evidencias (docs/evidencia/) y diagramas (docs/img/)
@@ -64,7 +71,7 @@ k6/operacion/despliegue.sh <k3s|microk8s> construir <ciclo>
 k6/operacion/despliegue.sh <k3s|microk8s> destruir <ciclo>
 ```
 
-`despliegue.sh` encadena `terraform apply`, `limpia_fingerprint.sh` y el playbook del clúster, y registra los tiempos por fase en `data/despliegue/despliegue_<distribución>.jsonl`. Los pasos manuales equivalentes están en el README de cada distribución.
+`despliegue.sh` encadena `terraform apply`, `limpia_fingerprint.sh` y el playbook del clúster, y registra los tiempos por fase en `data/despliegue/despliegue_<distribución>.jsonl` (o en `$DESPLIEGUE_REGISTRO` si está definida, como en la campaña y las pruebas). Los pasos manuales equivalentes están en el README de cada distribución.
 
 Requisitos: libvirt funcionando, Terraform, Ansible, imagen cloud de Ubuntu 24.04 y un `terraform.tfvars` propio con `base_image` y `cluster_user`. Llaves, `tfvars`, `tfstate` e `inventory.ini` no se versionan.
 
@@ -72,10 +79,16 @@ Requisitos: libvirt funcionando, Terraform, Ansible, imagen cloud de Ubuntu 24.0
 
 ```bash
 cd ansible
-ansible-playbook playbook.yml --ask-become-pass -e active_distribution=<k3s|microk8s>
+ansible-playbook playbook.yml --ask-become-pass
 ```
 
-Instala Scaphandre, Node Exporter, Prometheus, k6 y chrony en el host, y deja la etiqueta `distribution` de Prometheus con la distribución activa. También instala `tesis-modo-medicion`, que deja al host en estado de medición: sin sesión gráfica, solo las unidades permitidas, perfil `balanced` y CPU boost apagado. El estado vive en `/run`, así que se pierde al reiniciar. Tras cada corrida del playbook hay que repetir `salir` y `entrar`:
+Instala Scaphandre, Node Exporter, Prometheus, k6 y chrony en el host. Los objetivos de Prometheus quedan en `/etc/prometheus/objetivos/*.json` (`file_sd_configs`), que el operador puede escribir. La etiqueta `distribution` se cambia sin playbook ni reinicio, y el comando espera a que Prometheus la muestre en todos los objetivos:
+
+```bash
+python3 -m k6.operacion.etiqueta --distribucion <k3s|microk8s>
+```
+
+El playbook también instala dos ayudantes de root con su regla de `sudo` sin contraseña y sin argumentos: `tesis-preparar-memoria` (libera el swap y vacía la caché de páginas) y `tesis-kvm-stats` (estadísticas de KVM en debugfs, solo lectura). También instala `tesis-modo-medicion`, que deja al host en estado de medición: sin sesión gráfica, solo las unidades permitidas, perfil `balanced` y CPU boost apagado. El estado vive en `/run`, así que se pierde al reiniciar. Tras cada corrida del playbook hay que repetir `salir` y `entrar`:
 
 ```bash
 sudo /usr/local/sbin/tesis-modo-medicion entrar      # y `salir` al terminar
@@ -129,7 +142,8 @@ k6/medicion/secuencia_piloto.sh <dist> <tasa_media> <tasa_alta> [repeticiones]
 - Evidencias: [`docs/evidencia/`](docs/evidencia/)
 - Informe de Etapa 1: [`docs/Entrega_1_Proyecto_de_Título.pdf`](docs/Entrega_1_Proyecto_de_Título.pdf)
 - Informe de Etapa 2: [`docs/Entrega_2_Proyecto_de_Título.pdf`](docs/Entrega_2_Proyecto_de_Título.pdf)
+- Informe de Etapa 3: [`docs/Entrega_3_Proyecto_de_Título.pdf`](docs/Entrega_3_Proyecto_de_Título.pdf)
 - Pauta y rúbrica: [`docs/Pauta_y_Rubrica_Trabajo_de_Titulo.pdf`](docs/Pauta_y_Rubrica_Trabajo_de_Titulo.pdf)
-- Diagramas fuente: [`docs/diagrama_arquitectura.drawio.pdf`](docs/diagrama_arquitectura.drawio.pdf), [`docs/topologia_red.drawio.pdf`](docs/topologia_red.drawio.pdf), [`docs/arquitectura_observabilidad.drawio.pdf`](docs/arquitectura_observabilidad.drawio.pdf)
+- Diagramas fuente (PDF vectorial; los PNG de `docs/img/` se generan con `pdftoppm -png -r 220 -singlefile`): [`docs/figura_arquitectura.pdf`](docs/figura_arquitectura.pdf), [`docs/figura_topologia_red.pdf`](docs/figura_topologia_red.pdf), [`docs/figura_observabilidad.pdf`](docs/figura_observabilidad.pdf)
 
 Cada clúster: [`k3sHA/README.md`](k3sHA/README.md) · [`microk8sHA/README.md`](microk8sHA/README.md)

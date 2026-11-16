@@ -6,8 +6,8 @@ Estado al 27-oct-2026. Aquí dejo preparados el diagnóstico del desfase de ≈ 
 
 | Parte | Estado |
 |---|---|
-| Pilotos de energía con la aplicación definitiva (SHA-256, `2000m`, `media` 450 y `alta` 900 rps) en ambas distribuciones | Pendiente |
-| K3s construido por el flujo completo de Ansible con la aplicación definitiva, sin ajustes manuales | Pendiente |
+| Pilotos de energía con la aplicación definitiva (SHA-256, `2000m`, `media` 450 y `alta` 900 rps) en ambas distribuciones | Cumplido en la Etapa 3: jornadas 3 y 4 (`evidencia_T-20.md`, 7.6) |
+| K3s construido por el flujo completo de Ansible con la aplicación definitiva, sin ajustes manuales | Cumplido en la Etapa 3: validación integral (`evidencia_T-22.md`, sección 3) |
 | Contadores por repetición (C-states, KSM, temperatura, hilos de QEMU) | Instrumentación escrita y probada (sección 2); **no está integrada en `k6/medicion/orquestador.py`**: hoy solo la usa el diagnóstico |
 | Experimento diagnóstico del desfase de ≈ 1 W | Script escrito y probado en simulacro; no ejecutado (sección 3) |
 | Desbordamiento del contador RAPL en el análisis de Scaphandre | Pendiente (análisis de la Etapa 4) |
