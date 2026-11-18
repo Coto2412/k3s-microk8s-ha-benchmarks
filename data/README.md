@@ -24,6 +24,7 @@ data/
 ├── despliegue/                             tiempos de construcción y destrucción (despliegue_<distribución>.jsonl)
 ├── humo/                                   pruebas de humo de k6 (k6/medicion/correr.sh)
 ├── diagnostico/<fecha>/                    salidas de k6/diagnostico/diagnostico_desfase.py (T-24.4); despliegue_k3s.jsonl con ciclo 300 + n
+├── calibracion/despliegue_<distribución>.jsonl registro de despliegue de la capacidad máxima (T-24.5, ciclo 400)
 ├── prometheus-snapshots/                   snapshots de la TSDB copiados con --copiar-snapshot
 └── k6-crudo/<tipo>/<sesión>/               JSON crudo de k6, ignorado por git
 ```
