@@ -291,7 +291,7 @@ def fig_memoria(filas, ruta, rotulo):
 
 
 # ---------------------------------------------------------------------------------------------------------------- 5
-def fig_recuperacion(filas, ruta, rotulo):
+def fig_recuperacion(filas, ruta, rotulo, prefijo="r"):
     """Línea de tiempo por corrida con fallo (segundos desde la inyección), por distribución y por liderazgo del controlador."""
     plt, halo = _mpl()
     from matplotlib.gridspec import GridSpec
@@ -314,7 +314,7 @@ def fig_recuperacion(filas, ruta, rotulo):
                     fontweight="bold")
             y -= 1.15
             for f in sorted(g, key=lambda f: f["repeticion"]):
-                ticks.append((y, f"r{int(f['repeticion'])}"))
+                ticks.append((y, f"{prefijo}{int(f['repeticion'])}"))
                 ax.axhline(y, color=GUIA, lw=0.7, zorder=1)
                 if f.get("api_caida_desde") is not None and f.get("api_restablecida") is not None:
                     ax.barh(y - 0.24, f["api_restablecida"] - f["api_caida_desde"], left=f["api_caida_desde"], height=0.16,
@@ -358,6 +358,32 @@ def fig_recuperacion(filas, ruta, rotulo):
     _guardar(plt, fig, ruta, rotulo)
 
 
+# ---------------------------------------------------------------------------------------------------------------- 6
+def fig_bloques(celdas, ruta, rotulo):
+    """Campaña: potencia de cada celda (promedio de sus repeticiones) por bloque; una línea une las dos distribuciones del bloque."""
+    plt, halo = _mpl()
+    fig, axs = plt.subplots(1, 3, figsize=(ANCHO, 2.9))
+    for ax, e in zip(axs, ("idle", "media", "alta")):
+        por = {}
+        for c in celdas:
+            if c["escenario"] == e and c.get("potencia_W") is not None:
+                por.setdefault(int(c["bloque"]), {})[c["distribucion"]] = c["potencia_W"]
+        for b, v in sorted(por.items()):
+            if all(d in v for d in DIST):
+                ax.plot([b, b], [v["k3s"], v["microk8s"]], color="#c9ced3", lw=1.0, zorder=2)
+            for d, w in v.items():
+                ax.plot(b, w, ls="", marker=FORMA[d], ms=TAM[d] - 1, mfc=COL[d], mec="white", mew=0.8, zorder=3)
+        ax.set_title(e, loc="left", fontsize=8.5, fontweight="bold")
+        ax.set_xticks(sorted(por))
+        ax.set_xlabel("Bloque")
+        ax.grid(axis="y", color=GUIA, lw=0.6)
+        ax.yaxis.set_major_formatter(_fmt(plt))
+    axs[0].set_ylabel("Potencia media del paquete (W)")
+    _leyenda_dist(plt, fig, loc="upper right", bbox_to_anchor=(1.0, 1.0))
+    fig.subplots_adjust(left=0.09, right=0.99, bottom=0.17, top=0.8, wspace=0.32)
+    _guardar(plt, fig, ruta, rotulo)
+
+
 # ---------------------------------------------------------------------------------------------------------------- misc
 def autotest():
     try:
@@ -381,8 +407,10 @@ def autotest():
             "migracion_vip_plano_control": 18.0, "migracion_vip_servicio": 17.0, "notready": 50.0 + 60 * (r % 2 == 0), "restauracion": 121.0,
             "ready_tras_restauracion": 8.0} for d in DIST for r in (1, 2, 3)]
     with tempfile.TemporaryDirectory() as t:
+        celdas = [{"bloque": b, "distribucion": d, "escenario": e, "potencia_W": 5 + b * 0.1 + (d == "microk8s") * 0.2}
+                  for b in range(1, 9) for d in DIST for e in ("idle", "media", "alta")]
         for f, args in ((fig_energia_latencia, (filas,)), (fig_recursos, (filas,)), (fig_memoria, (filas,)), (fig_espectro, (filas, cache)),
-                        (fig_recuperacion, (rec,))):
+                        (fig_recuperacion, (rec,)), (fig_bloques, (celdas,))):
             ruta = os.path.join(t, f.__name__ + ".pdf")
             f(*args, ruta, "Preliminar")
             assert os.path.getsize(ruta) > 1000, ruta

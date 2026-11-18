@@ -134,6 +134,8 @@ cat data/campana/diario/estado_actual.json                # avance sin entrar a 
 - `--reanudar` retoma desde el inicio del tramo interrumpido, según el diario. Un bloque que quedó a medias en otra jornada se rehace desde su primer tramo.
 - Ctrl+C detiene k6 y restaura el fallo si estaba inyectado. No borra datos ni destruye el clúster: antes de `--reanudar` hay que destruirlo con `DESPLIEGUE_REGISTRO=data/campana/despliegue_<dist>.jsonl k6/operacion/despliegue.sh <dist> destruir <ciclo>`, donde el ciclo es 100 + bloque. El ejecutor no arranca si hay VMs encendidas.
 
+Análisis pre-registrado (`docs/preregistro/plan-campana-v1.md`): `python3 -m analysis.campana.todo --datos data/campana --salida analysis/salidas/<fecha>_campana`.
+
 ## Protocolo experimental (diseño)
 
 - Carga abierta (`ramping-arrival-rate`) generada por k6 en el host: ascenso 30 s, fase estable 3 min (única ventana de medición), descenso 30 s.

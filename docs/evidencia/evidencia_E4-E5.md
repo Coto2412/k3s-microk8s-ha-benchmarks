@@ -89,3 +89,37 @@ La construcción de MicroK8s tomó 1 317 y 1 501 s, frente a 758 s en la Etapa 3
 - No probé una construcción fallida ni un aborto por memoria dentro del ejecutor; la lógica está en el autotest y el código 86 se probó en el orquestador (E3).
 - `--reanudar` confía en el diario: si se borra o edita, no sabe qué tramos terminaron.
 - El término estimado que imprime el ejecutor usa los tiempos típicos del plan (60 y 69 min), no los medidos.
+
+## 6. Procedimiento del bloque 0 (viernes 20, lo ejecuta el usuario)
+
+Es un bloque completo con el ejecutor definitivo, en el orden del bloque 1 (K3s y luego MicroK8s). Usa `--tipo piloto`, con sesiones `b00_<dist>` en `data/pilotos/`, y **queda excluido del análisis**. Antes de empezar: los cambios del código commiteados, porque el ejecutor exige `git status` limpio en `k6/`, `ansible/`, `k3sHA/` y `microk8sHA/`, y ninguna VM encendida.
+
+Desde la consola de texto, en la raíz del repositorio:
+
+```
+sudo /usr/local/sbin/tesis-modo-medicion entrar
+tmux new -s bloque0
+python3 -m k6.medicion.campana --plan data/campana/plan_campana_v1.json --jornada 0 --bloques 0 --tipo piloto
+```
+
+**Prueba de reanudación (una vez, a propósito).**
+1. Ctrl+B y luego C abre una segunda ventana de tmux. En ella, `tail -f data/pilotos/diario/jornada_0.log`.
+2. Cuando aparezca `b00_k3s … rtt_plano_control ok`, la primera corrida idle de K3s está en curso. Vuelve a la ventana 0 (Ctrl+B y luego 0) y presiona Ctrl+C una vez.
+3. Espera a que salga a la terminal y luego ejecuta:
+
+```
+DESPLIEGUE_REGISTRO=data/pilotos/despliegue_k3s.jsonl k6/operacion/despliegue.sh k3s destruir 100
+python3 -m k6.medicion.campana --plan data/campana/plan_campana_v1.json --jornada 0 --bloques 0 --tipo piloto --reanudar
+```
+
+Al terminar: `sudo /usr/local/sbin/tesis-modo-medicion salir`.
+
+**Tiempo esperado.** Unas 2 h 45 min: el bloque de 2 h 20 a 2 h 30 min más unos 15 min que se pierden en el tramo interrumpido.
+
+**Qué verifica:** los tiempos reales del tramo con las fases completas (se recalcula la estimación de las jornadas), la memoria de MicroK8s en un tramo completo, el diario completo y la reanudación.
+
+**Qué devolver:**
+- `data/pilotos/b00_k3s/`, `data/pilotos/b00_microk8s/`, `data/pilotos/b00_k3s_interrumpido_*`, `data/pilotos/diario/` y `data/pilotos/despliegue_*.jsonl`;
+- la salida en pantalla si algo se detuvo.
+
+Después del bloque 0 solo se corrigen errores, sin cambios de diseño.

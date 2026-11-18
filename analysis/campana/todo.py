@@ -113,8 +113,8 @@ def modelo_mixto(corridas):
     intentos = [("jornada fija", "potencia_W ~ C(distribucion) * C(escenario) + C(jornada)", None)]
     intentos.append(("jornada aleatoria", "potencia_W ~ C(distribucion) * C(escenario)", {"jornada": "0 + C(jornada)"}))
     for etiqueta, formula, vc in intentos:
-        if etiqueta == "jornada fija" and df["jornada"].nunique() < 2:
-            formula = formula.replace(" + C(jornada)", "")
+        if df["jornada"].nunique() < 2:  # una sola jornada: no hay efecto que estimar
+            etiqueta, formula, vc = "sin jornada (un solo nivel)", formula.replace(" + C(jornada)", ""), None
         with warnings.catch_warnings(record=True) as avisos:
             warnings.simplefilter("always")
             try:
@@ -158,7 +158,19 @@ def exploratorios(tramos, corridas):
     return ex_niv, cov, nr
 
 
-def ejecutar(mapa, salida, incluir_no_validas=False):
+def figuras(salida, corridas, celdas, cache, rotulo):
+    """T-26.5: solo donde los datos son extensos (potencia por bloque, espectro de latencia, recuperación); el resto va en CSV."""
+    from analysis import figuras as fg
+    normales = [f for f in corridas if f["incluida"] and not f["fallo"]]
+    fg.fig_bloques(celdas, os.path.join(salida, "figura_potencia_bloques.pdf"), rotulo)
+    if any(f["escenario"] != "idle" for f in normales):
+        fg.fig_espectro(normales, cache, os.path.join(salida, "figura_espectro_latencia.pdf"), rotulo)
+    rec = [dict(f, repeticion=f["bloque"]) for f in corridas if f["fallo"] and f["incluida"] and f.get("restauracion") is not None]
+    if rec:  # en la campaña hay una corrida con fallo por tramo: la fila se rotula con el bloque
+        fg.fig_recuperacion(rec, os.path.join(salida, "figura_recuperacion.pdf"), rotulo, prefijo="b")
+
+
+def ejecutar(mapa, salida, incluir_no_validas=False, rotulo=""):
     os.makedirs(salida, exist_ok=True)
     ruta_cache = os.path.join(salida, "cache_latencia.json")
     cache = json.load(open(ruta_cache)) if os.path.exists(ruta_cache) else {}
@@ -192,6 +204,7 @@ def ejecutar(mapa, salida, incluir_no_validas=False):
     mm = sens["modelo_mixto"]
     lineas.append(f"Modelo mixto: {mm.get('especificacion', mm.get('motivo'))}")
     open(os.path.join(salida, "resumen.txt"), "w").write("\n".join(lineas) + "\n")
+    figuras(salida, corridas, celdas, cache, rotulo)
     print("\n".join(lineas))
     return corridas, tramos, celdas
 
@@ -220,6 +233,7 @@ def main():
     ap.add_argument("--ficticio", action="append", default=[], help="BLOQUE:DIST:carpeta[,carpeta] (solo pruebas del pipeline)")
     ap.add_argument("--incluir-no-validas", action="store_true", help="solo pruebas del pipeline con pilotos o simulacros")
     ap.add_argument("--salida", required=True)
+    ap.add_argument("--rotulo", default="", help="texto en la esquina de cada figura")
     a = ap.parse_args()
     if a.datos:
         mapa = {k: [v] for k, v in con.sesiones(a.datos).items()}
@@ -230,7 +244,7 @@ def main():
             mapa[(int(b), d)] = cs.split(",")
     if not mapa:
         ap.error("sin sesiones: --datos o --ficticio")
-    ejecutar(mapa, a.salida, a.incluir_no_validas)
+    ejecutar(mapa, a.salida, a.incluir_no_validas, a.rotulo)
 
 
 if __name__ == "__main__":

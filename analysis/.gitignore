@@ -1,5 +1,4 @@
-# estadistica.py y notebooks/ SÍ se versionan.
-# Se ignoran artefactos de ejecución de Python/Jupyter.
+# El código y analysis/salidas/ se versionan; se ignoran artefactos de ejecución de Python.
 
 __pycache__/
 *.pyc
@@ -7,5 +6,3 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
-
-!.gitkeep

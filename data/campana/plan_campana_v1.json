@@ -4,14 +4,50 @@
  "semilla": 20261028,
  "diseno": "8 bloques; 4 empiezan por K3s y 4 por MicroK8s (sorteo con la semilla); la unidad de análisis es el promedio de cada celda (bloque x distribución x escenario)",
  "repeticiones_por_celda": 2,
- "repeticiones_por_celda_provisional": true,
+ "repeticiones_por_celda_provisional": false,
  "fases_s": {
   "rampa": 30,
   "estable": 180,
   "descenso": 30,
   "estabilizacion": 120
  },
- "validez": "una corrida entra al análisis solo si el orquestador la marca valida_para_campana; el resto de las reglas de exclusión se fijan antes del primer bloque",
+ "ventana_referencia_s": {
+  "espera": 120,
+  "medicion": 180,
+  "momento": "al inicio de cada tramo, antes de construir, sin VMs ni k6"
+ },
+ "construccion": "el clúster se construye desde cero en cada tramo y se destruye al final; ciclo del registro = 100 + bloque",
+ "corrida_fallo": {
+  "escenario": "media",
+  "tasa_rps": 450,
+  "fallo_en_s": 30,
+  "retener_s": 120,
+  "momento": "al final de cada tramo, después del almacenamiento y antes de destruir"
+ },
+ "jornadas": {
+  "1": [
+   1,
+   2,
+   3
+  ],
+  "2": [
+   4,
+   5,
+   6
+  ],
+  "3": [
+   7,
+   8
+  ],
+  "reserva": "bloques abortados (sesiones bNNr_<dist>) y luego T-24.5"
+ },
+ "validez": "una corrida entra al análisis solo si el orquestador la marca valida_para_campana y no fue abortada por memoria",
+ "reglas_exclusion": [
+  "no válida solo por falla del procedimiento: precondición no cumplida, lectura de RAPL fallida, aborto por reloj, fase estable incompleta o valida_para_campana falso; se repite una vez al final del tramo, antes de la corrida con fallo; si sigue no válida, la celda queda con una corrida",
+  "la latencia, las solicitudes fallidas, las iteraciones descartadas y MemAvailable bajo 1024 MB son resultados y no excluyen",
+  "construcción fallida: un reintento (destruir y construir); si vuelve a fallar, el bloque completo pasa a la reserva con el mismo orden",
+  "MemAvailable bajo 512 MB: aborta el tramo, se destruye el clúster y se registra como resultado de la distribución; no se repite"
+ ],
  "bloques": [
   {
    "bloque": 1,
