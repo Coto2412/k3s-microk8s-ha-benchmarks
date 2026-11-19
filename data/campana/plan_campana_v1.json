@@ -1,6 +1,6 @@
 {
  "version": "v1",
- "estado": "borrador sin fijar: aún no existe la etiqueta plan-campana-v1",
+ "estado": "fijado",
  "semilla": 20261028,
  "diseno": "8 bloques; 4 empiezan por K3s y 4 por MicroK8s (sorteo con la semilla); la unidad de análisis es el promedio de cada celda (bloque x distribución x escenario)",
  "repeticiones_por_celda": 2,
@@ -697,5 +697,11 @@
     }
    ]
   }
- ]
+ ],
+ "fijacion": {
+  "fecha": "2026-11-19",
+  "commit": "8d7f68d7e3ab320919fcf1a70fc7c23eb71fa0b9",
+  "etiqueta": "plan-campana-v1",
+  "preregistro": "docs/preregistro/plan-campana-v1.md"
+ }
 }
