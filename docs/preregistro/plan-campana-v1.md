@@ -1,6 +1,6 @@
 # Pre-registro de la campaña definitiva (`plan-campana-v1`)
 
-**Estado: BORRADOR.** Se revisa antes de crear la etiqueta `plan-campana-v1`. Después de la etiqueta, este documento no se modifica: cualquier cambio posterior se registra como desviación en `docs/preregistro/desviaciones.md`.
+**Estado: fijado con la etiqueta `plan-campana-v1`.** Después de la etiqueta, este documento no se modifica: cualquier cambio posterior se registra como desviación en `docs/preregistro/desviaciones.md`.
 
 - **Plan de ejecución:** `data/campana/plan_campana_v1.json`, generado por `k6/medicion/plan_campana.py`.
 - **Ejecutor:** `k6/medicion/campana.py`.
@@ -90,7 +90,11 @@ Es el del Cuadro 17 del informe 3, verificado por el orquestador en cada corrida
 - corriente alterna conectada;
 - relojes sincronizados (host < 100 ms, VMs < 5 ms).
 
-Además, el factor fijado por el diagnóstico del 19-nov, si lo hay: **[pendiente de la decisión del viernes 20]**.
+**Factor del diagnóstico: ninguno.** En el diagnóstico del 18-nov ningún factor cumplió la regla: ksm, haltpoll y emulatorpin quedaron descartados y cstates, no concluyente. En la prueba del 19-nov se descartó fclk: el nivel cambió 0,7 W con fclk constante. La causa del desfase queda no resuelta y se declara como limitación (`docs/evidencia/evidencia_E6.md` §2.6 a 2.8). Hay dos observaciones que el diseño ya contempla:
+- El salto aparece después de un `salir`/`entrar` del modo medición, y la campaña entra una sola vez por jornada.
+- Las construcciones de una misma sesión cayeron en el mismo nivel: 5,79, 5,79 y 5,76 W el 18-nov, y 4,25 y 4,19 W el 19-nov.
+
+Además del estado anterior, el muestreador registra en cada corrida el nivel de fclk y de socclk y la potencia PPT del SoC según amdgpu, como covariables exploratorias.
 
 Versiones fijas:
 
@@ -102,12 +106,12 @@ Versiones fijas:
 
 ## 10. Exploratorio declarado
 
-Todo lo que sigue va rotulado como exploratorio: desfase con las covariables de la instrumentación y de la ventana de referencia, agrupamiento de los niveles idle de los 16 tramos (por construcción), NotReady por estrato, y cualquier comparación no listada en las secciones 3 a 6.
+Todo lo que sigue va rotulado como exploratorio: desfase con las covariables de la instrumentación (incluidos fclk, socclk y la potencia PPT del SoC) y de la ventana de referencia, nivel de potencia por jornada, agrupamiento de los niveles idle de los 16 tramos (por construcción), NotReady por estrato, y cualquier comparación no listada en las secciones 3 a 6.
 
 ## 11. Fijación
 
-- **Commit del código de medición y del pipeline:** **[se completa al fijar]**
-- **Fecha:** **[se completa al fijar]**
+- **Commit del código de medición y del pipeline, y fecha de fijación:** los registra `data/campana/plan_campana_v1.json`, en el bloque `fijacion` (`commit` y `fecha`), escrito por el comando de fijación.
+- **Bloque 0 (19-nov, `data/pilotos/b00_<dist>`, excluido del análisis):** ejecutor definitivo completo y reanudación probada. No hubo correcciones después del bloque 0.
 - **Comando de fijación:** `python3 -m k6.medicion.plan_campana --fijar --commit <sha>`. Verifica que la semilla y el orden sean los del borrador y escribe `estado: fijado` en el plan.
 - **Etiqueta:** `plan-campana-v1`, sobre el commit que contiene este documento y el plan fijado. La crea el usuario.
 - **Pruebas del pipeline antes de fijar:** `python3 -m analysis.campana.todo --autotest`, que usa datos sintéticos con efecto conocido. Además, una prueba de punta a punta con las jornadas 3 y 4 como dos bloques ficticios, cuyas salidas no se interpretan (`docs/evidencia/evidencia_E7-E8.md`).

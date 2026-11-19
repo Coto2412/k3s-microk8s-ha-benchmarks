@@ -1,0 +1,12 @@
+{
+ "paso": "terminado",
+ "resultado": "ok",
+ "t": 1795123061.976,
+ "hora": "2026-11-19 18:17:41",
+ "jornada": 0,
+ "termino_estimado": "2026-11-19 18:23",
+ "tramos": [
+  "b00_k3s",
+  "b00_microk8s"
+ ]
+}

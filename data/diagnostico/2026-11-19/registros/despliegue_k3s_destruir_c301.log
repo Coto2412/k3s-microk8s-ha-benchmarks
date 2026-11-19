@@ -1,0 +1,622 @@
+[0m[1mlocal_file.ansible_inventory: Refreshing state... [id=350f6516583b2407dd2c46efd4eebd76140cc2b4][0m
+[0m[1mlibvirt_volume.base_image: Refreshing state... [id=/var/lib/libvirt/images/ubuntu-2404-base.qcow2][0m
+[0m[1mlibvirt_network.k3s_network: Refreshing state... [id=9dc75e0f-9f1a-4464-a4fa-a964f416268f][0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[0]: Refreshing state... [id=/var/lib/libvirt/images/k3s-node1-cloudinit.iso;39b1645d-5346-4982-a2e4-382d755212e1][0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[2]: Refreshing state... [id=/var/lib/libvirt/images/k3s-node3-cloudinit.iso;f0eb689d-a7d8-4948-b610-cdec5b0eb19a][0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[1]: Refreshing state... [id=/var/lib/libvirt/images/k3s-node2-cloudinit.iso;9aa6a4c2-6cb3-448c-a8df-8f745a96f82a][0m
+[0m[1mlibvirt_volume.vm_disk[0]: Refreshing state... [id=/var/lib/libvirt/images/k3s-node1-disk.qcow2][0m
+[0m[1mlibvirt_volume.vm_disk[1]: Refreshing state... [id=/var/lib/libvirt/images/k3s-node2-disk.qcow2][0m
+[0m[1mlibvirt_volume.vm_disk[2]: Refreshing state... [id=/var/lib/libvirt/images/k3s-node3-disk.qcow2][0m
+[0m[1mlibvirt_domain.k3s_node[0]: Refreshing state... [id=a3055931-d994-4b39-9c0f-b816dea15add][0m
+[0m[1mlibvirt_domain.k3s_node[1]: Refreshing state... [id=6e850238-1865-4345-92b6-009c68291064][0m
+[0m[1mlibvirt_domain.k3s_node[2]: Refreshing state... [id=4c53a131-8aca-4acb-9970-40c992038468][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [31m-[0m destroy[0m
+
+Terraform will perform the following actions:
+
+[1m  # libvirt_cloudinit_disk.cloudinit[0][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/k3s-node1-cloudinit.iso;39b1645d-5346-4982-a2e4-382d755212e1" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "k3s-node1-cloudinit.iso" [90m-> null[0m[0m
+      [31m-[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:10:00:01"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: k3s-node1
+            fqdn: k3s-node1.k3s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` espera el
+            # timeout de DNS resolviendo el hostname propio (~15s cada vez, medido en
+            # microk8sHA). Se aplica igual acá por consistencia y prevención.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDDdSwSP9lwqlMhnULZYnGu7INojPK32JnDNXlNTx6Gz88Wy+4CxxDPHAkE7DXvxI8twRBei9ibCvsY6sqpNeIzCMzlpL1OeCvwRe8+JROtDqj4M5O7HYSzzVJWDfdpRz8+edVQ2yWYqxp4muQuf7iBYmBDInMkCt6VLC9rZ8J+s0mNNVHrzL2s7ym0r5zEK/0tWQnNUQIckXhrA9vbS1JHKhXJBGvNHZtl4CdnyBjMRgfqzQGzqHSNlsndI9XIVtYhjUfOdia5cRNkqLXzlPiwPXcPZuSzKll39mwii9V8yyz7ZmmsplqUiCPR8V18hm/6rABSMatXP79NYPAPGvYXIBxOaMqFc5x5kQIshcYVUUorTk6PRRUF2Gc02PiJy7irEHhWE4eLhcKpz8d5WFp0PFss1qnfayi6kjLAePFAL822zhopBXALX7dISPf7gGI2BynGctd5/1vS2AOwiFiXjUQVDLYmmWSdDJiQvQHYKlpZ1Ltp8DIfp+oF++CiocW8f/Oy95QfKv3XKRX1IBCC6EW0BYFOU1VaiP1tPnm4T/gfA8RCeI0GXQU6ymwi+cDVYlbgqhUVo0aV+a8RtcaCBX2/Bn2sYCKrelB0TJW9V8Bl7yVVphU/sXjZ6qnzQp9Vj4Qx949+ofrkLmkNBezCE1cF5qHWwWpKZ83HAopNjw== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # libvirt_cloudinit_disk.cloudinit[1][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/k3s-node2-cloudinit.iso;9aa6a4c2-6cb3-448c-a8df-8f745a96f82a" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "k3s-node2-cloudinit.iso" [90m-> null[0m[0m
+      [31m-[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:10:00:02"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: k3s-node2
+            fqdn: k3s-node2.k3s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` espera el
+            # timeout de DNS resolviendo el hostname propio (~15s cada vez, medido en
+            # microk8sHA). Se aplica igual acá por consistencia y prevención.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDDdSwSP9lwqlMhnULZYnGu7INojPK32JnDNXlNTx6Gz88Wy+4CxxDPHAkE7DXvxI8twRBei9ibCvsY6sqpNeIzCMzlpL1OeCvwRe8+JROtDqj4M5O7HYSzzVJWDfdpRz8+edVQ2yWYqxp4muQuf7iBYmBDInMkCt6VLC9rZ8J+s0mNNVHrzL2s7ym0r5zEK/0tWQnNUQIckXhrA9vbS1JHKhXJBGvNHZtl4CdnyBjMRgfqzQGzqHSNlsndI9XIVtYhjUfOdia5cRNkqLXzlPiwPXcPZuSzKll39mwii9V8yyz7ZmmsplqUiCPR8V18hm/6rABSMatXP79NYPAPGvYXIBxOaMqFc5x5kQIshcYVUUorTk6PRRUF2Gc02PiJy7irEHhWE4eLhcKpz8d5WFp0PFss1qnfayi6kjLAePFAL822zhopBXALX7dISPf7gGI2BynGctd5/1vS2AOwiFiXjUQVDLYmmWSdDJiQvQHYKlpZ1Ltp8DIfp+oF++CiocW8f/Oy95QfKv3XKRX1IBCC6EW0BYFOU1VaiP1tPnm4T/gfA8RCeI0GXQU6ymwi+cDVYlbgqhUVo0aV+a8RtcaCBX2/Bn2sYCKrelB0TJW9V8Bl7yVVphU/sXjZ6qnzQp9Vj4Qx949+ofrkLmkNBezCE1cF5qHWwWpKZ83HAopNjw== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # libvirt_cloudinit_disk.cloudinit[2][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/k3s-node3-cloudinit.iso;f0eb689d-a7d8-4948-b610-cdec5b0eb19a" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "k3s-node3-cloudinit.iso" [90m-> null[0m[0m
+      [31m-[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:10:00:03"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: k3s-node3
+            fqdn: k3s-node3.k3s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` espera el
+            # timeout de DNS resolviendo el hostname propio (~15s cada vez, medido en
+            # microk8sHA). Se aplica igual acá por consistencia y prevención.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDDdSwSP9lwqlMhnULZYnGu7INojPK32JnDNXlNTx6Gz88Wy+4CxxDPHAkE7DXvxI8twRBei9ibCvsY6sqpNeIzCMzlpL1OeCvwRe8+JROtDqj4M5O7HYSzzVJWDfdpRz8+edVQ2yWYqxp4muQuf7iBYmBDInMkCt6VLC9rZ8J+s0mNNVHrzL2s7ym0r5zEK/0tWQnNUQIckXhrA9vbS1JHKhXJBGvNHZtl4CdnyBjMRgfqzQGzqHSNlsndI9XIVtYhjUfOdia5cRNkqLXzlPiwPXcPZuSzKll39mwii9V8yyz7ZmmsplqUiCPR8V18hm/6rABSMatXP79NYPAPGvYXIBxOaMqFc5x5kQIshcYVUUorTk6PRRUF2Gc02PiJy7irEHhWE4eLhcKpz8d5WFp0PFss1qnfayi6kjLAePFAL822zhopBXALX7dISPf7gGI2BynGctd5/1vS2AOwiFiXjUQVDLYmmWSdDJiQvQHYKlpZ1Ltp8DIfp+oF++CiocW8f/Oy95QfKv3XKRX1IBCC6EW0BYFOU1VaiP1tPnm4T/gfA8RCeI0GXQU6ymwi+cDVYlbgqhUVo0aV+a8RtcaCBX2/Bn2sYCKrelB0TJW9V8Bl7yVVphU/sXjZ6qnzQp9Vj4Qx949+ofrkLmkNBezCE1cF5qHWwWpKZ83HAopNjw== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # libvirt_domain.k3s_node[0][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_domain" "k3s_node" {
+      [31m-[0m[0m arch        = "x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m autostart   = false [90m-> null[0m[0m
+      [31m-[0m[0m cloudinit   = "/var/lib/libvirt/images/k3s-node1-cloudinit.iso;39b1645d-5346-4982-a2e4-382d755212e1" [90m-> null[0m[0m
+      [31m-[0m[0m cmdline     = [] [90m-> null[0m[0m
+      [31m-[0m[0m emulator    = "/usr/bin/qemu-system-x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m fw_cfg_name = "opt/com.coreos/config" [90m-> null[0m[0m
+      [31m-[0m[0m id          = "a3055931-d994-4b39-9c0f-b816dea15add" [90m-> null[0m[0m
+      [31m-[0m[0m machine     = "ubuntu" [90m-> null[0m[0m
+      [31m-[0m[0m memory      = 4096 [90m-> null[0m[0m
+      [31m-[0m[0m name        = "k3s-node1" [90m-> null[0m[0m
+      [31m-[0m[0m qemu_agent  = false [90m-> null[0m[0m
+      [31m-[0m[0m running     = true [90m-> null[0m[0m
+      [31m-[0m[0m type        = "kvm" [90m-> null[0m[0m
+      [31m-[0m[0m vcpu        = 2 [90m-> null[0m[0m
+        [90m# (3 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m console {
+          [31m-[0m[0m source_host    = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m source_service = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_port    = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_type    = "serial" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "pty" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m cpu {
+          [31m-[0m[0m mode = "custom" [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m disk {
+          [31m-[0m[0m scsi         = false [90m-> null[0m[0m
+          [31m-[0m[0m volume_id    = "/var/lib/libvirt/images/k3s-node1-disk.qcow2" [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m graphics {
+          [31m-[0m[0m autoport       = true [90m-> null[0m[0m
+          [31m-[0m[0m listen_address = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m listen_type    = "address" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "spice" [90m-> null[0m[0m
+          [31m-[0m[0m websocket      = 0 [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m network_interface {
+          [31m-[0m[0m addresses      = [
+              [31m-[0m[0m "192.168.100.11",
+            ] [90m-> null[0m[0m
+          [31m-[0m[0m hostname       = "k3s-node1" [90m-> null[0m[0m
+          [31m-[0m[0m mac            = "52:54:00:10:00:01" [90m-> null[0m[0m
+          [31m-[0m[0m network_id     = "9dc75e0f-9f1a-4464-a4fa-a964f416268f" [90m-> null[0m[0m
+          [31m-[0m[0m network_name   = "k3s-tesis" [90m-> null[0m[0m
+          [31m-[0m[0m wait_for_lease = true [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m xml {
+          [31m-[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="2"/>
+                      <vcpupin vcpu="1" cpuset="3"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT [90m-> null[0m[0m
+        }
+    }
+
+[1m  # libvirt_domain.k3s_node[1][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_domain" "k3s_node" {
+      [31m-[0m[0m arch        = "x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m autostart   = false [90m-> null[0m[0m
+      [31m-[0m[0m cloudinit   = "/var/lib/libvirt/images/k3s-node2-cloudinit.iso;9aa6a4c2-6cb3-448c-a8df-8f745a96f82a" [90m-> null[0m[0m
+      [31m-[0m[0m cmdline     = [] [90m-> null[0m[0m
+      [31m-[0m[0m emulator    = "/usr/bin/qemu-system-x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m fw_cfg_name = "opt/com.coreos/config" [90m-> null[0m[0m
+      [31m-[0m[0m id          = "6e850238-1865-4345-92b6-009c68291064" [90m-> null[0m[0m
+      [31m-[0m[0m machine     = "ubuntu" [90m-> null[0m[0m
+      [31m-[0m[0m memory      = 4096 [90m-> null[0m[0m
+      [31m-[0m[0m name        = "k3s-node2" [90m-> null[0m[0m
+      [31m-[0m[0m qemu_agent  = false [90m-> null[0m[0m
+      [31m-[0m[0m running     = true [90m-> null[0m[0m
+      [31m-[0m[0m type        = "kvm" [90m-> null[0m[0m
+      [31m-[0m[0m vcpu        = 2 [90m-> null[0m[0m
+        [90m# (3 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m console {
+          [31m-[0m[0m source_host    = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m source_service = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_port    = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_type    = "serial" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "pty" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m cpu {
+          [31m-[0m[0m mode = "custom" [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m disk {
+          [31m-[0m[0m scsi         = false [90m-> null[0m[0m
+          [31m-[0m[0m volume_id    = "/var/lib/libvirt/images/k3s-node2-disk.qcow2" [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m graphics {
+          [31m-[0m[0m autoport       = true [90m-> null[0m[0m
+          [31m-[0m[0m listen_address = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m listen_type    = "address" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "spice" [90m-> null[0m[0m
+          [31m-[0m[0m websocket      = 0 [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m network_interface {
+          [31m-[0m[0m addresses      = [
+              [31m-[0m[0m "192.168.100.12",
+            ] [90m-> null[0m[0m
+          [31m-[0m[0m hostname       = "k3s-node2" [90m-> null[0m[0m
+          [31m-[0m[0m mac            = "52:54:00:10:00:02" [90m-> null[0m[0m
+          [31m-[0m[0m network_id     = "9dc75e0f-9f1a-4464-a4fa-a964f416268f" [90m-> null[0m[0m
+          [31m-[0m[0m network_name   = "k3s-tesis" [90m-> null[0m[0m
+          [31m-[0m[0m wait_for_lease = true [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m xml {
+          [31m-[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="4"/>
+                      <vcpupin vcpu="1" cpuset="5"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT [90m-> null[0m[0m
+        }
+    }
+
+[1m  # libvirt_domain.k3s_node[2][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_domain" "k3s_node" {
+      [31m-[0m[0m arch        = "x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m autostart   = false [90m-> null[0m[0m
+      [31m-[0m[0m cloudinit   = "/var/lib/libvirt/images/k3s-node3-cloudinit.iso;f0eb689d-a7d8-4948-b610-cdec5b0eb19a" [90m-> null[0m[0m
+      [31m-[0m[0m cmdline     = [] [90m-> null[0m[0m
+      [31m-[0m[0m emulator    = "/usr/bin/qemu-system-x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m fw_cfg_name = "opt/com.coreos/config" [90m-> null[0m[0m
+      [31m-[0m[0m id          = "4c53a131-8aca-4acb-9970-40c992038468" [90m-> null[0m[0m
+      [31m-[0m[0m machine     = "ubuntu" [90m-> null[0m[0m
+      [31m-[0m[0m memory      = 4096 [90m-> null[0m[0m
+      [31m-[0m[0m name        = "k3s-node3" [90m-> null[0m[0m
+      [31m-[0m[0m qemu_agent  = false [90m-> null[0m[0m
+      [31m-[0m[0m running     = true [90m-> null[0m[0m
+      [31m-[0m[0m type        = "kvm" [90m-> null[0m[0m
+      [31m-[0m[0m vcpu        = 2 [90m-> null[0m[0m
+        [90m# (3 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m console {
+          [31m-[0m[0m source_host    = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m source_service = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_port    = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_type    = "serial" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "pty" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m cpu {
+          [31m-[0m[0m mode = "custom" [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m disk {
+          [31m-[0m[0m scsi         = false [90m-> null[0m[0m
+          [31m-[0m[0m volume_id    = "/var/lib/libvirt/images/k3s-node3-disk.qcow2" [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m graphics {
+          [31m-[0m[0m autoport       = true [90m-> null[0m[0m
+          [31m-[0m[0m listen_address = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m listen_type    = "address" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "spice" [90m-> null[0m[0m
+          [31m-[0m[0m websocket      = 0 [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m network_interface {
+          [31m-[0m[0m addresses      = [
+              [31m-[0m[0m "192.168.100.13",
+            ] [90m-> null[0m[0m
+          [31m-[0m[0m hostname       = "k3s-node3" [90m-> null[0m[0m
+          [31m-[0m[0m mac            = "52:54:00:10:00:03" [90m-> null[0m[0m
+          [31m-[0m[0m network_id     = "9dc75e0f-9f1a-4464-a4fa-a964f416268f" [90m-> null[0m[0m
+          [31m-[0m[0m network_name   = "k3s-tesis" [90m-> null[0m[0m
+          [31m-[0m[0m wait_for_lease = true [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m xml {
+          [31m-[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="6"/>
+                      <vcpupin vcpu="1" cpuset="7"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT [90m-> null[0m[0m
+        }
+    }
+
+[1m  # libvirt_network.k3s_network[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_network" "k3s_network" {
+      [31m-[0m[0m addresses = [
+          [31m-[0m[0m "192.168.100.0/24",
+        ] [90m-> null[0m[0m
+      [31m-[0m[0m autostart = true [90m-> null[0m[0m
+      [31m-[0m[0m bridge    = "virbr1" [90m-> null[0m[0m
+      [31m-[0m[0m domain    = "k3s-tesis.local" [90m-> null[0m[0m
+      [31m-[0m[0m id        = "9dc75e0f-9f1a-4464-a4fa-a964f416268f" [90m-> null[0m[0m
+      [31m-[0m[0m mode      = "nat" [90m-> null[0m[0m
+      [31m-[0m[0m name      = "k3s-tesis" [90m-> null[0m[0m
+
+      [31m-[0m[0m dhcp {
+          [31m-[0m[0m enabled = true [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m dns {
+          [31m-[0m[0m enabled    = true [90m-> null[0m[0m
+          [31m-[0m[0m local_only = false [90m-> null[0m[0m
+        }
+    }
+
+[1m  # libvirt_volume.base_image[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_volume" "base_image" {
+      [31m-[0m[0m format = "qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m id     = "/var/lib/libvirt/images/ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m name   = "ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m pool   = "default" [90m-> null[0m[0m
+      [31m-[0m[0m size   = 3758096384 [90m-> null[0m[0m
+      [31m-[0m[0m source = "/home/coto/vmstore/images/noble-server-cloudimg-amd64.img" [90m-> null[0m[0m
+    }
+
+[1m  # libvirt_volume.vm_disk[0][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_volume" "vm_disk" {
+      [31m-[0m[0m base_volume_id = "/var/lib/libvirt/images/ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m format         = "qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/k3s-node1-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "k3s-node1-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m size           = 53687091200 [90m-> null[0m[0m
+    }
+
+[1m  # libvirt_volume.vm_disk[1][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_volume" "vm_disk" {
+      [31m-[0m[0m base_volume_id = "/var/lib/libvirt/images/ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m format         = "qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/k3s-node2-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "k3s-node2-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m size           = 53687091200 [90m-> null[0m[0m
+    }
+
+[1m  # libvirt_volume.vm_disk[2][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_volume" "vm_disk" {
+      [31m-[0m[0m base_volume_id = "/var/lib/libvirt/images/ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m format         = "qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/k3s-node3-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "k3s-node3-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m size           = 53687091200 [90m-> null[0m[0m
+    }
+
+[1m  # local_file.ansible_inventory[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "local_file" "ansible_inventory" {
+      [31m-[0m[0m content              = <<-EOT
+            # Grupo de servidores k3s
+            [k3s_servers]
+            k3s-node1 ansible_host=192.168.100.11
+            k3s-node2 ansible_host=192.168.100.12
+            k3s-node3 ansible_host=192.168.100.13
+            
+            # Grupo principal que incluye todos los servidores k3s
+            [k3s_cluster:children]
+            k3s_servers
+            
+            # Variables compartidas para el grupo k3s_cluster
+            [k3s_cluster:vars]
+            ansible_user=jdelpino
+            cluster_user=jdelpino
+            vip_address=192.168.100.100
+            ansible_ssh_private_key_file=../keys/key
+        EOT [90m-> null[0m[0m
+      [31m-[0m[0m content_base64sha256 = "EKmi9Bf6JtGULzOU14hK3EnAkeWb9NwnZwpIWcoS0DY=" [90m-> null[0m[0m
+      [31m-[0m[0m content_base64sha512 = "FQ+HlalysjM3HG2rezzZHO1410kfc1V4w6XAfyKNq2KNq1Ks8S+3K2zR3azX5hVH6xo2cTYhgChv/NNvxRhcnQ==" [90m-> null[0m[0m
+      [31m-[0m[0m content_md5          = "fdccaca6b9979758723aa7386532e46c" [90m-> null[0m[0m
+      [31m-[0m[0m content_sha1         = "350f6516583b2407dd2c46efd4eebd76140cc2b4" [90m-> null[0m[0m
+      [31m-[0m[0m content_sha256       = "10a9a2f417fa26d1942f3394d7884adc49c091e59bf4dc27670a4859ca12d036" [90m-> null[0m[0m
+      [31m-[0m[0m content_sha512       = "150f8795a972b233371c6dab7b3cd91ced78d7491f735578c3a5c07f228dab628dab52acf12fb72b6cd1ddacd7e61547eb1a3671362180286ffcd36fc5185c9d" [90m-> null[0m[0m
+      [31m-[0m[0m directory_permission = "0777" [90m-> null[0m[0m
+      [31m-[0m[0m file_permission      = "0777" [90m-> null[0m[0m
+      [31m-[0m[0m filename             = "./../ansible/inventory.ini" [90m-> null[0m[0m
+      [31m-[0m[0m id                   = "350f6516583b2407dd2c46efd4eebd76140cc2b4" [90m-> null[0m[0m
+    }
+
+[1mPlan:[0m [0m0 to add, 0 to change, 12 to destroy.
+
+Changes to Outputs:
+  [31m-[0m[0m vip_address = "192.168.100.100" [90m-> null[0m[0m
+  [31m-[0m[0m vm_ips      = {
+      [31m-[0m[0m k3s-node1 = "192.168.100.11"
+      [31m-[0m[0m k3s-node2 = "192.168.100.12"
+      [31m-[0m[0m k3s-node3 = "192.168.100.13"
+    } [90m-> null[0m[0m
+[0m[1mlocal_file.ansible_inventory: Destroying... [id=350f6516583b2407dd2c46efd4eebd76140cc2b4][0m[0m
+[0m[1mlocal_file.ansible_inventory: Destruction complete after 0s[0m
+[0m[1mlibvirt_domain.k3s_node[1]: Destroying... [id=6e850238-1865-4345-92b6-009c68291064][0m[0m
+[0m[1mlibvirt_domain.k3s_node[0]: Destroying... [id=a3055931-d994-4b39-9c0f-b816dea15add][0m[0m
+[0m[1mlibvirt_domain.k3s_node[2]: Destroying... [id=4c53a131-8aca-4acb-9970-40c992038468][0m[0m
+[0m[1mlibvirt_domain.k3s_node[0]: Destruction complete after 1s[0m
+[0m[1mlibvirt_domain.k3s_node[2]: Destruction complete after 1s[0m
+[0m[1mlibvirt_domain.k3s_node[1]: Destruction complete after 1s[0m
+[0m[1mlibvirt_volume.vm_disk[1]: Destroying... [id=/var/lib/libvirt/images/k3s-node2-disk.qcow2][0m[0m
+[0m[1mlibvirt_volume.vm_disk[2]: Destroying... [id=/var/lib/libvirt/images/k3s-node3-disk.qcow2][0m[0m
+[0m[1mlibvirt_volume.vm_disk[0]: Destroying... [id=/var/lib/libvirt/images/k3s-node1-disk.qcow2][0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[1]: Destroying... [id=/var/lib/libvirt/images/k3s-node2-cloudinit.iso;9aa6a4c2-6cb3-448c-a8df-8f745a96f82a][0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[0]: Destroying... [id=/var/lib/libvirt/images/k3s-node1-cloudinit.iso;39b1645d-5346-4982-a2e4-382d755212e1][0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[2]: Destroying... [id=/var/lib/libvirt/images/k3s-node3-cloudinit.iso;f0eb689d-a7d8-4948-b610-cdec5b0eb19a][0m[0m
+[0m[1mlibvirt_network.k3s_network: Destroying... [id=9dc75e0f-9f1a-4464-a4fa-a964f416268f][0m[0m
+[0m[1mlibvirt_volume.vm_disk[2]: Destruction complete after 0s[0m
+[0m[1mlibvirt_volume.vm_disk[1]: Destruction complete after 0s[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[1]: Destruction complete after 0s[0m
+[0m[1mlibvirt_volume.vm_disk[0]: Destruction complete after 0s[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[0]: Destruction complete after 0s[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[2]: Destruction complete after 0s[0m
+[0m[1mlibvirt_volume.base_image: Destroying... [id=/var/lib/libvirt/images/ubuntu-2404-base.qcow2][0m[0m
+[0m[1mlibvirt_volume.base_image: Destruction complete after 0s[0m
+[0m[1mlibvirt_network.k3s_network: Destruction complete after 5s[0m
+[0m[1m[32m
+Destroy complete! Resources: 12 destroyed.[0m

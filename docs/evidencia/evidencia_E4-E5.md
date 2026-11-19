@@ -123,3 +123,25 @@ Al terminar: `sudo /usr/local/sbin/tesis-modo-medicion salir`.
 - la salida en pantalla si algo se detuvo.
 
 Después del bloque 0 solo se corrigen errores, sin cambios de diseño.
+
+## 7. Resultado del bloque 0 (19-nov)
+
+Sesiones en `data/pilotos/b00_k3s`, `b00_microk8s` y `b00_k3s_interrumpido_20261119T161455`; diario en `data/pilotos/diario/jornada_0.*`. El bloque 0 queda excluido del análisis. Sus potencias no se interpretan.
+
+- **Completo, sin errores:** 12 corridas normales y 2 con fallo, todas marcadas «válida» por el ejecutor. `valida_para_campana` queda en falso solo por ser de tipo piloto. Respaldos de k6 y de Prometheus hechos.
+- **Reanudación:**
+  - Ctrl+C a las 16:13:32, durante la primera idle de K3s.
+  - El diario registró `interrumpido SIGINT`.
+  - Destrucción manual del clúster.
+  - `--reanudar` a las 16:14:55: apartó la sesión como `_interrumpido_` y repitió el tramo de K3s completo.
+- **Tiempos reales:**
+
+| Tramo | Duración | Construcción |
+|---|---|---|
+| K3s | 57,6 min | 457 s |
+| MicroK8s | 65,2 min | 912 s |
+
+  El bloque toma 2 h 03 min, menos que la estimación de 2 h 20 a 2 h 30 min. Recalculado: jornadas 1 y 2 (3 bloques) ≈ 6 h 10 min; jornada 3 (2 bloques) ≈ 4 h 10 min.
+- **Memoria de MicroK8s en un tramo completo:** MemAvailable mínimo de 1236 MB en la corrida media r1 y de 1397 a 1542 MB en las demás, por encima del umbral de 1024 MB, pero con poco margen. Swap: 116 páginas escritas en alta r1 y 1 en media r1; ninguna leída. K3s: mínimo de 5769 MB y sin swap.
+- **Covariables nuevas:** fclk en 1200 MHz el 100 % del tiempo en todas las corridas. Se registra la PPT del SoC.
+- **Correcciones después del bloque 0:** ninguna.

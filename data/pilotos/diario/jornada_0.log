@@ -1,0 +1,48 @@
+[2026-11-19 15:59:31] -              jornada_inicio         ok            commit=21f4673600f511eb198da656267c000b2801a763 plan=data/campana/plan_campana_v1.json bloques=0 tipo=piloto simulacro=False reanudar=False
+[2026-11-19 15:59:31] b00_k3s        tramo_inicio           ok            ciclo=100
+[2026-11-19 15:59:47] b00_k3s        etiqueta               ok           16.1 s t_api=1795114771.3351562 t_up=1795114787.3984747
+[2026-11-19 15:59:48] b00_k3s        memoria                ok           1.0 s swapfree_antes=2096328 memavailable_despues=14056844
+[2026-11-19 16:04:49] b00_k3s        referencia             ok           301.6 s potencia_W=2.299
+[2026-11-19 16:11:44] b00_k3s        construccion           ok           414.2 s intento=1 energia_J=2038.771
+[2026-11-19 16:11:45] b00_k3s        verificacion           ok            
+[2026-11-19 16:12:35] b00_k3s        rtt_plano_control      ok           49.4 s 
+[2026-11-19 16:13:32] b00_k3s        interrumpido           SIGINT        
+[2026-11-19 16:14:55] -              jornada_inicio         ok            commit=21f4673600f511eb198da656267c000b2801a763 plan=data/campana/plan_campana_v1.json bloques=0 tipo=piloto simulacro=False reanudar=True
+[2026-11-19 16:14:55] b00_k3s        tramo_inicio           ok            ciclo=100
+[2026-11-19 16:15:13] b00_k3s        etiqueta               ok           18.1 s t_api=1795115695.882742 t_up=1795115713.9542575
+[2026-11-19 16:15:14] b00_k3s        memoria                ok           0.3 s swapfree_antes=2097148 memavailable_despues=14056748
+[2026-11-19 16:20:15] b00_k3s        referencia             ok           301.6 s potencia_W=2.252
+[2026-11-19 16:27:53] b00_k3s        construccion           ok           457.3 s intento=1 energia_J=2207.796
+[2026-11-19 16:27:54] b00_k3s        verificacion           ok            
+[2026-11-19 16:28:44] b00_k3s        rtt_plano_control      ok           49.8 s 
+[2026-11-19 16:34:52] b00_k3s        corrida                valida       367.8 s escenario=idle repeticion=1 rc=0 potencia_W=4.21
+[2026-11-19 16:41:04] b00_k3s        corrida                valida       372.0 s escenario=media repeticion=1 rc=0 potencia_W=5.068
+[2026-11-19 16:47:21] b00_k3s        corrida                valida       377.0 s escenario=alta repeticion=1 rc=0 potencia_W=5.644
+[2026-11-19 16:53:29] b00_k3s        corrida                valida       367.8 s escenario=idle repeticion=2 rc=0 potencia_W=4.245
+[2026-11-19 16:59:41] b00_k3s        corrida                valida       372.3 s escenario=media repeticion=2 rc=0 potencia_W=5.073
+[2026-11-19 17:05:58] b00_k3s        corrida                valida       376.9 s escenario=alta repeticion=2 rc=0 potencia_W=5.713
+[2026-11-19 17:06:02] b00_k3s        almacenamiento         ok           4.4 s 
+[2026-11-19 17:12:22] b00_k3s        corrida_fallo          valida       379.6 s rc=0
+[2026-11-19 17:12:28] b00_k3s        destruccion            ok           6.6 s 
+[2026-11-19 17:12:29] b00_k3s        respaldo_k6            ok           0.2 s archivos=7 destino=/home/coto/tesis_respaldo/k6-crudo/pilotos/b00_k3s
+[2026-11-19 17:12:29] b00_k3s        tramo_fin              completo      
+[2026-11-19 17:12:29] b00_microk8s   tramo_inicio           ok            ciclo=100
+[2026-11-19 17:12:46] b00_microk8s   etiqueta               ok           17.1 s t_api=1795119158.2305992 t_up=1795119166.2616267
+[2026-11-19 17:12:46] b00_microk8s   memoria                ok           0.4 s swapfree_antes=2097148 memavailable_despues=14034888
+[2026-11-19 17:17:48] b00_microk8s   referencia             ok           301.6 s potencia_W=2.278
+[2026-11-19 17:32:59] b00_microk8s   construccion           ok           911.7 s intento=1 energia_J=4460.086
+[2026-11-19 17:33:01] b00_microk8s   verificacion           ok            
+[2026-11-19 17:33:51] b00_microk8s   rtt_plano_control      ok           49.8 s 
+[2026-11-19 17:39:59] b00_microk8s   corrida                valida       367.8 s escenario=idle repeticion=1 rc=0 potencia_W=4.262
+[2026-11-19 17:46:12] b00_microk8s   corrida                valida       372.7 s escenario=media repeticion=1 rc=0 potencia_W=5.107
+[2026-11-19 17:52:29] b00_microk8s   corrida                valida       377.3 s escenario=alta repeticion=1 rc=0 potencia_W=5.742
+[2026-11-19 17:58:38] b00_microk8s   corrida                valida       368.8 s escenario=idle repeticion=2 rc=0 potencia_W=4.233
+[2026-11-19 18:04:50] b00_microk8s   corrida                valida       372.6 s escenario=media repeticion=2 rc=0 potencia_W=5.106
+[2026-11-19 18:11:07] b00_microk8s   corrida                valida       376.7 s escenario=alta repeticion=2 rc=0 potencia_W=5.73
+[2026-11-19 18:11:13] b00_microk8s   almacenamiento         ok           5.6 s 
+[2026-11-19 18:17:34] b00_microk8s   corrida_fallo          valida       381.5 s rc=0
+[2026-11-19 18:17:41] b00_microk8s   destruccion            ok           6.9 s 
+[2026-11-19 18:17:41] b00_microk8s   respaldo_k6            ok           0.2 s archivos=7 destino=/home/coto/tesis_respaldo/k6-crudo/pilotos/b00_microk8s
+[2026-11-19 18:17:41] b00_microk8s   tramo_fin              completo      
+[2026-11-19 18:17:41] b00_microk8s   respaldo_prometheus    ok           0.4 s snapshot=20261119T211741Z-013778804cf6750e bytes=64010240 sha256=bb4270178b8bec41e49d7e9014b373d8a9902ddae500ed49c187d016fbeca430
+[2026-11-19 18:17:41] -              jornada_fin            ok            

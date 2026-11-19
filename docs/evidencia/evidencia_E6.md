@@ -298,3 +298,10 @@ sudo /usr/local/sbin/tesis-modo-medicion salir
 - La confirmación construye con el ciclo 300 + n. Los pasos 3 y 4 repiten ciclos de registro dentro de la misma carpeta, pero la fase y la hora quedan en cada fila.
 
 **Qué devolver:** las dos últimas líneas del análisis. La carpeta la leo directamente.
+
+### 2.8 Resultado de la prueba de fclk (19-nov)
+
+- **Paso 1, ciclos sin factor (A):** base 4,84 W, ciclo 1 4,85 W y ciclo 2 4,83 W. En el ciclo 3, después del tercer `salir`/`entrar`, cae a 4,13 W. Durante toda la fase, fclk quedó en 1200 MHz y socclk en 400 MHz el 100 % del tiempo. La potencia PPT de amdgpu baja con el nivel (≈ 5,1 a ≈ 4,2 W): el salto está en el paquete y el SoC lo registra, pero **no acompaña a fclk ni a socclk**.
+- **Paso 2, ciclos con fclk (B):** abortado en la tercera ventana del ciclo 1 por reloj sin converger tras `salir`/`entrar` (node1 a 6 ms y node2 a 29 ms; umbral de 5 ms). El factor se restauró (`auto`). Las ventanas válidas dieron 4,71 a 4,72 W con fclk en 1333 MHz y socclk en 780 MHz.
+- **Veredicto con la regla de 2.7:** no se puede aplicar, porque B quedó incompleto: no alcanzó un evento que cambiara el nivel. La parte descriptiva sí responde la pregunta: el nivel cambió 0,7 W con fclk constante, así que **el nivel de fclk no es el mecanismo**. Se descarta fclk y la causa sigue no resuelta. No se repite B.
+- **Patrón que se mantiene:** el salto aparece después de un `salir`/`entrar`, aunque no en todos, y no durante una sesión continua. La campaña entra una sola vez por jornada, así que no tiene ese evento dentro de un bloque.
