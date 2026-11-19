@@ -9,6 +9,13 @@ Regla (plan de la Etapa 4, E6): en la fase abab de cada factor,
 - en otro caso, no concluyente.
 Si varios mueven el nivel, se elige el de mayor |B − A| medio. Si hubo confirmación de ese factor, su dispersión entre
 construcciones debe ser menor o igual a la de la reconstrucción sin factor. La decisión final es del usuario.
+
+Prueba de fclk (fijada el 19-nov antes de medir, después de ver los tres niveles del 18-nov): con los ciclos y la
+reconstrucción sin factor (A) y con fclk en B (relojes del SoC fijos):
+- si el rango de las medias de condición en A es < 0,3 W, no hubo desfase que explicar: no concluyente;
+- si en A es ≥ 0,3 W y en B es ≤ 0,1 W, fclk fija el nivel (se propone fijarlo en el modo medición);
+- en otro caso, fclk no fija el nivel.
+Además se informa si el nivel de fclk acompaña a los cambios de nivel en A (descriptivo, no decide).
 """
 import argparse, csv, glob, json, os, statistics, sys
 
@@ -26,7 +33,13 @@ def condiciones(archivos):
         d = json.load(open(f))
         for c in d["condiciones"]:
             w = [v["potencia_media_W"] for v in c["ventanas"]]
-            filas.append({"archivo": os.path.basename(f), "fase": d["fase"], "factor": d.get("factor") or "",
+            fc = {}
+            for v in c["ventanas"]:  # fracción media de tiempo en cada nivel de fclk (si se registró)
+                for nivel, fr in (((v.get("muestreo") or {}).get("fase_estable") or {}).get("fclk_mhz") or {}).items():
+                    fc[nivel] = fc.get(nivel, 0) + fr / len(c["ventanas"])
+            modal = max(fc, key=fc.get) if fc else None
+            filas.append({"fclk_modal_mhz": modal, "fclk_frac_modal": round(fc[modal], 3) if modal else None,
+                          "archivo": os.path.basename(f), "fase": d["fase"], "factor": d.get("factor") or "",
                           "condicion": c["condicion"], "n": len(w), "media_W": media(w),
                           "sd_W": round(statistics.stdev(w), 4) if len(w) > 1 else None,
                           "min_W": min(w, default=None), "max_W": max(w, default=None), "abortada": d.get("abortada") or ""})
@@ -89,6 +102,22 @@ def decision(ver, filas):
     return r
 
 
+def prueba_fclk(filas):
+    """Regla de la prueba de fclk (docstring del módulo) con las condiciones de ciclos, reconstrucción y confirmación."""
+    sel = lambda fac, fases: [f for f in filas if f["factor"] == fac and f["fase"] in fases and f["n"] and f["media_W"] is not None]
+    a, b = sel("", ("ciclos", "reconstruccion")), sel("fclk", ("ciclos", "confirmacion"))
+    if not a or not b:
+        return None
+    rango = lambda xs: round(max(x["media_W"] for x in xs) - min(x["media_W"] for x in xs), 4)
+    ra, rb = rango(a), rango(b)
+    v = "no concluyente: sin desfase en A" if ra < MUEVE_W else ("fclk fija el nivel" if rb <= DESCARTA_W else "fclk no fija el nivel")
+    pares = [(x, y) for i, x in enumerate(a) for y in a[i + 1:] if abs(x["media_W"] - y["media_W"]) >= MUEVE_W]
+    acompana = None if not pares or any(x["fclk_modal_mhz"] is None for x in a) else all(
+        x["fclk_modal_mhz"] != y["fclk_modal_mhz"] or abs(x["fclk_frac_modal"] - y["fclk_frac_modal"]) >= 0.2 for x, y in pares)
+    return {"rango_A_W": ra, "rango_B_W": rb, "condiciones_A": len(a), "condiciones_B": len(b), "veredicto": v,
+            "fclk_acompana_los_niveles": acompana}
+
+
 def escribir(ruta, filas):
     if not filas:
         return
@@ -115,6 +144,15 @@ def autotest():
     d = decision(list(ver.values()), filas)
     assert d["factor"] == "cstates" and d["otros_que_mueven"] == ["ksm"] and d["confirmacion"] == "cumple"
     assert decision([ver["haltpoll"]], filas)["factor"] is None
+    fc = lambda a, fase, fac, c, w, m, fr: dict(fila(a, fase, fac, c, w), fclk_modal_mhz=m, fclk_frac_modal=fr)
+    pf = [fc("cic", "ciclos", "", "base", 4.9, "800", 1.0), fc("cic", "ciclos", "", "ciclo1", 4.1, "400", 0.9),
+          fc("rec", "reconstruccion", "", "ciclo1", 5.8, "1200", 1.0),
+          fc("cicB", "ciclos", "fclk", "base", 6.0, "1333", 1.0), fc("conf", "confirmacion", "fclk", "ciclo1", 6.05, "1333", 1.0)]
+    r = prueba_fclk(pf)
+    assert r["veredicto"] == "fclk fija el nivel" and r["fclk_acompana_los_niveles"] is True, r
+    pf[-1]["media_W"] = 6.5
+    assert prueba_fclk(pf)["veredicto"] == "fclk no fija el nivel"
+    assert prueba_fclk(pf[:3]) is None
     print("autotest ok")
 
 
@@ -129,6 +167,9 @@ def main():
     filas = condiciones(archivos)
     ver = veredictos(filas)
     dec = decision(ver, filas)
+    pf = prueba_fclk(filas)
+    if pf:
+        dec["prueba_fclk"] = pf
     os.makedirs(a.salida, exist_ok=True)
     escribir(os.path.join(a.salida, "condiciones.csv"), filas)
     escribir(os.path.join(a.salida, "veredictos.csv"), ver)
@@ -138,6 +179,8 @@ def main():
     for v in ver:
         print(f"{v['factor']:11} {v['veredicto']:15} {v.get('dif_par1_W', '')} {v.get('dif_par2_W', '')}")
     print(dec["texto"])
+    if pf:
+        print(f"prueba fclk: {pf['veredicto']} (rango A {pf['rango_A_W']} W, B {pf['rango_B_W']} W; fclk acompaña: {pf['fclk_acompana_los_niveles']})")
 
 
 if __name__ == "__main__":

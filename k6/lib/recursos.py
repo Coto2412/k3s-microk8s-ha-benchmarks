@@ -127,11 +127,30 @@ def _frec_mhz():
     return round(sum(f) / len(f) / 1000, 1) if f else None
 
 
+GPU = (glob.glob("/sys/class/drm/card*/device/pp_dpm_fclk") or [""])[0].rsplit("/", 1)[0]  # iGPU AMD: relojes del SoC
+
+
+def _nivel_mhz(nombre):
+    """Nivel DPM activo (la línea marcada con *) de pp_dpm_<nombre>; None si no existe."""
+    try:
+        return next(int(l.split()[1].lower().rstrip("mhz")) for l in open(f"{GPU}/pp_dpm_{nombre}") if l.rstrip().endswith("*"))
+    except (OSError, StopIteration, ValueError, IndexError):
+        return None
+
+
+def _ppt_w():
+    try:
+        return round(int(open(glob.glob(f"{GPU}/hwmon/hwmon*/power1_input")[0]).read()) / 1e6, 3)
+    except (OSError, IndexError, ValueError):
+        return None
+
+
 def muestra_host():
     """Una muestra local y barata: solo /proc y /sys, sin SSH."""
     m, v = _meminfo(), _vmstat()
     return {"t": round(time.time(), 3), "memavailable_mb": m["MemAvailable"] // 1024, "swapfree_mb": m["SwapFree"] // 1024,
-            "pswpin": v.get("pswpin"), "pswpout": v.get("pswpout"), "temperatura_C": _temp_c(), "frecuencia_mhz": _frec_mhz()}
+            "pswpin": v.get("pswpin"), "pswpout": v.get("pswpout"), "temperatura_C": _temp_c(), "frecuencia_mhz": _frec_mhz(),
+            "fclk_mhz": _nivel_mhz("fclk"), "socclk_mhz": _nivel_mhz("socclk"), "ppt_w": _ppt_w()}
 
 
 class Muestreador(threading.Thread):
@@ -180,6 +199,12 @@ def resumen_muestreo(muestras, t0, t1, umbral_mb):
             "temperatura_media_C": med(s["temperatura_C"] for s in est),
             "temperatura_max_C": max((s["temperatura_C"] for s in est if s["temperatura_C"] is not None), default=None),
             "frecuencia_media_mhz": med(s["frecuencia_mhz"] for s in est)}
+        for k in ("fclk_mhz", "socclk_mhz"):  # fracción de muestras en cada nivel (exploratorio, desfase)
+            xs = [s.get(k) for s in est if s.get(k) is not None]
+            if xs:
+                r["fase_estable"][k] = {str(x): round(xs.count(x) / len(xs), 3) for x in sorted(set(xs))}
+        if any(s.get("ppt_w") is not None for s in est):
+            r["fase_estable"]["ppt_media_w"] = med(s.get("ppt_w") for s in est)
     return r
 
 
@@ -245,6 +270,8 @@ def autotest():
           {"t": 10, "memavailable_mb": 900, "pswpin": 8, "pswpout": 1, "temperatura_C": 52, "frecuencia_mhz": 1900},
           {"t": 20, "memavailable_mb": 1500, "pswpin": 9, "pswpout": 4, "temperatura_C": None, "frecuencia_mhz": None}]
     r = resumen_muestreo(ms, 10, 20, 1024)
+    r2 = resumen_muestreo([dict(x, fclk_mhz=f) for x, f in zip(ms, (400, 800, 1200))], 0, 20, 1024)["fase_estable"]
+    assert r2["fclk_mhz"] == {"400": 0.333, "800": 0.333, "1200": 0.333}, r2
     assert r["memoria_bajo_umbral"] and r["memavailable_min_mb"] == 900, r
     assert r["fase_estable"] == {"muestras": 2, "memavailable_min_mb": 900, "pswpin_paginas": 1, "pswpout_paginas": 3,
                                  "temperatura_media_C": 52, "temperatura_max_C": 52, "frecuencia_media_mhz": 1900}, r

@@ -197,3 +197,104 @@ sudo /usr/local/sbin/tesis-modo-medicion salir
 - Al iniciar, `entrar` debe mostrar la detención de los contenedores de incus (`ssh-client` y `ssh-server`). Al final, `salir` los vuelve a iniciar: comprobarlo con `incus list`.
 
 **Qué devolver:** la carpeta `data/diagnostico/<fecha>/` completa (JSON por fase, registro de despliegue y `registros/`) y la salida en pantalla de los pasos que hayan fallado. El veredicto lo calculo el viernes con `analysis.diagnostico`.
+
+### 2.6 Resultado del diagnóstico (18-nov, adelantado un día)
+
+Corrió completo en K3s, en modo medición: serie, los cuatro ABAB, ciclos, reconstrucción (ciclos 301 y 302) y reinicio (ciclo 310). La confirmación no corrió, porque no hubo candidato. Datos en `data/diagnostico/2026-11-18/`; salida del análisis en `analysis/salidas/2026-11-18_diagnostico/`.
+
+**Veredicto con la regla de 2.3:**
+
+| Factor | Diferencia B − A, par 1 y par 2 | Veredicto |
+|---|---|---|
+| ksm | −0,003 / −0,024 W | descartado |
+| haltpoll | +0,014 / −0,036 W | descartado |
+| emulatorpin | −0,009 / +0,039 W | descartado |
+| cstates | +0,213 / +0,239 W | no concluyente: apagar C3 sube la potencia, pero no alcanza 0,3 W |
+
+Ningún factor cumple la regla, así que la causa queda no resuelta.
+
+**Observación exploratoria.** El nivel de reposo tomó tres valores el mismo día, cada uno con una sd de ≈ 0,01 W dentro de su condición:
+
+| Condición | Media |
+|---|---|
+| Serie, ABAB y base de los ciclos (clúster c300, construido antes de `entrar`) | 4,86 a 4,93 W |
+| Después del primer `salir` y `entrar` de los ciclos (los tres ciclos) | 4,14 a 4,17 W |
+| Construcciones dentro del modo medición (c301, c302) | 5,79 W |
+| Tras reiniciar las VMs (c310) | 5,76 W |
+
+Entre esos niveles no cambia ninguna covariable registrada:
+- residencia en C3 de los núcleos de las vCPU (0,66 a 0,68) y del resto (0,98);
+- CPU de las vCPU (0,62 a 0,64 núcleos) y del emulador;
+- interrupciones del host;
+- salidas de KVM;
+- frecuencia media (1433 a 1461 MHz);
+- temperatura;
+- estado del host registrado (perfil, EPP, perfil de plataforma, boost y gobernador).
+
+Las páginas compartidas por KSM no siguen los niveles: 2865 en la serie, ≈ 660 000 en los ciclos y 0 tras construir.
+
+**Interpretación (mía, no demostrada).** Si el salto no se ve en los núcleos, podría estar en el SoC. En este equipo (AMD, iGPU 0x1002), el paquete de RAPL también incluye la fábrica de datos, el controlador de memoria y la iGPU. El equipo expone `pp_dpm_fclk`, con los niveles 400, 800, 1200 y 1333 MHz, y hasta ahora no se registraba.
+
+**Cambios del 19-nov:**
+- `k6/lib/recursos.py`: el muestreador de 2 s registra el nivel activo de `fclk` y de `socclk`, y la potencia PPT de amdgpu. El resumen de la fase estable da la fracción de muestras en cada nivel y la PPT media. Sirve para la campaña y para el diagnóstico. Leer esos archivos de sysfs consulta al firmware del SoC cada 2 s, un costo que no medí.
+- `k6/diagnostico/diagnostico_desfase.py`: nuevo factor `fclk`, en el que B fija los relojes del SoC en su máximo (`power_dpm_force_performance_level` = `high`). Además, `--fase ciclos` acepta `--factor`, que deja B aplicado durante toda la fase.
+- `analysis/diagnostico.py`: agrega la regla de la prueba de fclk, fijada antes de medir. Se describe en 2.7.
+
+### 2.7 Prueba de fclk (jueves 19, lo ejecuta el usuario)
+
+**Regla, fijada antes de medir** (`analysis/diagnostico.py`, `prueba_fclk`). A son los ciclos y la reconstrucción sin factor; B son los ciclos y la confirmación con `fclk`.
+- Si el rango de las medias de condición en A es menor que 0,3 W, no hubo desfase que explicar y el resultado es no concluyente.
+- Si en A es de al menos 0,3 W y en B es de a lo sumo 0,1 W, fclk fija el nivel. En ese caso se propone fijarlo en `tesis-modo-medicion`; la decisión final es del usuario.
+- En otro caso, fclk no fija el nivel.
+
+Además se informa, de forma descriptiva, si el nivel de fclk cambia junto con la potencia en A.
+
+**Paso previo, fuera del modo medición** (unos 10 s). Comprueba que el firmware acepta el cambio:
+
+```
+G=/sys/class/drm/card1/device
+cat $G/power_dpm_force_performance_level          # auto
+sudo sh -c "echo high > $G/power_dpm_force_performance_level"
+cat $G/pp_dpm_fclk                                 # el * debe quedar en 1333Mhz
+sudo sh -c "echo auto > $G/power_dpm_force_performance_level"
+cat $G/power_dpm_force_performance_level          # auto
+```
+
+Si el `echo high` da error o el `*` no se mueve, no corras la prueba y avísame.
+
+**Prueba, desde la consola de texto:**
+
+```
+cd ~/universidad/5to_año/tesis
+tmux new -s fclk
+sudo /usr/local/sbin/tesis-modo-medicion entrar
+F=data/diagnostico/2026-11-19
+mkdir -p $F
+
+# 0. Clúster K3s y etiqueta (≈ 6 min)
+DESPLIEGUE_REGISTRO=$F/despliegue_k3s.jsonl DESPLIEGUE_LOG=$F k6/operacion/despliegue.sh k3s construir 300
+python3 -m k6.operacion.etiqueta --distribucion k3s
+
+# 1. Ciclos sin factor, A (≈ 46 min)
+python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase ciclos
+
+# 2. Ciclos con fclk, B (≈ 46 min)
+sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase ciclos --factor fclk
+
+# 3. Reconstrucción sin factor, A (≈ 45 min; destruye el clúster del paso 0 y lo deja destruido)
+python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase reconstruccion
+
+# 4. Confirmación con fclk, B (≈ 45 min)
+sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase confirmacion --factor fclk
+
+# Análisis y cierre
+python3 -m analysis.diagnostico --datos $F --salida /tmp/diagnostico | tail -2
+cat /sys/class/drm/card1/device/power_dpm_force_performance_level   # auto
+sudo /usr/local/sbin/tesis-modo-medicion salir
+```
+
+- **Total:** ≈ 3 h 10 min.
+- Si un paso termina con `ERROR al restaurar`, no sigas y avísame: `power_dpm_force_performance_level` quedaría en `high`.
+- La confirmación construye con el ciclo 300 + n. Los pasos 3 y 4 repiten ciclos de registro dentro de la misma carpeta, pero la fase y la hora quedan en cada fila.
+
+**Qué devolver:** las dos últimas líneas del análisis. La carpeta la leo directamente.

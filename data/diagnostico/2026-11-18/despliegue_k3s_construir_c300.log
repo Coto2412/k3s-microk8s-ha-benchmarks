@@ -1,0 +1,1209 @@
+[0m[1mInitializing the backend...[0m
+
+[0m[1mInitializing provider plugins...[0m
+- Finding dmacvicar/libvirt versions matching "0.7.6"...
+- Finding hashicorp/local versions matching "~> 2.0"...
+- Installing dmacvicar/libvirt v0.7.6...
+- Installed dmacvicar/libvirt v0.7.6 (self-signed, key ID [0m[1m0833E38C51E74D26[0m)[0m
+- Installing hashicorp/local v2.9.1...
+- Installed hashicorp/local v2.9.1 (signed by HashiCorp)
+Partner and community providers are signed by their developers.
+If you'd like to know more about provider signing, you can read about it here:
+https://developer.hashicorp.com/terraform/cli/plugins/signing
+
+Terraform has created a lock file [1m.terraform.lock.hcl[0m to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.[0m
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+[0m[32m
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.[0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform will perform the following actions:
+
+[1m  # libvirt_cloudinit_disk.cloudinit[0][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m name           = "k3s-node1-cloudinit.iso"
+      [32m+[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:10:00:01"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT
+      [32m+[0m[0m pool           = "default"
+      [32m+[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: k3s-node1
+            fqdn: k3s-node1.k3s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` espera el
+            # timeout de DNS resolviendo el hostname propio (~15s cada vez, medido en
+            # microk8sHA). Se aplica igual acá por consistencia y prevención.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDDdSwSP9lwqlMhnULZYnGu7INojPK32JnDNXlNTx6Gz88Wy+4CxxDPHAkE7DXvxI8twRBei9ibCvsY6sqpNeIzCMzlpL1OeCvwRe8+JROtDqj4M5O7HYSzzVJWDfdpRz8+edVQ2yWYqxp4muQuf7iBYmBDInMkCt6VLC9rZ8J+s0mNNVHrzL2s7ym0r5zEK/0tWQnNUQIckXhrA9vbS1JHKhXJBGvNHZtl4CdnyBjMRgfqzQGzqHSNlsndI9XIVtYhjUfOdia5cRNkqLXzlPiwPXcPZuSzKll39mwii9V8yyz7ZmmsplqUiCPR8V18hm/6rABSMatXP79NYPAPGvYXIBxOaMqFc5x5kQIshcYVUUorTk6PRRUF2Gc02PiJy7irEHhWE4eLhcKpz8d5WFp0PFss1qnfayi6kjLAePFAL822zhopBXALX7dISPf7gGI2BynGctd5/1vS2AOwiFiXjUQVDLYmmWSdDJiQvQHYKlpZ1Ltp8DIfp+oF++CiocW8f/Oy95QfKv3XKRX1IBCC6EW0BYFOU1VaiP1tPnm4T/gfA8RCeI0GXQU6ymwi+cDVYlbgqhUVo0aV+a8RtcaCBX2/Bn2sYCKrelB0TJW9V8Bl7yVVphU/sXjZ6qnzQp9Vj4Qx949+ofrkLmkNBezCE1cF5qHWwWpKZ83HAopNjw== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT
+    }
+
+[1m  # libvirt_cloudinit_disk.cloudinit[1][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m name           = "k3s-node2-cloudinit.iso"
+      [32m+[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:10:00:02"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT
+      [32m+[0m[0m pool           = "default"
+      [32m+[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: k3s-node2
+            fqdn: k3s-node2.k3s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` espera el
+            # timeout de DNS resolviendo el hostname propio (~15s cada vez, medido en
+            # microk8sHA). Se aplica igual acá por consistencia y prevención.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDDdSwSP9lwqlMhnULZYnGu7INojPK32JnDNXlNTx6Gz88Wy+4CxxDPHAkE7DXvxI8twRBei9ibCvsY6sqpNeIzCMzlpL1OeCvwRe8+JROtDqj4M5O7HYSzzVJWDfdpRz8+edVQ2yWYqxp4muQuf7iBYmBDInMkCt6VLC9rZ8J+s0mNNVHrzL2s7ym0r5zEK/0tWQnNUQIckXhrA9vbS1JHKhXJBGvNHZtl4CdnyBjMRgfqzQGzqHSNlsndI9XIVtYhjUfOdia5cRNkqLXzlPiwPXcPZuSzKll39mwii9V8yyz7ZmmsplqUiCPR8V18hm/6rABSMatXP79NYPAPGvYXIBxOaMqFc5x5kQIshcYVUUorTk6PRRUF2Gc02PiJy7irEHhWE4eLhcKpz8d5WFp0PFss1qnfayi6kjLAePFAL822zhopBXALX7dISPf7gGI2BynGctd5/1vS2AOwiFiXjUQVDLYmmWSdDJiQvQHYKlpZ1Ltp8DIfp+oF++CiocW8f/Oy95QfKv3XKRX1IBCC6EW0BYFOU1VaiP1tPnm4T/gfA8RCeI0GXQU6ymwi+cDVYlbgqhUVo0aV+a8RtcaCBX2/Bn2sYCKrelB0TJW9V8Bl7yVVphU/sXjZ6qnzQp9Vj4Qx949+ofrkLmkNBezCE1cF5qHWwWpKZ83HAopNjw== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT
+    }
+
+[1m  # libvirt_cloudinit_disk.cloudinit[2][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m name           = "k3s-node3-cloudinit.iso"
+      [32m+[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:10:00:03"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT
+      [32m+[0m[0m pool           = "default"
+      [32m+[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: k3s-node3
+            fqdn: k3s-node3.k3s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` espera el
+            # timeout de DNS resolviendo el hostname propio (~15s cada vez, medido en
+            # microk8sHA). Se aplica igual acá por consistencia y prevención.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDDdSwSP9lwqlMhnULZYnGu7INojPK32JnDNXlNTx6Gz88Wy+4CxxDPHAkE7DXvxI8twRBei9ibCvsY6sqpNeIzCMzlpL1OeCvwRe8+JROtDqj4M5O7HYSzzVJWDfdpRz8+edVQ2yWYqxp4muQuf7iBYmBDInMkCt6VLC9rZ8J+s0mNNVHrzL2s7ym0r5zEK/0tWQnNUQIckXhrA9vbS1JHKhXJBGvNHZtl4CdnyBjMRgfqzQGzqHSNlsndI9XIVtYhjUfOdia5cRNkqLXzlPiwPXcPZuSzKll39mwii9V8yyz7ZmmsplqUiCPR8V18hm/6rABSMatXP79NYPAPGvYXIBxOaMqFc5x5kQIshcYVUUorTk6PRRUF2Gc02PiJy7irEHhWE4eLhcKpz8d5WFp0PFss1qnfayi6kjLAePFAL822zhopBXALX7dISPf7gGI2BynGctd5/1vS2AOwiFiXjUQVDLYmmWSdDJiQvQHYKlpZ1Ltp8DIfp+oF++CiocW8f/Oy95QfKv3XKRX1IBCC6EW0BYFOU1VaiP1tPnm4T/gfA8RCeI0GXQU6ymwi+cDVYlbgqhUVo0aV+a8RtcaCBX2/Bn2sYCKrelB0TJW9V8Bl7yVVphU/sXjZ6qnzQp9Vj4Qx949+ofrkLmkNBezCE1cF5qHWwWpKZ83HAopNjw== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT
+    }
+
+[1m  # libvirt_domain.k3s_node[0][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_domain" "k3s_node" {
+      [32m+[0m[0m arch        = (known after apply)
+      [32m+[0m[0m autostart   = (known after apply)
+      [32m+[0m[0m cloudinit   = (known after apply)
+      [32m+[0m[0m emulator    = (known after apply)
+      [32m+[0m[0m fw_cfg_name = "opt/com.coreos/config"
+      [32m+[0m[0m id          = (known after apply)
+      [32m+[0m[0m machine     = (known after apply)
+      [32m+[0m[0m memory      = 4096
+      [32m+[0m[0m name        = "k3s-node1"
+      [32m+[0m[0m qemu_agent  = false
+      [32m+[0m[0m running     = true
+      [32m+[0m[0m type        = "kvm"
+      [32m+[0m[0m vcpu        = 2
+
+      [32m+[0m[0m console {
+          [32m+[0m[0m source_host    = "127.0.0.1"
+          [32m+[0m[0m source_service = "0"
+          [32m+[0m[0m target_port    = "0"
+          [32m+[0m[0m target_type    = "serial"
+          [32m+[0m[0m type           = "pty"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m mode = "host-model"
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m scsi      = false
+          [32m+[0m[0m volume_id = (known after apply)
+        }
+
+      [32m+[0m[0m graphics {
+          [32m+[0m[0m autoport       = true
+          [32m+[0m[0m listen_address = "127.0.0.1"
+          [32m+[0m[0m listen_type    = "address"
+          [32m+[0m[0m type           = "spice"
+        }
+
+      [32m+[0m[0m network_interface {
+          [32m+[0m[0m addresses      = [
+              [32m+[0m[0m "192.168.100.11",
+            ]
+          [32m+[0m[0m hostname       = "k3s-node1"
+          [32m+[0m[0m mac            = "52:54:00:10:00:01"
+          [32m+[0m[0m network_id     = (known after apply)
+          [32m+[0m[0m network_name   = (known after apply)
+          [32m+[0m[0m wait_for_lease = true
+        }
+
+      [32m+[0m[0m xml {
+          [32m+[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="2"/>
+                      <vcpupin vcpu="1" cpuset="3"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT
+        }
+    }
+
+[1m  # libvirt_domain.k3s_node[1][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_domain" "k3s_node" {
+      [32m+[0m[0m arch        = (known after apply)
+      [32m+[0m[0m autostart   = (known after apply)
+      [32m+[0m[0m cloudinit   = (known after apply)
+      [32m+[0m[0m emulator    = (known after apply)
+      [32m+[0m[0m fw_cfg_name = "opt/com.coreos/config"
+      [32m+[0m[0m id          = (known after apply)
+      [32m+[0m[0m machine     = (known after apply)
+      [32m+[0m[0m memory      = 4096
+      [32m+[0m[0m name        = "k3s-node2"
+      [32m+[0m[0m qemu_agent  = false
+      [32m+[0m[0m running     = true
+      [32m+[0m[0m type        = "kvm"
+      [32m+[0m[0m vcpu        = 2
+
+      [32m+[0m[0m console {
+          [32m+[0m[0m source_host    = "127.0.0.1"
+          [32m+[0m[0m source_service = "0"
+          [32m+[0m[0m target_port    = "0"
+          [32m+[0m[0m target_type    = "serial"
+          [32m+[0m[0m type           = "pty"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m mode = "host-model"
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m scsi      = false
+          [32m+[0m[0m volume_id = (known after apply)
+        }
+
+      [32m+[0m[0m graphics {
+          [32m+[0m[0m autoport       = true
+          [32m+[0m[0m listen_address = "127.0.0.1"
+          [32m+[0m[0m listen_type    = "address"
+          [32m+[0m[0m type           = "spice"
+        }
+
+      [32m+[0m[0m network_interface {
+          [32m+[0m[0m addresses      = [
+              [32m+[0m[0m "192.168.100.12",
+            ]
+          [32m+[0m[0m hostname       = "k3s-node2"
+          [32m+[0m[0m mac            = "52:54:00:10:00:02"
+          [32m+[0m[0m network_id     = (known after apply)
+          [32m+[0m[0m network_name   = (known after apply)
+          [32m+[0m[0m wait_for_lease = true
+        }
+
+      [32m+[0m[0m xml {
+          [32m+[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="4"/>
+                      <vcpupin vcpu="1" cpuset="5"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT
+        }
+    }
+
+[1m  # libvirt_domain.k3s_node[2][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_domain" "k3s_node" {
+      [32m+[0m[0m arch        = (known after apply)
+      [32m+[0m[0m autostart   = (known after apply)
+      [32m+[0m[0m cloudinit   = (known after apply)
+      [32m+[0m[0m emulator    = (known after apply)
+      [32m+[0m[0m fw_cfg_name = "opt/com.coreos/config"
+      [32m+[0m[0m id          = (known after apply)
+      [32m+[0m[0m machine     = (known after apply)
+      [32m+[0m[0m memory      = 4096
+      [32m+[0m[0m name        = "k3s-node3"
+      [32m+[0m[0m qemu_agent  = false
+      [32m+[0m[0m running     = true
+      [32m+[0m[0m type        = "kvm"
+      [32m+[0m[0m vcpu        = 2
+
+      [32m+[0m[0m console {
+          [32m+[0m[0m source_host    = "127.0.0.1"
+          [32m+[0m[0m source_service = "0"
+          [32m+[0m[0m target_port    = "0"
+          [32m+[0m[0m target_type    = "serial"
+          [32m+[0m[0m type           = "pty"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m mode = "host-model"
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m scsi      = false
+          [32m+[0m[0m volume_id = (known after apply)
+        }
+
+      [32m+[0m[0m graphics {
+          [32m+[0m[0m autoport       = true
+          [32m+[0m[0m listen_address = "127.0.0.1"
+          [32m+[0m[0m listen_type    = "address"
+          [32m+[0m[0m type           = "spice"
+        }
+
+      [32m+[0m[0m network_interface {
+          [32m+[0m[0m addresses      = [
+              [32m+[0m[0m "192.168.100.13",
+            ]
+          [32m+[0m[0m hostname       = "k3s-node3"
+          [32m+[0m[0m mac            = "52:54:00:10:00:03"
+          [32m+[0m[0m network_id     = (known after apply)
+          [32m+[0m[0m network_name   = (known after apply)
+          [32m+[0m[0m wait_for_lease = true
+        }
+
+      [32m+[0m[0m xml {
+          [32m+[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="6"/>
+                      <vcpupin vcpu="1" cpuset="7"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT
+        }
+    }
+
+[1m  # libvirt_network.k3s_network[0m will be created
+[0m  [32m+[0m[0m resource "libvirt_network" "k3s_network" {
+      [32m+[0m[0m addresses = [
+          [32m+[0m[0m "192.168.100.0/24",
+        ]
+      [32m+[0m[0m autostart = true
+      [32m+[0m[0m bridge    = (known after apply)
+      [32m+[0m[0m domain    = "k3s-tesis.local"
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m mode      = "nat"
+      [32m+[0m[0m name      = "k3s-tesis"
+
+      [32m+[0m[0m dhcp {
+          [32m+[0m[0m enabled = true
+        }
+
+      [32m+[0m[0m dns {
+          [32m+[0m[0m enabled = true
+        }
+    }
+
+[1m  # libvirt_volume.base_image[0m will be created
+[0m  [32m+[0m[0m resource "libvirt_volume" "base_image" {
+      [32m+[0m[0m format = "qcow2"
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m name   = "ubuntu-2404-base.qcow2"
+      [32m+[0m[0m pool   = "default"
+      [32m+[0m[0m size   = (known after apply)
+      [32m+[0m[0m source = "/home/coto/vmstore/images/noble-server-cloudimg-amd64.img"
+    }
+
+[1m  # libvirt_volume.vm_disk[0][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_volume" "vm_disk" {
+      [32m+[0m[0m base_volume_id = (known after apply)
+      [32m+[0m[0m format         = "qcow2"
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m name           = "k3s-node1-disk.qcow2"
+      [32m+[0m[0m pool           = "default"
+      [32m+[0m[0m size           = 53687091200
+    }
+
+[1m  # libvirt_volume.vm_disk[1][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_volume" "vm_disk" {
+      [32m+[0m[0m base_volume_id = (known after apply)
+      [32m+[0m[0m format         = "qcow2"
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m name           = "k3s-node2-disk.qcow2"
+      [32m+[0m[0m pool           = "default"
+      [32m+[0m[0m size           = 53687091200
+    }
+
+[1m  # libvirt_volume.vm_disk[2][0m will be created
+[0m  [32m+[0m[0m resource "libvirt_volume" "vm_disk" {
+      [32m+[0m[0m base_volume_id = (known after apply)
+      [32m+[0m[0m format         = "qcow2"
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m name           = "k3s-node3-disk.qcow2"
+      [32m+[0m[0m pool           = "default"
+      [32m+[0m[0m size           = 53687091200
+    }
+
+[1m  # local_file.ansible_inventory[0m will be created
+[0m  [32m+[0m[0m resource "local_file" "ansible_inventory" {
+      [32m+[0m[0m content              = <<-EOT
+            # Grupo de servidores k3s
+            [k3s_servers]
+            k3s-node1 ansible_host=192.168.100.11
+            k3s-node2 ansible_host=192.168.100.12
+            k3s-node3 ansible_host=192.168.100.13
+            
+            # Grupo principal que incluye todos los servidores k3s
+            [k3s_cluster:children]
+            k3s_servers
+            
+            # Variables compartidas para el grupo k3s_cluster
+            [k3s_cluster:vars]
+            ansible_user=jdelpino
+            cluster_user=jdelpino
+            vip_address=192.168.100.100
+            ansible_ssh_private_key_file=../keys/key
+        EOT
+      [32m+[0m[0m content_base64sha256 = (known after apply)
+      [32m+[0m[0m content_base64sha512 = (known after apply)
+      [32m+[0m[0m content_md5          = (known after apply)
+      [32m+[0m[0m content_sha1         = (known after apply)
+      [32m+[0m[0m content_sha256       = (known after apply)
+      [32m+[0m[0m content_sha512       = (known after apply)
+      [32m+[0m[0m directory_permission = "0777"
+      [32m+[0m[0m file_permission      = "0777"
+      [32m+[0m[0m filename             = "./../ansible/inventory.ini"
+      [32m+[0m[0m id                   = (known after apply)
+    }
+
+[1mPlan:[0m [0m12 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  [32m+[0m[0m vip_address = "192.168.100.100"
+  [32m+[0m[0m vm_ips      = {
+      [32m+[0m[0m k3s-node1 = "192.168.100.11"
+      [32m+[0m[0m k3s-node2 = "192.168.100.12"
+      [32m+[0m[0m k3s-node3 = "192.168.100.13"
+    }
+[0m[1mlibvirt_volume.base_image: Creating...[0m[0m
+[0m[1mlibvirt_network.k3s_network: Creating...[0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[0]: Creating...[0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[2]: Creating...[0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[1]: Creating...[0m[0m
+[0m[1mlocal_file.ansible_inventory: Creating...[0m[0m
+[0m[1mlocal_file.ansible_inventory: Creation complete after 0s [id=350f6516583b2407dd2c46efd4eebd76140cc2b4][0m
+[0m[1mlibvirt_volume.base_image: Creation complete after 1s [id=/var/lib/libvirt/images/ubuntu-2404-base.qcow2][0m
+[0m[1mlibvirt_volume.vm_disk[2]: Creating...[0m[0m
+[0m[1mlibvirt_volume.vm_disk[1]: Creating...[0m[0m
+[0m[1mlibvirt_volume.vm_disk[0]: Creating...[0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[0]: Creation complete after 1s [id=/var/lib/libvirt/images/k3s-node1-cloudinit.iso;c6842249-adb9-45c4-b36c-8ea70cbf6c34][0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[1]: Creation complete after 1s [id=/var/lib/libvirt/images/k3s-node2-cloudinit.iso;a87fa1d5-c24e-47a0-8499-e010e5117c86][0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[2]: Creation complete after 1s [id=/var/lib/libvirt/images/k3s-node3-cloudinit.iso;d485d9d9-e258-4193-9349-49472cfb989f][0m
+[0m[1mlibvirt_volume.vm_disk[1]: Creation complete after 0s [id=/var/lib/libvirt/images/k3s-node2-disk.qcow2][0m
+[0m[1mlibvirt_volume.vm_disk[2]: Creation complete after 0s [id=/var/lib/libvirt/images/k3s-node3-disk.qcow2][0m
+[0m[1mlibvirt_volume.vm_disk[0]: Creation complete after 0s [id=/var/lib/libvirt/images/k3s-node1-disk.qcow2][0m
+[0m[1mlibvirt_network.k3s_network: Creation complete after 5s [id=fe1739df-f625-4df2-b792-95f670a0555e][0m
+[0m[1mlibvirt_domain.k3s_node[1]: Creating...[0m[0m
+[0m[1mlibvirt_domain.k3s_node[2]: Creating...[0m[0m
+[0m[1mlibvirt_domain.k3s_node[0]: Creating...[0m[0m
+[0m[1mlibvirt_domain.k3s_node[2]: Still creating... [00m10s elapsed][0m[0m
+[0m[1mlibvirt_domain.k3s_node[0]: Still creating... [00m10s elapsed][0m[0m
+[0m[1mlibvirt_domain.k3s_node[1]: Still creating... [00m10s elapsed][0m[0m
+[0m[1mlibvirt_domain.k3s_node[2]: Creation complete after 17s [id=c65dbd0f-6215-436f-a324-425f4d028f8d][0m
+[0m[1mlibvirt_domain.k3s_node[1]: Creation complete after 17s [id=0398211c-dfc2-4b95-b354-9ff1582d45e3][0m
+[0m[1mlibvirt_domain.k3s_node[0]: Creation complete after 17s [id=1979ca9c-1221-4580-9760-5607a8dbfa7f][0m
+[0m[1m[32m
+Apply complete! Resources: 12 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0mvip_address = "192.168.100.100"
+vm_ips = {
+  "k3s-node1" = "192.168.100.11"
+  "k3s-node2" = "192.168.100.12"
+  "k3s-node3" = "192.168.100.13"
+}
+🧹 Limpiando known_hosts para las IPs del clúster...
+🔑 Iniciando ssh-agent...
+Agent pid 122842
+🔐 Cargando clave SSH...
+Identity added: keys/key (coto@coto-thinkpad-t14-gen2a)
+🌐 Probando conectividad...
+➡ Probando 192.168.100.11 ...
+➡ Probando SSH en 192.168.100.11 ...
+Warning: Permanently added '192.168.100.11' (ED25519) to the list of known hosts.
+OK
+➡ Probando 192.168.100.12 ...
+➡ Probando SSH en 192.168.100.12 ...
+Warning: Permanently added '192.168.100.12' (ED25519) to the list of known hosts.
+OK
+➡ Probando 192.168.100.13 ...
+➡ Probando SSH en 192.168.100.13 ...
+Warning: Permanently added '192.168.100.13' (ED25519) to the list of known hosts.
+OK
+✅ Conectividad OK
+📡 Probando Ansible...
+[WARNING]: Host 'k3s-node2' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'k3s-node1' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'k3s-node3' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+k3s-node2 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.12"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+k3s-node1 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.12"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+k3s-node3 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.12"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+
+PLAY [Configurar nodo principal del clúster k3s] *******************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'k3s-node1' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+ok: [k3s-node1]
+
+TASK [common : Actualizar caché de paquetes apt] *******************************
+ok: [k3s-node1]
+
+TASK [common : Instalar paquetes requeridos] ***********************************
+changed: [k3s-node1]
+
+TASK [common : Deshabilitar swap] **********************************************
+ok: [k3s-node1]
+
+TASK [common : Deshabilitar swap en fstab] *************************************
+ok: [k3s-node1]
+
+TASK [common : Cargar módulos del kernel para k3s] *****************************
+changed: [k3s-node1]
+
+TASK [common : Cargar módulo overlay] ******************************************
+changed: [k3s-node1]
+
+TASK [common : Cargar módulo br_netfilter] *************************************
+changed: [k3s-node1]
+
+TASK [common : Configurar parámetros sysctl para kubernetes] *******************
+changed: [k3s-node1]
+
+TASK [common : Aplicar parámetros sysctl] **************************************
+ok: [k3s-node1]
+
+TASK [ssh_config : Generar llaves del host SSH] ********************************
+ok: [k3s-node1]
+
+TASK [ssh_config : Deshabilitar autenticación por contraseña en SSH] ***********
+changed: [k3s-node1]
+
+TASK [ssh_config : Deshabilitar login directo de root por SSH] *****************
+changed: [k3s-node1]
+
+TASK [ssh_config : Habilitar autenticación por llave pública en SSH] ***********
+changed: [k3s-node1]
+
+TASK [ssh_config : Crear directorio .ssh para jdelpino] ************************
+ok: [k3s-node1]
+
+TASK [ssh_config : Configurar llave pública autorizada para jdelpino] **********
+ok: [k3s-node1]
+
+TASK [ssh_config : Asegurar permisos de sshd_config] ***************************
+ok: [k3s-node1]
+
+TASK [ssh_config : Habilitar servicio SSH] *************************************
+changed: [k3s-node1]
+
+TASK [chrony : Instalar chrony (apt retira systemd-timesyncd por conflicto)] ***
+changed: [k3s-node1]
+
+TASK [chrony : Configurar chrony con el host como única fuente] ****************
+changed: [k3s-node1]
+
+TASK [chrony : Habilitar e iniciar chrony] *************************************
+ok: [k3s-node1]
+
+TASK [chrony : Aplicar la configuración antes de verificar] ********************
+
+RUNNING HANDLER [ssh_config : Reiniciar sshd] **********************************
+changed: [k3s-node1]
+
+RUNNING HANDLER [chrony : Reiniciar chrony] ************************************
+changed: [k3s-node1]
+
+TASK [chrony : Esperar a que el host sea la fuente seleccionada] ***************
+FAILED - RETRYING: [k3s-node1]: chrony : Esperar a que el host sea la fuente seleccionada (14 retries left).
+ok: [k3s-node1]
+
+TASK [k3s_server : Verificar si k3s ya está instalado] *************************
+ok: [k3s-node1]
+
+TASK [k3s_server : Descargar script de instalación de k3s] *********************
+changed: [k3s-node1]
+
+TASK [k3s_server : Construir lista de tls-san] *********************************
+ok: [k3s-node1]
+
+TASK [k3s_server : Instalar k3s en el primer nodo] *****************************
+changed: [k3s-node1]
+
+TASK [k3s_server : Esperar token de k3s en el primer nodo] *********************
+ok: [k3s-node1]
+
+TASK [k3s_server : Leer token de k3s desde el primer nodo] *********************
+ok: [k3s-node1]
+
+TASK [k3s_server : Establecer token de k3s como variable] **********************
+ok: [k3s-node1]
+
+TASK [k3s_server : Validar token de k3s en nodos adicionales] ******************
+skipping: [k3s-node1]
+
+TASK [k3s_server : Instalar k3s en nodos adicionales] **************************
+skipping: [k3s-node1]
+
+TASK [k3s_server : Crear directorio kube config] *******************************
+changed: [k3s-node1]
+
+TASK [k3s_server : Copiar kubeconfig de k3s al usuario] ************************
+changed: [k3s-node1]
+
+TASK [k3s_server : Agregar KUBECONFIG al bashrc] *******************************
+changed: [k3s-node1]
+
+TASK [kube_vip : Desplegar manifest de kube-vip (RBAC + DaemonSet)] ************
+changed: [k3s-node1]
+
+TASK [kube_vip : Esperar a que el DaemonSet de kube-vip esté listo] ************
+FAILED - RETRYING: [k3s-node1]: kube_vip : Esperar a que el DaemonSet de kube-vip esté listo (2 retries left).
+FAILED - RETRYING: [k3s-node1]: kube_vip : Esperar a que el DaemonSet de kube-vip esté listo (1 retries left).
+ok: [k3s-node1]
+
+TASK [node_exporter : Crear usuario de sistema node_exporter] ******************
+changed: [k3s-node1]
+
+TASK [node_exporter : Descargar node_exporter con checksum fijado] *************
+changed: [k3s-node1]
+
+TASK [node_exporter : Extraer node_exporter] ***********************************
+changed: [k3s-node1]
+
+TASK [node_exporter : Instalar binario de node_exporter en /usr/local/bin] *****
+changed: [k3s-node1]
+
+TASK [node_exporter : Verificar nombres de colectores con --help] **************
+ok: [k3s-node1]
+
+TASK [node_exporter : Confirmar que los colectores configurados existen en esta versión] ***
+ok: [k3s-node1] => (item=cpu) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "cpu",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node1] => (item=meminfo) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "meminfo",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node1] => (item=diskstats) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "diskstats",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node1] => (item=filesystem) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "filesystem",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node1] => (item=netdev) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "netdev",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node1] => (item=loadavg) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "loadavg",
+    "msg": "All assertions passed"
+}
+
+TASK [node_exporter : Desplegar unidad systemd de node_exporter] ***************
+changed: [k3s-node1]
+
+TASK [node_exporter : Habilitar e iniciar node_exporter] ***********************
+changed: [k3s-node1]
+
+TASK [node_exporter : Esperar a que node_exporter responda] ********************
+ok: [k3s-node1]
+
+TASK [node_exporter : Instalar ufw] ********************************************
+ok: [k3s-node1]
+
+TASK [node_exporter : Fijar política por defecto de ufw en permitir entrante] ***
+ok: [k3s-node1]
+
+TASK [node_exporter : Permitir node_exporter solo desde el host físico] ********
+changed: [k3s-node1]
+
+TASK [node_exporter : Denegar por defecto el acceso a node_exporter] ***********
+changed: [k3s-node1]
+
+TASK [node_exporter : Activar ufw] *********************************************
+changed: [k3s-node1]
+
+TASK [kube_state_metrics : Desplegar manifest de kube-state-metrics] ***********
+changed: [k3s-node1]
+
+TASK [kube_state_metrics : Esperar a que kube-state-metrics esté listo] ********
+FAILED - RETRYING: [k3s-node1]: kube_state_metrics : Esperar a que kube-state-metrics esté listo (2 retries left).
+ok: [k3s-node1]
+
+TASK [Esperar API de k3s en el VIP] ********************************************
+ok: [k3s-node1]
+
+RUNNING HANDLER [k3s_server : Actualizar servidor en kubeconfig] ***************
+changed: [k3s-node1]
+
+RUNNING HANDLER [node_exporter : Recargar systemd] *****************************
+ok: [k3s-node1]
+
+RUNNING HANDLER [node_exporter : Reiniciar node_exporter] **********************
+changed: [k3s-node1]
+
+PLAY [Configurar nodos adicionales del clúster k3s] ****************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'k3s-node3' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'k3s-node2' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+ok: [k3s-node3]
+ok: [k3s-node2]
+
+TASK [common : Actualizar caché de paquetes apt] *******************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [common : Instalar paquetes requeridos] ***********************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [common : Deshabilitar swap] **********************************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [common : Deshabilitar swap en fstab] *************************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [common : Cargar módulos del kernel para k3s] *****************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [common : Cargar módulo overlay] ******************************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [common : Cargar módulo br_netfilter] *************************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [common : Configurar parámetros sysctl para kubernetes] *******************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [common : Aplicar parámetros sysctl] **************************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [ssh_config : Generar llaves del host SSH] ********************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [ssh_config : Deshabilitar autenticación por contraseña en SSH] ***********
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [ssh_config : Deshabilitar login directo de root por SSH] *****************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [ssh_config : Habilitar autenticación por llave pública en SSH] ***********
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [ssh_config : Crear directorio .ssh para jdelpino] ************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [ssh_config : Configurar llave pública autorizada para jdelpino] **********
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [ssh_config : Asegurar permisos de sshd_config] ***************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [ssh_config : Habilitar servicio SSH] *************************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [chrony : Instalar chrony (apt retira systemd-timesyncd por conflicto)] ***
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [chrony : Configurar chrony con el host como única fuente] ****************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [chrony : Habilitar e iniciar chrony] *************************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [chrony : Aplicar la configuración antes de verificar] ********************
+
+TASK [chrony : Aplicar la configuración antes de verificar] ********************
+
+RUNNING HANDLER [ssh_config : Reiniciar sshd] **********************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+RUNNING HANDLER [chrony : Reiniciar chrony] ************************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [chrony : Esperar a que el host sea la fuente seleccionada] ***************
+FAILED - RETRYING: [k3s-node2]: chrony : Esperar a que el host sea la fuente seleccionada (14 retries left).
+FAILED - RETRYING: [k3s-node3]: chrony : Esperar a que el host sea la fuente seleccionada (14 retries left).
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [k3s_server : Verificar si k3s ya está instalado] *************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [k3s_server : Descargar script de instalación de k3s] *********************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [k3s_server : Construir lista de tls-san] *********************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [k3s_server : Instalar k3s en el primer nodo] *****************************
+skipping: [k3s-node2]
+skipping: [k3s-node3]
+
+TASK [k3s_server : Esperar token de k3s en el primer nodo] *********************
+ok: [k3s-node2 -> k3s-node1(192.168.100.11)]
+
+TASK [k3s_server : Leer token de k3s desde el primer nodo] *********************
+ok: [k3s-node2 -> k3s-node1(192.168.100.11)]
+
+TASK [k3s_server : Establecer token de k3s como variable] **********************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [k3s_server : Validar token de k3s en nodos adicionales] ******************
+ok: [k3s-node2] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+ok: [k3s-node3] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [k3s_server : Instalar k3s en nodos adicionales] **************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [k3s_server : Crear directorio kube config] *******************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [k3s_server : Copiar kubeconfig de k3s al usuario] ************************
+skipping: [k3s-node2]
+skipping: [k3s-node3]
+
+TASK [k3s_server : Agregar KUBECONFIG al bashrc] *******************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [kube_vip : Desplegar manifest de kube-vip (RBAC + DaemonSet)] ************
+skipping: [k3s-node2]
+skipping: [k3s-node3]
+
+TASK [kube_vip : Esperar a que el DaemonSet de kube-vip esté listo] ************
+skipping: [k3s-node2]
+skipping: [k3s-node3]
+
+TASK [node_exporter : Crear usuario de sistema node_exporter] ******************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [node_exporter : Descargar node_exporter con checksum fijado] *************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [node_exporter : Extraer node_exporter] ***********************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [node_exporter : Instalar binario de node_exporter en /usr/local/bin] *****
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [node_exporter : Verificar nombres de colectores con --help] **************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [node_exporter : Confirmar que los colectores configurados existen en esta versión] ***
+ok: [k3s-node2] => (item=cpu) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "cpu",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node3] => (item=cpu) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "cpu",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node2] => (item=meminfo) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "meminfo",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node2] => (item=diskstats) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "diskstats",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node2] => (item=filesystem) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "filesystem",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node3] => (item=meminfo) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "meminfo",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node2] => (item=netdev) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "netdev",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node3] => (item=diskstats) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "diskstats",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node2] => (item=loadavg) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "loadavg",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node3] => (item=filesystem) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "filesystem",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node3] => (item=netdev) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "netdev",
+    "msg": "All assertions passed"
+}
+ok: [k3s-node3] => (item=loadavg) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": "loadavg",
+    "msg": "All assertions passed"
+}
+
+TASK [node_exporter : Desplegar unidad systemd de node_exporter] ***************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [node_exporter : Habilitar e iniciar node_exporter] ***********************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [node_exporter : Esperar a que node_exporter responda] ********************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [node_exporter : Instalar ufw] ********************************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [node_exporter : Fijar política por defecto de ufw en permitir entrante] ***
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+TASK [node_exporter : Permitir node_exporter solo desde el host físico] ********
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [node_exporter : Denegar por defecto el acceso a node_exporter] ***********
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+TASK [node_exporter : Activar ufw] *********************************************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+RUNNING HANDLER [node_exporter : Recargar systemd] *****************************
+ok: [k3s-node2]
+ok: [k3s-node3]
+
+RUNNING HANDLER [node_exporter : Reiniciar node_exporter] **********************
+changed: [k3s-node2]
+changed: [k3s-node3]
+
+PLAY [Desplegar la aplicación de referencia en el clúster k3s] *****************
+
+TASK [Gathering Facts] *********************************************************
+ok: [k3s-node1]
+
+TASK [nginx_referencia : Desplegar manifiestos de la aplicación de referencia] ***
+changed: [k3s-node1] => (item=nginx-deployment)
+changed: [k3s-node1] => (item=nginx-service)
+
+TASK [nginx_referencia : Esperar a que NGINX de referencia esté listo] *********
+FAILED - RETRYING: [k3s-node1]: nginx_referencia : Esperar a que NGINX de referencia esté listo (2 retries left).
+FAILED - RETRYING: [k3s-node1]: nginx_referencia : Esperar a que NGINX de referencia esté listo (1 retries left).
+ok: [k3s-node1]
+
+PLAY RECAP *********************************************************************
+k3s-node1                  : ok=59   changed=32   unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+k3s-node2                  : ok=50   changed=27   unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+k3s-node3                  : ok=48   changed=27   unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+

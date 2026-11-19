@@ -9,6 +9,7 @@ Se lanza como usuario desde la consola de texto, sin otras aplicaciones abiertas
   python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase reconstruccion --ciclos 2   # referencia, construir, 3 idle, destruir
   python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase reinicio                    # virsh shutdown/start, Ready, 3 idle
   sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase confirmacion --factor ksm --ciclos 2  # reconstruccion con el factor B
+  sudo python3 -m k6.diagnostico.diagnostico_desfase --distribucion k3s --fase ciclos --factor fclk   # salir/entrar con el factor B
 
 reconstruccion y confirmacion destruyen el clúster de la distribución si está arriba y lo dejan destruido.
 
@@ -53,6 +54,10 @@ def factor(nombre):
     if nombre == "cstates":
         fs = {f: _rd(f) for f in sorted(glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpuidle/state[2-9]/disable"))}
         return fs, lambda: [_wr(f, "1") for f in fs], lambda: [_wr(f, v) for f, v in fs.items()], True
+    if nombre == "fclk":  # B = relojes del SoC (fclk, socclk, gfx) fijos en su máximo vía amdgpu
+        r = f"{recursos.GPU}/power_dpm_force_performance_level"
+        o = _rd(r)
+        return o, lambda: _wr(r, "high"), lambda: _wr(r, o), True
     if nombre == "emulatorpin":
         doms = subprocess.run(["virsh", "-c", "qemu:///system", "list", "--name"], capture_output=True, text=True).stdout.split()
         o = {d: subprocess.run(["virsh", "-c", "qemu:///system", "emulatorpin", d], capture_output=True, text=True).stdout.split("*:")[-1].strip() for d in doms}
@@ -117,7 +122,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--distribucion", required=True, choices=["k3s", "microk8s"])
     ap.add_argument("--fase", required=True, choices=["serie", "ciclos", "abab", "reconstruccion", "reinicio", "confirmacion"])
-    ap.add_argument("--factor", choices=["ksm", "cstates", "haltpoll", "emulatorpin"])
+    ap.add_argument("--factor", choices=["ksm", "cstates", "haltpoll", "emulatorpin", "fclk"])
     ap.add_argument("--ventanas", type=int, default=20, help="serie: ventanas consecutivas (20 × 180 s ≈ 1 h)")
     ap.add_argument("--ciclos", type=int, help="ciclos: salir/entrar (3); reconstruccion y confirmacion: construcciones (2); reinicio: reinicios (1)")
     ap.add_argument("--ventanas-por-condicion", type=int, default=3, help="ciclos y abab: ventanas tras cada cambio")
@@ -189,6 +194,12 @@ def main():
         if a.fase == "serie":
             condicion("serie", a.ventanas)
         elif a.fase == "ciclos":
+            if a.factor:  # ciclos con el factor B aplicado durante toda la fase
+                original, aplicar, restaurar, root = factor(a.factor)
+                if root and os.geteuid() != 0:
+                    sys.exit(f"El factor {a.factor} escribe en /sys: ejecutar con sudo")
+                res["factor_original"] = original
+                aplicar()
             condicion("base", a.ventanas_por_condicion)
             for c in range(1, a.ciclos + 1):
                 if a.simulacro:
