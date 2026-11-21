@@ -1,0 +1,19 @@
+{
+ "paso": "interrumpido",
+ "resultado": "SIGINT",
+ "t": 1795188245.944,
+ "hora": "2026-11-20 12:24:05",
+ "jornada": 1,
+ "termino_estimado": "2026-11-20 18:37",
+ "tramos": [
+  "b01_k3s",
+  "b01_microk8s",
+  "b02_k3s",
+  "b02_microk8s",
+  "b03_microk8s",
+  "b03_k3s"
+ ],
+ "bloque": 1,
+ "distribucion": "k3s",
+ "sesion": "b01_k3s"
+}

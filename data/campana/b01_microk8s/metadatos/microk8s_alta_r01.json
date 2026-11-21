@@ -1,0 +1,1025 @@
+{
+  "esquema": 3,
+  "tipo": "definitiva",
+  "estado": "completa",
+  "verificacion": false,
+  "distribution": "microk8s",
+  "escenario": "alta",
+  "repeticion": 1,
+  "t_inicio": 1795194245.28,
+  "t_fin": 1795194425.281,
+  "t_ejecucion_inicio": 1795194215.272,
+  "t_ejecucion_fin": 1795194456.066,
+  "parametros": {
+    "tasa": 900.0,
+    "rampa_s": 30,
+    "estable_s": 180,
+    "descenso_s": 30,
+    "pre_vus": 50,
+    "max_vus": 200,
+    "estabilizacion_s": 120,
+    "objetivo": "http://192.168.100.150:80/"
+  },
+  "rapl": {
+    "dominio": "package-0",
+    "max_energy_range_uj": 65532610987,
+    "energy_uj_inicio": 35067926677,
+    "energy_uj_fin": 36264959179,
+    "lectura_inicio_s": [
+      1795194245.272,
+      1795194245.288
+    ],
+    "lectura_fin_s": [
+      1795194425.272,
+      1795194425.289
+    ],
+    "desbordamiento": false,
+    "delta_uj": 1197032502,
+    "potencia_media_W": 6.65
+  },
+  "titulares": {
+    "inicio": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "fin": {
+      "nodo_vip_plano_control": "microk8s-node3",
+      "nodo_vip_servicio": "microk8s-node3",
+      "nodo_pod": "microk8s-node2"
+    },
+    "cambiaron": false,
+    "metodo": "VIP: MAC vista por el host en ARP (ip neigh tras ping) comparada con la MAC de cada nodo; pod: kube_pod_info de kube-state-metrics v\u00eda Prometheus"
+  },
+  "k6": {
+    "codigo_salida": 0,
+    "cpus": "0,1",
+    "json": "data/k6-crudo/campana/b01_microk8s/microk8s_alta_r01.json.gz",
+    "resumen": "data/campana/b01_microk8s/k6-resultados/microk8s_alta_r01.resumen.json",
+    "tamano_json_bytes": 26336374,
+    "sha256_json": "311f0cec1f50ca2202c93c4a18e365a4a7efab141879c909dc7b9bd170763e02",
+    "por_segundo": "data/campana/b01_microk8s/k6-resultados/microk8s_alta_r01.por_segundo.json.gz",
+    "primer_punto_json": "2026-11-20T14:03:35.616977263-03:00",
+    "version": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)"
+  },
+  "rtt": null,
+  "red_virtual": {
+    "dominios": {
+      "microk8s-node1": [
+        {
+          "interfaz": "vnet1",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:01"
+        }
+      ],
+      "microk8s-node2": [
+        {
+          "interfaz": "vnet0",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:02"
+        }
+      ],
+      "microk8s-node3": [
+        {
+          "interfaz": "vnet2",
+          "tipo": "network",
+          "red": "microk8s-tesis",
+          "modelo": "virtio",
+          "mac": "52:54:00:20:00:03"
+        }
+      ]
+    },
+    "redes": {
+      "microk8s-tesis": {
+        "forward": "nat",
+        "bridge": "virbr1",
+        "ip": "192.168.100.1",
+        "mascara": null
+      }
+    }
+  },
+  "recursos_host": {
+    "inicio": {
+      "t": 1795194215.255,
+      "memavailable_kb": 1557884,
+      "memtotal_kb": 15154240,
+      "swaptotal_kb": 2097148,
+      "swapfree_kb": 2097148,
+      "pswpin": 0,
+      "pswpout": 126,
+      "qemu": [
+        {
+          "dominio": "microk8s-node1",
+          "pid": 30659,
+          "VmRSS": 4238792,
+          "RssAnon": 4212280,
+          "RssFile": 26512,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node2",
+          "pid": 30668,
+          "VmRSS": 4233372,
+          "RssAnon": 4207148,
+          "RssFile": 26224,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node3",
+          "pid": 30686,
+          "VmRSS": 3976108,
+          "RssAnon": 3949776,
+          "RssFile": 26332,
+          "RssShmem": 0
+        }
+      ]
+    },
+    "fin": {
+      "t": 1795194456.066,
+      "memavailable_kb": 1506432,
+      "memtotal_kb": 15154240,
+      "swaptotal_kb": 2097148,
+      "swapfree_kb": 2097144,
+      "pswpin": 0,
+      "pswpout": 127,
+      "qemu": [
+        {
+          "dominio": "microk8s-node1",
+          "pid": 30659,
+          "VmRSS": 4238232,
+          "RssAnon": 4211832,
+          "RssFile": 26400,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node2",
+          "pid": 30668,
+          "VmRSS": 4232704,
+          "RssAnon": 4206572,
+          "RssFile": 26132,
+          "RssShmem": 0
+        },
+        {
+          "dominio": "microk8s-node3",
+          "pid": 30686,
+          "VmRSS": 3975560,
+          "RssAnon": 3949328,
+          "RssFile": 26232,
+          "RssShmem": 0
+        }
+      ]
+    },
+    "resumen": {
+      "pswpin_paginas": 0,
+      "pswpout_paginas": 1,
+      "swap_usado_kb_inicio": 0,
+      "swap_usado_kb_fin": 4,
+      "memavailable_min_mb_prometheus": 1451
+    }
+  },
+  "cgroup_cp": null,
+  "instrumentacion": {
+    "esquema": 1,
+    "host": {
+      "foto_inicio": {
+        "t": 1795194244.2724326,
+        "dur_s": 0.134
+      },
+      "foto_fin": {
+        "t": 1795194425.2888215,
+        "dur_s": 0.135
+      },
+      "delta": {
+        "dt_s": 181.016,
+        "intervalo": [
+          1795194244.272,
+          1795194425.289
+        ],
+        "cpuidle_residencia": {
+          "cpu0": {
+            "0_POLL": 0.0002,
+            "1_C1": 0.0903,
+            "2_C2": 0.4078,
+            "3_C3": 0.1845
+          },
+          "cpu1": {
+            "0_POLL": 0.0002,
+            "1_C1": 0.0967,
+            "2_C2": 0.4038,
+            "3_C3": 0.1919
+          },
+          "cpu10": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.0593,
+            "2_C2": 0.0575,
+            "3_C3": 0.8434
+          },
+          "cpu11": {
+            "0_POLL": 0.0,
+            "1_C1": 0.0219,
+            "2_C2": 0.0255,
+            "3_C3": 0.9311
+          },
+          "cpu12": {
+            "0_POLL": 0.0,
+            "1_C1": 0.046,
+            "2_C2": 0.0526,
+            "3_C3": 0.8648
+          },
+          "cpu13": {
+            "0_POLL": 0.0,
+            "1_C1": 0.0396,
+            "2_C2": 0.0383,
+            "3_C3": 0.8966
+          },
+          "cpu14": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.0563,
+            "2_C2": 0.0639,
+            "3_C3": 0.8392
+          },
+          "cpu15": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.0622,
+            "2_C2": 0.055,
+            "3_C3": 0.8441
+          },
+          "cpu2": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.0078,
+            "2_C2": 0.3414,
+            "3_C3": 0.4757
+          },
+          "cpu3": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.0066,
+            "2_C2": 0.3277,
+            "3_C3": 0.4941
+          },
+          "cpu4": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.0052,
+            "2_C2": 0.202,
+            "3_C3": 0.0007
+          },
+          "cpu5": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.0031,
+            "2_C2": 0.1222,
+            "3_C3": 0.0002
+          },
+          "cpu6": {
+            "0_POLL": 0.0002,
+            "1_C1": 0.0137,
+            "2_C2": 0.3964,
+            "3_C3": 0.2136
+          },
+          "cpu7": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.0065,
+            "2_C2": 0.3237,
+            "3_C3": 0.2562
+          },
+          "cpu8": {
+            "0_POLL": 0.0001,
+            "1_C1": 0.065,
+            "2_C2": 0.0687,
+            "3_C3": 0.8246
+          },
+          "cpu9": {
+            "0_POLL": 0.0,
+            "1_C1": 0.0237,
+            "2_C2": 0.0246,
+            "3_C3": 0.9324
+          }
+        },
+        "cpuidle_entradas": {
+          "cpu0": {
+            "0_POLL": 1762,
+            "1_C1": 159521,
+            "2_C2": 411772,
+            "3_C3": 91614
+          },
+          "cpu1": {
+            "0_POLL": 1617,
+            "1_C1": 187962,
+            "2_C2": 384737,
+            "3_C3": 74812
+          },
+          "cpu10": {
+            "0_POLL": 270,
+            "1_C1": 64615,
+            "2_C2": 54538,
+            "3_C3": 130495
+          },
+          "cpu11": {
+            "0_POLL": 134,
+            "1_C1": 24957,
+            "2_C2": 24494,
+            "3_C3": 64921
+          },
+          "cpu12": {
+            "0_POLL": 214,
+            "1_C1": 51177,
+            "2_C2": 49579,
+            "3_C3": 118377
+          },
+          "cpu13": {
+            "0_POLL": 196,
+            "1_C1": 45483,
+            "2_C2": 41223,
+            "3_C3": 74067
+          },
+          "cpu14": {
+            "0_POLL": 277,
+            "1_C1": 61499,
+            "2_C2": 61453,
+            "3_C3": 115701
+          },
+          "cpu15": {
+            "0_POLL": 244,
+            "1_C1": 67245,
+            "2_C2": 55522,
+            "3_C3": 153049
+          },
+          "cpu2": {
+            "0_POLL": 1134,
+            "1_C1": 31923,
+            "2_C2": 215541,
+            "3_C3": 58268
+          },
+          "cpu3": {
+            "0_POLL": 1115,
+            "1_C1": 30427,
+            "2_C2": 208708,
+            "3_C3": 39474
+          },
+          "cpu4": {
+            "0_POLL": 929,
+            "1_C1": 29719,
+            "2_C2": 145107,
+            "3_C3": 327
+          },
+          "cpu5": {
+            "0_POLL": 622,
+            "1_C1": 14169,
+            "2_C2": 97665,
+            "3_C3": 83
+          },
+          "cpu6": {
+            "0_POLL": 1802,
+            "1_C1": 50469,
+            "2_C2": 347571,
+            "3_C3": 99516
+          },
+          "cpu7": {
+            "0_POLL": 1343,
+            "1_C1": 28692,
+            "2_C2": 269431,
+            "3_C3": 117957
+          },
+          "cpu8": {
+            "0_POLL": 299,
+            "1_C1": 70949,
+            "2_C2": 67602,
+            "3_C3": 138814
+          },
+          "cpu9": {
+            "0_POLL": 133,
+            "1_C1": 25435,
+            "2_C2": 22597,
+            "3_C3": 83289
+          }
+        },
+        "interrupciones_por_s_por_cpu": [
+          4260.3,
+          3983.7,
+          2499.7,
+          2285.8,
+          4212.6,
+          4270.2,
+          4189.9,
+          3913.8,
+          1299.5,
+          644.4,
+          1163.5,
+          553.0,
+          1044.7,
+          725.7,
+          1121.0,
+          1289.1
+        ],
+        "interrupciones_top_por_s": {
+          "LOC Local timer interrupts": 19032.4,
+          "CAL Function call interrupts": 14236.8,
+          "RES Rescheduling interrupts": 3996.3,
+          "94 IR-PCI-MSIX-0000:07:00.0 0-edg": 38.7,
+          "93 IR-PCI-MSI-0000:03:00.0 0-edge": 33.9,
+          "TLB TLB shootdowns": 27.8,
+          "69 IR-PCI-MSIX-0000:01:00.0 9-edg": 14.3,
+          "71 IR-PCI-MSIX-0000:01:00.0 11-ed": 13.5,
+          "65 IR-PCI-MSIX-0000:01:00.0 5-edg": 12.7,
+          "67 IR-PCI-MSIX-0000:01:00.0 7-edg": 10.7
+        },
+        "qemu_cpu_s": {
+          "microk8s-node3": {
+            "emulador_io": 2.38,
+            "vhost": 13.75,
+            "vcpu0": 62.17,
+            "vcpu1": 69.61,
+            "otros": 0.0
+          },
+          "microk8s-node2": {
+            "emulador_io": 2.31,
+            "vhost": 6.4,
+            "vcpu0": 140.69,
+            "vcpu1": 156.54,
+            "otros": 0.0
+          },
+          "microk8s-node1": {
+            "emulador_io": 2.36,
+            "vhost": 0.34,
+            "vcpu0": 26.84,
+            "vcpu1": 27.46,
+            "otros": 0.0
+          },
+          "driver": {
+            "emulador_io": 0.0
+          }
+        },
+        "ksm": {
+          "ksmd_cpu_s": 0.17,
+          "full_scans": 0,
+          "pages_sharing_fin": "0",
+          "pages_shared_fin": "0",
+          "run": "1"
+        },
+        "kvm_halt_poll": {
+          "halt_poll_ns_shrink": "2",
+          "halt_poll_ns": "200000",
+          "halt_poll_ns_grow_start": "10000",
+          "halt_poll_ns_grow": "2"
+        },
+        "temperatura_C": [
+          51.375,
+          51.625
+        ],
+        "frecuencia_khz_fin": {
+          "cpu0": "1855888",
+          "cpu1": "1856320",
+          "cpu10": "1113443",
+          "cpu11": "1113443",
+          "cpu12": "1855931",
+          "cpu13": "1113443",
+          "cpu14": "1855593",
+          "cpu15": "1113443",
+          "cpu2": "1856494",
+          "cpu3": "1856500",
+          "cpu4": "1856279",
+          "cpu5": "1856481",
+          "cpu6": "1856362",
+          "cpu7": "1856172",
+          "cpu8": "1856486",
+          "cpu9": "1855846"
+        },
+        "kvm": {
+          "disponible": true,
+          "global": {
+            "blocking": 1,
+            "directed_yield_attempted": 0,
+            "directed_yield_successful": 0,
+            "exits": 7309201,
+            "fpu_reload": 13315,
+            "guest_mode": 0,
+            "halt_attempted_poll": 1667752,
+            "halt_exits": 2002662,
+            "halt_poll_fail_ns": 57088254456,
+            "halt_poll_invalid": 0,
+            "halt_poll_success_ns": 21872718419,
+            "halt_successful_poll": 548418,
+            "halt_wait_ns": 617959411976,
+            "halt_wakeup": 1421933,
+            "host_state_reload": 1432506,
+            "hypercalls": 0,
+            "insn_emulation": 691781,
+            "insn_emulation_fail": 0,
+            "invlpg": 0,
+            "io_exits": 13845,
+            "irq_exits": 1602638,
+            "irq_injections": 3369859,
+            "irq_window_exits": 336858,
+            "l1d_flush": 0,
+            "max_mmu_page_hash_collisions": 0,
+            "max_mmu_rmap_size": 0,
+            "mmio_exits": 0,
+            "mmu_cache_miss": 0,
+            "mmu_flooded": 0,
+            "mmu_pde_zapped": 0,
+            "mmu_pte_write": 0,
+            "mmu_recycled": 0,
+            "mmu_shadow_zapped": 0,
+            "mmu_unsync": 0,
+            "nested_run": 0,
+            "nmi_injections": 0,
+            "nmi_window_exits": 0,
+            "notify_window_exits": 0,
+            "nx_lpage_splits": 0,
+            "pages_1g": 0,
+            "pages_2m": 0,
+            "pages_4k": -1515,
+            "pf_emulate": 0,
+            "pf_fast": 0,
+            "pf_fixed": 501,
+            "pf_guest": 0,
+            "pf_mmio_spte_created": 0,
+            "pf_spurious": 0,
+            "pf_taken": 501,
+            "preemption_other": 102,
+            "preemption_reported": 1259,
+            "remote_tlb_flush": 1254,
+            "remote_tlb_flush_requests": 2016,
+            "req_event": 4599182,
+            "request_irq_exits": 0,
+            "signal_exits": 0,
+            "tlb_flush": 2364
+          },
+          "vms": {
+            "microk8s-node1": {
+              "blocking": 0,
+              "directed_yield_attempted": 0,
+              "directed_yield_successful": 0,
+              "exits": 1682771,
+              "fpu_reload": 3080,
+              "guest_mode": 0,
+              "halt_attempted_poll": 288232,
+              "halt_exits": 502363,
+              "halt_poll_fail_ns": 5238618631,
+              "halt_poll_invalid": 0,
+              "halt_poll_success_ns": 4240180980,
+              "halt_successful_poll": 103871,
+              "halt_wait_ns": 311628253573,
+              "halt_wakeup": 391267,
+              "host_state_reload": 393830,
+              "hypercalls": 0,
+              "insn_emulation": 12939,
+              "insn_emulation_fail": 0,
+              "invlpg": 0,
+              "io_exits": 3256,
+              "irq_exits": 148680,
+              "irq_injections": 632926,
+              "irq_window_exits": 60756,
+              "l1d_flush": 0,
+              "max_mmu_page_hash_collisions": 0,
+              "max_mmu_rmap_size": 0,
+              "mmio_exits": 0,
+              "mmu_cache_miss": 0,
+              "mmu_flooded": 0,
+              "mmu_pde_zapped": 0,
+              "mmu_pte_write": 0,
+              "mmu_recycled": 0,
+              "mmu_shadow_zapped": 0,
+              "mmu_unsync": 0,
+              "nested_run": 0,
+              "nmi_injections": 0,
+              "nmi_window_exits": 0,
+              "notify_window_exits": 0,
+              "nx_lpage_splits": 0,
+              "pages_1g": 0,
+              "pages_2m": 0,
+              "pages_4k": 1,
+              "pf_emulate": 0,
+              "pf_fast": 0,
+              "pf_fixed": 1,
+              "pf_guest": 0,
+              "pf_mmio_spte_created": 0,
+              "pf_spurious": 0,
+              "pf_taken": 1,
+              "preemption_other": 23,
+              "preemption_reported": 61,
+              "remote_tlb_flush": 0,
+              "remote_tlb_flush_requests": 0,
+              "req_event": 741427,
+              "request_irq_exits": 0,
+              "signal_exits": 0,
+              "tlb_flush": 0
+            },
+            "microk8s-node2": {
+              "blocking": 0,
+              "directed_yield_attempted": 0,
+              "directed_yield_successful": 0,
+              "exits": 2695227,
+              "fpu_reload": 3080,
+              "guest_mode": 0,
+              "halt_attempted_poll": 249923,
+              "halt_exits": 315639,
+              "halt_poll_fail_ns": 9194791293,
+              "halt_poll_invalid": 0,
+              "halt_poll_success_ns": 3761143399,
+              "halt_successful_poll": 72955,
+              "halt_wait_ns": 68006535257,
+              "halt_wakeup": 235494,
+              "host_state_reload": 238950,
+              "hypercalls": 0,
+              "insn_emulation": 181102,
+              "insn_emulation_fail": 0,
+              "invlpg": 0,
+              "io_exits": 3256,
+              "irq_exits": 1162430,
+              "irq_injections": 1252938,
+              "irq_window_exits": 151540,
+              "l1d_flush": 0,
+              "max_mmu_page_hash_collisions": 0,
+              "max_mmu_rmap_size": 0,
+              "mmio_exits": 0,
+              "mmu_cache_miss": 0,
+              "mmu_flooded": 0,
+              "mmu_pde_zapped": 0,
+              "mmu_pte_write": 0,
+              "mmu_recycled": 0,
+              "mmu_shadow_zapped": 0,
+              "mmu_unsync": 0,
+              "nested_run": 0,
+              "nmi_injections": 0,
+              "nmi_window_exits": 0,
+              "notify_window_exits": 0,
+              "nx_lpage_splits": 0,
+              "pages_1g": 0,
+              "pages_2m": 0,
+              "pages_4k": -1076,
+              "pf_emulate": 0,
+              "pf_fast": 0,
+              "pf_fixed": 84,
+              "pf_guest": 0,
+              "pf_mmio_spte_created": 0,
+              "pf_spurious": 0,
+              "pf_taken": 84,
+              "preemption_other": 43,
+              "preemption_reported": 1143,
+              "remote_tlb_flush": 1105,
+              "remote_tlb_flush_requests": 1160,
+              "req_event": 1759767,
+              "request_irq_exits": 0,
+              "signal_exits": 0,
+              "tlb_flush": 2140
+            },
+            "microk8s-node3": {
+              "blocking": 0,
+              "directed_yield_attempted": 0,
+              "directed_yield_successful": 0,
+              "exits": 2931260,
+              "fpu_reload": 7155,
+              "guest_mode": 0,
+              "halt_attempted_poll": 1129618,
+              "halt_exits": 1184676,
+              "halt_poll_fail_ns": 42655848115,
+              "halt_poll_invalid": 0,
+              "halt_poll_success_ns": 13872022563,
+              "halt_successful_poll": 371609,
+              "halt_wait_ns": 238321991245,
+              "halt_wakeup": 795161,
+              "host_state_reload": 799717,
+              "hypercalls": 0,
+              "insn_emulation": 497736,
+              "insn_emulation_fail": 0,
+              "invlpg": 0,
+              "io_exits": 7333,
+              "irq_exits": 291530,
+              "irq_injections": 1484000,
+              "irq_window_exits": 124560,
+              "l1d_flush": 0,
+              "max_mmu_page_hash_collisions": 0,
+              "max_mmu_rmap_size": 0,
+              "mmio_exits": 0,
+              "mmu_cache_miss": 0,
+              "mmu_flooded": 0,
+              "mmu_pde_zapped": 0,
+              "mmu_pte_write": 0,
+              "mmu_recycled": 0,
+              "mmu_shadow_zapped": 0,
+              "mmu_unsync": 0,
+              "nested_run": 0,
+              "nmi_injections": 0,
+              "nmi_window_exits": 0,
+              "notify_window_exits": 0,
+              "nx_lpage_splits": 0,
+              "pages_1g": 0,
+              "pages_2m": 0,
+              "pages_4k": -440,
+              "pf_emulate": 0,
+              "pf_fast": 0,
+              "pf_fixed": 416,
+              "pf_guest": 0,
+              "pf_mmio_spte_created": 0,
+              "pf_spurious": 0,
+              "pf_taken": 416,
+              "preemption_other": 36,
+              "preemption_reported": 55,
+              "remote_tlb_flush": 149,
+              "remote_tlb_flush_requests": 856,
+              "req_event": 2097966,
+              "request_irq_exits": 0,
+              "signal_exits": 0,
+              "tlb_flush": 224
+            }
+          }
+        },
+        "vms": {}
+      }
+    },
+    "vms": {
+      "foto_inicio": {
+        "t": 1795194235.2727988,
+        "dur_s": 1.342,
+        "t_fin": 1795194236.6146057
+      },
+      "foto_fin": {
+        "t": 1795194430.2724566,
+        "dur_s": 1.678,
+        "t_fin": 1795194431.9509447
+      },
+      "foto_inicio_antes_de_fase_estable": true,
+      "delta": {
+        "dt_s": 195.0,
+        "intervalo": [
+          1795194235.273,
+          1795194430.272
+        ],
+        "vms": {
+          "192.168.100.12": {
+            "driver_cpuidle": null,
+            "gobernador": null,
+            "cpu_s": {
+              "user": 196.41,
+              "nice": 0.0,
+              "system": 61.43,
+              "idle": 95.74,
+              "iowait": 0.22,
+              "irq": 0.0,
+              "softirq": 29.87,
+              "steal": 0.08,
+              "guest": 0.0
+            },
+            "interrupciones_por_s": 6870.2,
+            "cambios_de_contexto_por_s": 5340.6,
+            "irq_top_por_s": {
+              "LOC:_Local_timer_interrupts": 3102.6,
+              "30:_PCI-MSIX-0000:00:03.0_1-edge_virtio0-input.0": 1744.5,
+              "CAL:_Function_call_interrupts": 1025.6,
+              "31:_PCI-MSIX-0000:00:03.0_2-edge_virtio0-output.0": 967.4,
+              "27:_PCI-MSIX-0000:00:05.0_1-edge_virtio2-req.0": 11.5,
+              "28:_PCI-MSIX-0000:00:05.0_2-edge_virtio2-req.1": 9.7,
+              "RES:_Rescheduling_interrupts": 7.9,
+              "TLB:_TLB_shootdowns": 5.7,
+              "15:_IO-APIC_15-edge_ata_piix": 1.0,
+              "33:_PCI-MSIX-0000:00:07.0_1-edge_virtio4-input": 0.0
+            },
+            "cpuidle_residencia": {}
+          },
+          "192.168.100.11": {
+            "driver_cpuidle": null,
+            "gobernador": null,
+            "cpu_s": {
+              "user": 17.2,
+              "nice": 0.0,
+              "system": 12.49,
+              "idle": 350.07,
+              "iowait": 1.48,
+              "irq": 0.0,
+              "softirq": 1.77,
+              "steal": 0.36,
+              "guest": 0.0
+            },
+            "interrupciones_por_s": 3498.7,
+            "cambios_de_contexto_por_s": 5394.4,
+            "irq_top_por_s": {
+              "LOC:_Local_timer_interrupts": 2662.1,
+              "CAL:_Function_call_interrupts": 717.8,
+              "31:_PCI-MSIX-0000:00:03.0_2-edge_virtio0-output.0": 46.1,
+              "30:_PCI-MSIX-0000:00:03.0_1-edge_virtio0-input.0": 38.8,
+              "TLB:_TLB_shootdowns": 21.7,
+              "28:_PCI-MSIX-0000:00:05.0_2-edge_virtio2-req.1": 12.3,
+              "27:_PCI-MSIX-0000:00:05.0_1-edge_virtio2-req.0": 10.3,
+              "RES:_Rescheduling_interrupts": 10.3,
+              "15:_IO-APIC_15-edge_ata_piix": 1.0,
+              "33:_PCI-MSIX-0000:00:07.0_1-edge_virtio4-input": 0.0
+            },
+            "cpuidle_residencia": {}
+          },
+          "192.168.100.13": {
+            "driver_cpuidle": null,
+            "gobernador": null,
+            "cpu_s": {
+              "user": 15.63,
+              "nice": 0.0,
+              "system": 11.42,
+              "idle": 328.75,
+              "iowait": 1.37,
+              "irq": 0.0,
+              "softirq": 14.49,
+              "steal": 0.2,
+              "guest": 0.0
+            },
+            "interrupciones_por_s": 8155.6,
+            "cambios_de_contexto_por_s": 4370.2,
+            "irq_top_por_s": {
+              "31:_PCI-MSIX-0000:00:03.0_2-edge_virtio0-output.0": 2708.6,
+              "30:_PCI-MSIX-0000:00:03.0_1-edge_virtio0-input.0": 2632.9,
+              "LOC:_Local_timer_interrupts": 2171.2,
+              "CAL:_Function_call_interrupts": 611.7,
+              "TLB:_TLB_shootdowns": 17.7,
+              "27:_PCI-MSIX-0000:00:05.0_1-edge_virtio2-req.0": 10.9,
+              "28:_PCI-MSIX-0000:00:05.0_2-edge_virtio2-req.1": 10.4,
+              "RES:_Rescheduling_interrupts": 9.0,
+              "15:_IO-APIC_15-edge_ata_piix": 1.0,
+              "33:_PCI-MSIX-0000:00:07.0_1-edge_virtio4-input": 0.0
+            },
+            "cpuidle_residencia": {}
+          }
+        }
+      }
+    }
+  },
+  "muestreo_host": {
+    "periodo_s": 2,
+    "archivo": "data/campana/b01_microk8s/metadatos/microk8s_alta_r01.muestreo.json.gz",
+    "errores": 0,
+    "aborto_mb": 512,
+    "t_aborto": null,
+    "resumen": {
+      "muestras": 184,
+      "memavailable_min_mb": 1448,
+      "memoria_bajo_umbral": false,
+      "umbral_mb": 1024,
+      "fase_estable": {
+        "muestras": 90,
+        "memavailable_min_mb": 1484,
+        "pswpin_paginas": 0,
+        "pswpout_paginas": 1,
+        "temperatura_media_C": 51.77,
+        "temperatura_max_C": 53.25,
+        "frecuencia_media_mhz": 1626.38,
+        "fclk_mhz": {
+          "1200": 1.0
+        },
+        "socclk_mhz": {
+          "400": 1.0
+        },
+        "ppt_media_w": 6.59
+      }
+    }
+  },
+  "memoria_bajo_umbral": false,
+  "snapshot": null,
+  "ventana_prometheus": {
+    "archivo": "data/campana/b01_microk8s/prometheus-ventanas/microk8s_alta_r01.json.gz",
+    "series": 1691
+  },
+  "reloj_antes": {
+    "host": {
+      "Reference ID": "40B00374 (sa-south-1.clearnet.pw)",
+      "Stratum": "3",
+      "System time": "0.000949334 seconds fast of NTP time",
+      "Last offset": "+0.000973749 seconds",
+      "Leap status": "Normal"
+    },
+    "vms": {
+      "192.168.100.11": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000159910 seconds fast of NTP time",
+        "Last offset": "+0.000099400 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.12": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000151163 seconds fast of NTP time",
+        "Last offset": "+0.000079078 seconds",
+        "Leap status": "Normal"
+      },
+      "192.168.100.13": {
+        "Reference ID": "C0A86401 (coto-thinkpad-t14-gen2a)",
+        "Stratum": "4",
+        "System time": "0.000193862 seconds fast of NTP time",
+        "Last offset": "+0.000164280 seconds",
+        "Leap status": "Normal"
+      }
+    }
+  },
+  "reloj_espera_s": 5.8,
+  "estado_host": {
+    "brillo_pantalla": [
+      [
+        "45656",
+        "65535"
+      ]
+    ],
+    "sesion_grafica_activa": false,
+    "modo_medicion": true,
+    "unidades_fuera_de_la_lista": [],
+    "contenedores": {
+      "veth": [],
+      "lxc_monitor": []
+    },
+    "procesos_top_cpu": [
+      [
+        "qemu-system-x86",
+        "48,0"
+      ],
+      [
+        "qemu-system-x86",
+        "40,2"
+      ],
+      [
+        "qemu-system-x86",
+        "32,4"
+      ],
+      [
+        "kworker/u64:10-events_unbound",
+        "1,0"
+      ],
+      [
+        "top",
+        "1,0"
+      ],
+      [
+        "systemd",
+        "0,0"
+      ],
+      [
+        "kthreadd",
+        "0,0"
+      ],
+      [
+        "pool_workqueue_release",
+        "0,0"
+      ],
+      [
+        "kworker/R-rcu_gp",
+        "0,0"
+      ],
+      [
+        "kworker/R-sync_wq",
+        "0,0"
+      ]
+    ],
+    "perfil_energia": "balanced",
+    "boost_cpu": "0",
+    "memoria_disponible_mb": 1521,
+    "presion_memoria_some_avg60": "0.00",
+    "frecuencia_max_khz": "1901000",
+    "epp_cpu0": "balance_performance",
+    "perfil_plataforma": "balanced",
+    "corriente_alterna": true,
+    "gobernador_cpu": "powersave",
+    "temperatura_cpu_C": 49.5,
+    "carga_1min": 1.64404296875,
+    "ufw_habilitado": false,
+    "politica": {
+      "boost_cpu": 0,
+      "ip_host": "192.168.100.1",
+      "perfil_energia": "balanced",
+      "reloj": {
+        "espera_max_s": 180,
+        "umbral_host_ms": 100,
+        "umbral_vm_ms": 5
+      },
+      "servicios_requeridos": [
+        "chrony.service",
+        "node_exporter.service",
+        "prometheus.service",
+        "scaphandre.service",
+        "ssh.service"
+      ],
+      "unidades_permitidas": [
+        "chrony\\.service",
+        "node_exporter\\.service",
+        "prometheus\\.service",
+        "scaphandre\\.service",
+        "ssh\\.service",
+        "NetworkManager(-dispatcher)?\\.service",
+        "wpa_supplicant\\.service",
+        "dbus\\.(service|socket)",
+        "polkit\\.service",
+        "power-profiles-daemon\\.service",
+        "rsyslog\\.service",
+        "syslog\\.socket",
+        "networkd-dispatcher\\.service",
+        "(serial-)?getty@.*\\.service",
+        "user(-runtime-dir)?@.*\\.service",
+        "systemd-.*",
+        "(lib)?virt.*",
+        "dm-event\\.socket",
+        "lvm2-.*",
+        "uuidd\\.socket"
+      ]
+    }
+  },
+  "valida_para_campana": true,
+  "motivos_no_valida": [],
+  "fallo": null
+}

@@ -135,7 +135,7 @@ def revisar(ruta):
 
 def corridas_fallo(carpetas):
     return [r for c in carpetas for r in sorted(glob.glob(os.path.join(c, "metadatos", "*.json")))
-            if not r.endswith(".observador.json") and "fallo" in json.load(open(r))]
+            if not r.endswith(".observador.json") and json.load(open(r)).get("fallo")]
 
 
 def autotest():

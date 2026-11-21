@@ -1,0 +1,619 @@
+[0m[1mlocal_file.ansible_inventory: Refreshing state... [id=5a81c7702a8777e507e3ee1b9ed783635d6b0394][0m
+[0m[1mlibvirt_volume.base_image: Refreshing state... [id=/var/lib/libvirt/images/ubuntu-2404-base.qcow2][0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[2]: Refreshing state... [id=/var/lib/libvirt/images/microk8s-node3-cloudinit.iso;87f9e459-0902-45e9-b738-1df5f7974214][0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[1]: Refreshing state... [id=/var/lib/libvirt/images/microk8s-node2-cloudinit.iso;09f06203-dcea-439b-8eea-75c40ea0ccf8][0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[0]: Refreshing state... [id=/var/lib/libvirt/images/microk8s-node1-cloudinit.iso;e49fddf7-d9b9-46ab-89d2-0a77170fd72e][0m
+[0m[1mlibvirt_network.microk8s_network: Refreshing state... [id=a8481110-63ba-4e30-85e4-9c2a36c1f1bb][0m
+[0m[1mlibvirt_volume.vm_disk[1]: Refreshing state... [id=/var/lib/libvirt/images/microk8s-node2-disk.qcow2][0m
+[0m[1mlibvirt_volume.vm_disk[0]: Refreshing state... [id=/var/lib/libvirt/images/microk8s-node1-disk.qcow2][0m
+[0m[1mlibvirt_volume.vm_disk[2]: Refreshing state... [id=/var/lib/libvirt/images/microk8s-node3-disk.qcow2][0m
+[0m[1mlibvirt_domain.microk8s_node[0]: Refreshing state... [id=bfff126b-4e93-418e-8032-b90353df47d0][0m
+[0m[1mlibvirt_domain.microk8s_node[1]: Refreshing state... [id=a6df69d6-1e32-43eb-bc63-aab7ced0e6a9][0m
+[0m[1mlibvirt_domain.microk8s_node[2]: Refreshing state... [id=f7ceb0a1-744f-475a-b7a2-27e67fbb7362][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [31m-[0m destroy[0m
+
+Terraform will perform the following actions:
+
+[1m  # libvirt_cloudinit_disk.cloudinit[0][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/microk8s-node1-cloudinit.iso;e49fddf7-d9b9-46ab-89d2-0a77170fd72e" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "microk8s-node1-cloudinit.iso" [90m-> null[0m[0m
+      [31m-[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:20:00:01"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: microk8s-node1
+            fqdn: microk8s-node1.microk8s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` (docenas por
+            # arranque de cada daemon de MicroK8s) espera el timeout de DNS resolviendo
+            # el hostname propio (~15s cada vez, medido). Causa raíz de gran parte de
+            # la lentitud/inestabilidad vista en el join de nodos.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCQX327iQ4Iuqqn4bEPTW/4dAlAGr7nw7Zy8ecf+wryaAciv10V7UGKduzU5x8Yqah+gA5qShiq+eMSnoSYP4Fbis/A/+0aZDSG+mAcJBJFsVdm8LlKlRgPlL88DeAzx5PBDSXdmYkaA9PkfYxizVeNbOEfyP/q2cH1o5Sk/2HwRuIFFnY58R/Lu1kZQZkfFTfEX/yDdaEzpETONA2upZ5ANd4QjY5FgSK0jnX17HAkwb6Jm+lLfGSjk4HT9cbbOzisgLdQlDAokha/TKh7d0R/xPCd4g/GzJjEju3HpPb4HXIXju/PX0RwGgSy+66geJelVUqBvuJXOonIFcwt2KOTVYZpQ/YFdMcBTWh0E4Rb2kHYf3vk2mujObFWE5vCK9SR8J5aN+X4jRZEfj9hNq/FBFyr3rQjYIunGAsLCotEnQmh8ujXmrnlswJYOAccCgzxZByXku63MGbdEzbi8nftsg3OqKdvpTeY4nhnzQjkNlfRu2pgu6RxA8I9BMfy34RrTmi1DczUNAijoSQFDVVIUC/pcpaP+ez6OcaNIICnqh9PtIJOz8Zw8s0fHhAOgi6RtLIC62KE0NfHqC+veAIRMM1lsq1gXNNK5pkiTVgnTE2NWSya+EhFuaCzzfpktjfUmfb+JvchFxPaWvIdOOzEUbwsoey1W8d2HKvvE7WYIQ== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # libvirt_cloudinit_disk.cloudinit[1][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/microk8s-node2-cloudinit.iso;09f06203-dcea-439b-8eea-75c40ea0ccf8" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "microk8s-node2-cloudinit.iso" [90m-> null[0m[0m
+      [31m-[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:20:00:02"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: microk8s-node2
+            fqdn: microk8s-node2.microk8s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` (docenas por
+            # arranque de cada daemon de MicroK8s) espera el timeout de DNS resolviendo
+            # el hostname propio (~15s cada vez, medido). Causa raíz de gran parte de
+            # la lentitud/inestabilidad vista en el join de nodos.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCQX327iQ4Iuqqn4bEPTW/4dAlAGr7nw7Zy8ecf+wryaAciv10V7UGKduzU5x8Yqah+gA5qShiq+eMSnoSYP4Fbis/A/+0aZDSG+mAcJBJFsVdm8LlKlRgPlL88DeAzx5PBDSXdmYkaA9PkfYxizVeNbOEfyP/q2cH1o5Sk/2HwRuIFFnY58R/Lu1kZQZkfFTfEX/yDdaEzpETONA2upZ5ANd4QjY5FgSK0jnX17HAkwb6Jm+lLfGSjk4HT9cbbOzisgLdQlDAokha/TKh7d0R/xPCd4g/GzJjEju3HpPb4HXIXju/PX0RwGgSy+66geJelVUqBvuJXOonIFcwt2KOTVYZpQ/YFdMcBTWh0E4Rb2kHYf3vk2mujObFWE5vCK9SR8J5aN+X4jRZEfj9hNq/FBFyr3rQjYIunGAsLCotEnQmh8ujXmrnlswJYOAccCgzxZByXku63MGbdEzbi8nftsg3OqKdvpTeY4nhnzQjkNlfRu2pgu6RxA8I9BMfy34RrTmi1DczUNAijoSQFDVVIUC/pcpaP+ez6OcaNIICnqh9PtIJOz8Zw8s0fHhAOgi6RtLIC62KE0NfHqC+veAIRMM1lsq1gXNNK5pkiTVgnTE2NWSya+EhFuaCzzfpktjfUmfb+JvchFxPaWvIdOOzEUbwsoey1W8d2HKvvE7WYIQ== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # libvirt_cloudinit_disk.cloudinit[2][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_cloudinit_disk" "cloudinit" {
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/microk8s-node3-cloudinit.iso;87f9e459-0902-45e9-b738-1df5f7974214" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "microk8s-node3-cloudinit.iso" [90m-> null[0m[0m
+      [31m-[0m[0m network_config = <<-EOT
+            # Configuración de red para cloud-init (netplan).
+            # IP asignada por DHCP de libvirt vía reserva de host por MAC
+            # (ver `addresses` en network_interface, main.tf) — no se fija IP estática
+            # aquí, así el mismo template sirve para cualquier IP que reserve Terraform.
+            version: 2
+            ethernets:
+              ens3:
+                match:
+                  macaddress: "52:54:00:20:00:03"
+                set-name: "ens3"
+                dhcp4: true
+                dhcp6: false
+                optional: true
+        EOT [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m user_data      = <<-EOT
+            #cloud-config
+            # Configuración de cloud-init para cada máquina virtual
+            hostname: microk8s-node3
+            fqdn: microk8s-node3.microk8s-tesis.local
+            # Sin esto, /etc/hosts no tiene entrada propia y cada `sudo` (docenas por
+            # arranque de cada daemon de MicroK8s) espera el timeout de DNS resolviendo
+            # el hostname propio (~15s cada vez, medido). Causa raíz de gran parte de
+            # la lentitud/inestabilidad vista en el join de nodos.
+            manage_etc_hosts: true
+            
+            # Configuración del usuario del clúster con acceso sudo sin contraseña
+            users:
+              - name: jdelpino
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCQX327iQ4Iuqqn4bEPTW/4dAlAGr7nw7Zy8ecf+wryaAciv10V7UGKduzU5x8Yqah+gA5qShiq+eMSnoSYP4Fbis/A/+0aZDSG+mAcJBJFsVdm8LlKlRgPlL88DeAzx5PBDSXdmYkaA9PkfYxizVeNbOEfyP/q2cH1o5Sk/2HwRuIFFnY58R/Lu1kZQZkfFTfEX/yDdaEzpETONA2upZ5ANd4QjY5FgSK0jnX17HAkwb6Jm+lLfGSjk4HT9cbbOzisgLdQlDAokha/TKh7d0R/xPCd4g/GzJjEju3HpPb4HXIXju/PX0RwGgSy+66geJelVUqBvuJXOonIFcwt2KOTVYZpQ/YFdMcBTWh0E4Rb2kHYf3vk2mujObFWE5vCK9SR8J5aN+X4jRZEfj9hNq/FBFyr3rQjYIunGAsLCotEnQmh8ujXmrnlswJYOAccCgzxZByXku63MGbdEzbi8nftsg3OqKdvpTeY4nhnzQjkNlfRu2pgu6RxA8I9BMfy34RrTmi1DczUNAijoSQFDVVIUC/pcpaP+ez6OcaNIICnqh9PtIJOz8Zw8s0fHhAOgi6RtLIC62KE0NfHqC+veAIRMM1lsq1gXNNK5pkiTVgnTE2NWSya+EhFuaCzzfpktjfUmfb+JvchFxPaWvIdOOzEUbwsoey1W8d2HKvvE7WYIQ== coto@coto-thinkpad-t14-gen2a
+            
+            
+            # Deshabilitar acceso por contraseña SSH
+            ssh_pwauth: false
+            
+            # Actualizar índices de paquetes al iniciar
+            # Sin upgrade automático: un apt upgrade instalaría kernel/paquetes "más recientes"
+            # en cada reconstrucción, rompiendo la reproducibilidad de las mediciones energéticas
+            package_update: true
+            package_upgrade: false
+            
+            # Paquetes adicionales a instalar
+            packages:
+              - qemu-guest-agent
+            
+            # Comandos a ejecutar después de la configuración inicial
+            runcmd:
+              # Habilitar e iniciar el agente invitado de QEMU
+              - systemctl enable qemu-guest-agent
+              - systemctl start qemu-guest-agent
+              # Forzar aplicación de netplan y activación de la interfaz
+              - netplan generate
+              - netplan apply
+              - ip link set ens3 up
+              # Apagar el chequeo de red de motd-news/ESM en cada login: sin esto, una
+              # sesión SSH con tty (la que usa Ansible para el prompt de sudo) puede
+              # tardar >12s esperando esa llamada de red, disparando timeout de
+              # privilege escalation. También es ruido de red no determinístico que
+              # contaminaría las mediciones energéticas.
+              - chmod -x /etc/update-motd.d/50-motd-news /etc/update-motd.d/91-contract-ua-esm-status 2>/dev/null || true
+              - systemctl disable --now apt-news.service 2>/dev/null || true
+              - systemctl mask motd-news.service motd-news.timer 2>/dev/null || true
+              - systemctl disable --now ua-timer.timer 2>/dev/null || true
+            
+            # Mensaje final de cloud-init
+            final_message: "Cloud init finalizó en $UPTIME segundos"
+        EOT [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # libvirt_domain.microk8s_node[0][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_domain" "microk8s_node" {
+      [31m-[0m[0m arch        = "x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m autostart   = false [90m-> null[0m[0m
+      [31m-[0m[0m cloudinit   = "/var/lib/libvirt/images/microk8s-node1-cloudinit.iso;e49fddf7-d9b9-46ab-89d2-0a77170fd72e" [90m-> null[0m[0m
+      [31m-[0m[0m cmdline     = [] [90m-> null[0m[0m
+      [31m-[0m[0m emulator    = "/usr/bin/qemu-system-x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m fw_cfg_name = "opt/com.coreos/config" [90m-> null[0m[0m
+      [31m-[0m[0m id          = "bfff126b-4e93-418e-8032-b90353df47d0" [90m-> null[0m[0m
+      [31m-[0m[0m machine     = "ubuntu" [90m-> null[0m[0m
+      [31m-[0m[0m memory      = 4096 [90m-> null[0m[0m
+      [31m-[0m[0m name        = "microk8s-node1" [90m-> null[0m[0m
+      [31m-[0m[0m qemu_agent  = false [90m-> null[0m[0m
+      [31m-[0m[0m running     = true [90m-> null[0m[0m
+      [31m-[0m[0m type        = "kvm" [90m-> null[0m[0m
+      [31m-[0m[0m vcpu        = 2 [90m-> null[0m[0m
+        [90m# (3 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m console {
+          [31m-[0m[0m source_host    = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m source_service = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_port    = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_type    = "serial" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "pty" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m cpu {
+          [31m-[0m[0m mode = "custom" [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m disk {
+          [31m-[0m[0m scsi         = false [90m-> null[0m[0m
+          [31m-[0m[0m volume_id    = "/var/lib/libvirt/images/microk8s-node1-disk.qcow2" [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m graphics {
+          [31m-[0m[0m autoport       = true [90m-> null[0m[0m
+          [31m-[0m[0m listen_address = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m listen_type    = "address" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "spice" [90m-> null[0m[0m
+          [31m-[0m[0m websocket      = 0 [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m network_interface {
+          [31m-[0m[0m addresses      = [
+              [31m-[0m[0m "192.168.100.11",
+            ] [90m-> null[0m[0m
+          [31m-[0m[0m hostname       = "microk8s-node1" [90m-> null[0m[0m
+          [31m-[0m[0m mac            = "52:54:00:20:00:01" [90m-> null[0m[0m
+          [31m-[0m[0m network_id     = "a8481110-63ba-4e30-85e4-9c2a36c1f1bb" [90m-> null[0m[0m
+          [31m-[0m[0m network_name   = "microk8s-tesis" [90m-> null[0m[0m
+          [31m-[0m[0m wait_for_lease = true [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m xml {
+          [31m-[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="2"/>
+                      <vcpupin vcpu="1" cpuset="3"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT [90m-> null[0m[0m
+        }
+    }
+
+[1m  # libvirt_domain.microk8s_node[1][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_domain" "microk8s_node" {
+      [31m-[0m[0m arch        = "x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m autostart   = false [90m-> null[0m[0m
+      [31m-[0m[0m cloudinit   = "/var/lib/libvirt/images/microk8s-node2-cloudinit.iso;09f06203-dcea-439b-8eea-75c40ea0ccf8" [90m-> null[0m[0m
+      [31m-[0m[0m cmdline     = [] [90m-> null[0m[0m
+      [31m-[0m[0m emulator    = "/usr/bin/qemu-system-x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m fw_cfg_name = "opt/com.coreos/config" [90m-> null[0m[0m
+      [31m-[0m[0m id          = "a6df69d6-1e32-43eb-bc63-aab7ced0e6a9" [90m-> null[0m[0m
+      [31m-[0m[0m machine     = "ubuntu" [90m-> null[0m[0m
+      [31m-[0m[0m memory      = 4096 [90m-> null[0m[0m
+      [31m-[0m[0m name        = "microk8s-node2" [90m-> null[0m[0m
+      [31m-[0m[0m qemu_agent  = false [90m-> null[0m[0m
+      [31m-[0m[0m running     = true [90m-> null[0m[0m
+      [31m-[0m[0m type        = "kvm" [90m-> null[0m[0m
+      [31m-[0m[0m vcpu        = 2 [90m-> null[0m[0m
+        [90m# (3 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m console {
+          [31m-[0m[0m source_host    = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m source_service = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_port    = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_type    = "serial" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "pty" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m cpu {
+          [31m-[0m[0m mode = "custom" [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m disk {
+          [31m-[0m[0m scsi         = false [90m-> null[0m[0m
+          [31m-[0m[0m volume_id    = "/var/lib/libvirt/images/microk8s-node2-disk.qcow2" [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m graphics {
+          [31m-[0m[0m autoport       = true [90m-> null[0m[0m
+          [31m-[0m[0m listen_address = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m listen_type    = "address" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "spice" [90m-> null[0m[0m
+          [31m-[0m[0m websocket      = 0 [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m network_interface {
+          [31m-[0m[0m addresses      = [
+              [31m-[0m[0m "192.168.100.12",
+            ] [90m-> null[0m[0m
+          [31m-[0m[0m hostname       = "microk8s-node2" [90m-> null[0m[0m
+          [31m-[0m[0m mac            = "52:54:00:20:00:02" [90m-> null[0m[0m
+          [31m-[0m[0m network_id     = "a8481110-63ba-4e30-85e4-9c2a36c1f1bb" [90m-> null[0m[0m
+          [31m-[0m[0m network_name   = "microk8s-tesis" [90m-> null[0m[0m
+          [31m-[0m[0m wait_for_lease = true [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m xml {
+          [31m-[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="4"/>
+                      <vcpupin vcpu="1" cpuset="5"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT [90m-> null[0m[0m
+        }
+    }
+
+[1m  # libvirt_domain.microk8s_node[2][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_domain" "microk8s_node" {
+      [31m-[0m[0m arch        = "x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m autostart   = false [90m-> null[0m[0m
+      [31m-[0m[0m cloudinit   = "/var/lib/libvirt/images/microk8s-node3-cloudinit.iso;87f9e459-0902-45e9-b738-1df5f7974214" [90m-> null[0m[0m
+      [31m-[0m[0m cmdline     = [] [90m-> null[0m[0m
+      [31m-[0m[0m emulator    = "/usr/bin/qemu-system-x86_64" [90m-> null[0m[0m
+      [31m-[0m[0m fw_cfg_name = "opt/com.coreos/config" [90m-> null[0m[0m
+      [31m-[0m[0m id          = "f7ceb0a1-744f-475a-b7a2-27e67fbb7362" [90m-> null[0m[0m
+      [31m-[0m[0m machine     = "ubuntu" [90m-> null[0m[0m
+      [31m-[0m[0m memory      = 4096 [90m-> null[0m[0m
+      [31m-[0m[0m name        = "microk8s-node3" [90m-> null[0m[0m
+      [31m-[0m[0m qemu_agent  = false [90m-> null[0m[0m
+      [31m-[0m[0m running     = true [90m-> null[0m[0m
+      [31m-[0m[0m type        = "kvm" [90m-> null[0m[0m
+      [31m-[0m[0m vcpu        = 2 [90m-> null[0m[0m
+        [90m# (3 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m console {
+          [31m-[0m[0m source_host    = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m source_service = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_port    = "0" [90m-> null[0m[0m
+          [31m-[0m[0m target_type    = "serial" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "pty" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m cpu {
+          [31m-[0m[0m mode = "custom" [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m disk {
+          [31m-[0m[0m scsi         = false [90m-> null[0m[0m
+          [31m-[0m[0m volume_id    = "/var/lib/libvirt/images/microk8s-node3-disk.qcow2" [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m graphics {
+          [31m-[0m[0m autoport       = true [90m-> null[0m[0m
+          [31m-[0m[0m listen_address = "127.0.0.1" [90m-> null[0m[0m
+          [31m-[0m[0m listen_type    = "address" [90m-> null[0m[0m
+          [31m-[0m[0m type           = "spice" [90m-> null[0m[0m
+          [31m-[0m[0m websocket      = 0 [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m network_interface {
+          [31m-[0m[0m addresses      = [
+              [31m-[0m[0m "192.168.100.13",
+            ] [90m-> null[0m[0m
+          [31m-[0m[0m hostname       = "microk8s-node3" [90m-> null[0m[0m
+          [31m-[0m[0m mac            = "52:54:00:20:00:03" [90m-> null[0m[0m
+          [31m-[0m[0m network_id     = "a8481110-63ba-4e30-85e4-9c2a36c1f1bb" [90m-> null[0m[0m
+          [31m-[0m[0m network_name   = "microk8s-tesis" [90m-> null[0m[0m
+          [31m-[0m[0m wait_for_lease = true [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m xml {
+          [31m-[0m[0m xslt = <<-EOT
+                <?xml version="1.0"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output omit-xml-declaration="yes"/>
+                  <xsl:template match="@*|node()">
+                    <xsl:copy>
+                      <xsl:apply-templates select="@*|node()"/>
+                    </xsl:copy>
+                  </xsl:template>
+                  <xsl:template match="/domain/vcpu">
+                    <xsl:copy-of select="."/>
+                    <cputune>
+                      <vcpupin vcpu="0" cpuset="6"/>
+                      <vcpupin vcpu="1" cpuset="7"/>
+                    </cputune>
+                  </xsl:template>
+                </xsl:stylesheet>
+            EOT [90m-> null[0m[0m
+        }
+    }
+
+[1m  # libvirt_network.microk8s_network[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_network" "microk8s_network" {
+      [31m-[0m[0m addresses = [
+          [31m-[0m[0m "192.168.100.0/24",
+        ] [90m-> null[0m[0m
+      [31m-[0m[0m autostart = true [90m-> null[0m[0m
+      [31m-[0m[0m bridge    = "virbr1" [90m-> null[0m[0m
+      [31m-[0m[0m domain    = "microk8s-tesis.local" [90m-> null[0m[0m
+      [31m-[0m[0m id        = "a8481110-63ba-4e30-85e4-9c2a36c1f1bb" [90m-> null[0m[0m
+      [31m-[0m[0m mode      = "nat" [90m-> null[0m[0m
+      [31m-[0m[0m name      = "microk8s-tesis" [90m-> null[0m[0m
+
+      [31m-[0m[0m dhcp {
+          [31m-[0m[0m enabled = true [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m dns {
+          [31m-[0m[0m enabled    = true [90m-> null[0m[0m
+          [31m-[0m[0m local_only = false [90m-> null[0m[0m
+        }
+    }
+
+[1m  # libvirt_volume.base_image[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_volume" "base_image" {
+      [31m-[0m[0m format = "qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m id     = "/var/lib/libvirt/images/ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m name   = "ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m pool   = "default" [90m-> null[0m[0m
+      [31m-[0m[0m size   = 3758096384 [90m-> null[0m[0m
+      [31m-[0m[0m source = "/home/coto/vmstore/images/noble-server-cloudimg-amd64.img" [90m-> null[0m[0m
+    }
+
+[1m  # libvirt_volume.vm_disk[0][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_volume" "vm_disk" {
+      [31m-[0m[0m base_volume_id = "/var/lib/libvirt/images/ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m format         = "qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/microk8s-node1-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "microk8s-node1-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m size           = 53687091200 [90m-> null[0m[0m
+    }
+
+[1m  # libvirt_volume.vm_disk[1][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_volume" "vm_disk" {
+      [31m-[0m[0m base_volume_id = "/var/lib/libvirt/images/ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m format         = "qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/microk8s-node2-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "microk8s-node2-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m size           = 53687091200 [90m-> null[0m[0m
+    }
+
+[1m  # libvirt_volume.vm_disk[2][0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "libvirt_volume" "vm_disk" {
+      [31m-[0m[0m base_volume_id = "/var/lib/libvirt/images/ubuntu-2404-base.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m format         = "qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m id             = "/var/lib/libvirt/images/microk8s-node3-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m name           = "microk8s-node3-disk.qcow2" [90m-> null[0m[0m
+      [31m-[0m[0m pool           = "default" [90m-> null[0m[0m
+      [31m-[0m[0m size           = 53687091200 [90m-> null[0m[0m
+    }
+
+[1m  # local_file.ansible_inventory[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "local_file" "ansible_inventory" {
+      [31m-[0m[0m content              = <<-EOT
+            # Grupo de servidores microk8s
+            [microk8s_servers]
+            microk8s-node1 ansible_host=192.168.100.11
+            microk8s-node2 ansible_host=192.168.100.12
+            microk8s-node3 ansible_host=192.168.100.13
+            
+            # Grupo principal que incluye todos los servidores microk8s
+            [microk8s_cluster:children]
+            microk8s_servers
+            
+            # Variables compartidas para el grupo microk8s_cluster
+            [microk8s_cluster:vars]
+            ansible_user=jdelpino
+            cluster_user=jdelpino
+            vip_address=192.168.100.100
+            ansible_ssh_private_key_file=../keys/key
+        EOT [90m-> null[0m[0m
+      [31m-[0m[0m content_base64sha256 = "Cdg54C0tpX9qER/1P+QDLR2nPw72BzvPRh6E+0duk9A=" [90m-> null[0m[0m
+      [31m-[0m[0m content_base64sha512 = "2QgdqwKqmKM9DXa9m8HQrRSVYMggbb6Osae5NsQnV4R7cMbZVj4cjsYJ6VK0TPCMQz3chaTUziBEMdtWHQJ8BQ==" [90m-> null[0m[0m
+      [31m-[0m[0m content_md5          = "aa3eb3fd9aaa961a67762b702ecaccf7" [90m-> null[0m[0m
+      [31m-[0m[0m content_sha1         = "5a81c7702a8777e507e3ee1b9ed783635d6b0394" [90m-> null[0m[0m
+      [31m-[0m[0m content_sha256       = "09d839e02d2da57f6a111ff53fe4032d1da73f0ef6073bcf461e84fb476e93d0" [90m-> null[0m[0m
+      [31m-[0m[0m content_sha512       = "d9081dab02aa98a33d0d76bd9bc1d0ad149560c8206dbe8eb1a7b936c42757847b70c6d9563e1c8ec609e952b44cf08c433ddc85a4d4ce204431db561d027c05" [90m-> null[0m[0m
+      [31m-[0m[0m directory_permission = "0777" [90m-> null[0m[0m
+      [31m-[0m[0m file_permission      = "0777" [90m-> null[0m[0m
+      [31m-[0m[0m filename             = "./../ansible/inventory.ini" [90m-> null[0m[0m
+      [31m-[0m[0m id                   = "5a81c7702a8777e507e3ee1b9ed783635d6b0394" [90m-> null[0m[0m
+    }
+
+[1mPlan:[0m [0m0 to add, 0 to change, 12 to destroy.
+
+Changes to Outputs:
+  [31m-[0m[0m vip_address = "192.168.100.100" [90m-> null[0m[0m
+  [31m-[0m[0m vm_ips      = {
+      [31m-[0m[0m microk8s-node1 = "192.168.100.11"
+      [31m-[0m[0m microk8s-node2 = "192.168.100.12"
+      [31m-[0m[0m microk8s-node3 = "192.168.100.13"
+    } [90m-> null[0m[0m
+[0m[1mlocal_file.ansible_inventory: Destroying... [id=5a81c7702a8777e507e3ee1b9ed783635d6b0394][0m[0m
+[0m[1mlocal_file.ansible_inventory: Destruction complete after 0s[0m
+[0m[1mlibvirt_domain.microk8s_node[0]: Destroying... [id=bfff126b-4e93-418e-8032-b90353df47d0][0m[0m
+[0m[1mlibvirt_domain.microk8s_node[2]: Destroying... [id=f7ceb0a1-744f-475a-b7a2-27e67fbb7362][0m[0m
+[0m[1mlibvirt_domain.microk8s_node[1]: Destroying... [id=a6df69d6-1e32-43eb-bc63-aab7ced0e6a9][0m[0m
+[0m[1mlibvirt_domain.microk8s_node[2]: Destruction complete after 0s[0m
+[0m[1mlibvirt_domain.microk8s_node[0]: Destruction complete after 0s[0m
+[0m[1mlibvirt_domain.microk8s_node[1]: Destruction complete after 0s[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[2]: Destroying... [id=/var/lib/libvirt/images/microk8s-node3-cloudinit.iso;87f9e459-0902-45e9-b738-1df5f7974214][0m[0m
+[0m[1mlibvirt_volume.vm_disk[2]: Destroying... [id=/var/lib/libvirt/images/microk8s-node3-disk.qcow2][0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[0]: Destroying... [id=/var/lib/libvirt/images/microk8s-node1-cloudinit.iso;e49fddf7-d9b9-46ab-89d2-0a77170fd72e][0m[0m
+[0m[1mlibvirt_volume.vm_disk[1]: Destroying... [id=/var/lib/libvirt/images/microk8s-node2-disk.qcow2][0m[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[1]: Destroying... [id=/var/lib/libvirt/images/microk8s-node2-cloudinit.iso;09f06203-dcea-439b-8eea-75c40ea0ccf8][0m[0m
+[0m[1mlibvirt_volume.vm_disk[0]: Destroying... [id=/var/lib/libvirt/images/microk8s-node1-disk.qcow2][0m[0m
+[0m[1mlibvirt_network.microk8s_network: Destroying... [id=a8481110-63ba-4e30-85e4-9c2a36c1f1bb][0m[0m
+[0m[1mlibvirt_volume.vm_disk[1]: Destruction complete after 1s[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[1]: Destruction complete after 1s[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[2]: Destruction complete after 1s[0m
+[0m[1mlibvirt_cloudinit_disk.cloudinit[0]: Destruction complete after 1s[0m
+[0m[1mlibvirt_volume.vm_disk[2]: Destruction complete after 1s[0m
+[0m[1mlibvirt_volume.vm_disk[0]: Destruction complete after 1s[0m
+[0m[1mlibvirt_volume.base_image: Destroying... [id=/var/lib/libvirt/images/ubuntu-2404-base.qcow2][0m[0m
+[0m[1mlibvirt_volume.base_image: Destruction complete after 0s[0m
+[0m[1mlibvirt_network.microk8s_network: Destruction complete after 6s[0m
+[0m[1m[32m
+Destroy complete! Resources: 12 destroyed.[0m

@@ -1,0 +1,9 @@
+[2026-11-20 12:10:02] -              jornada_inicio         ok            commit=105a7a6dbd830b62a2078d5445c6d54422245fb8 plan=data/campana/plan_campana_v1.json bloques=1-3 tipo=definitiva simulacro=False reanudar=False
+[2026-11-20 12:10:02] b01_k3s        tramo_inicio           ok            ciclo=101
+[2026-11-20 12:10:21] b01_k3s        etiqueta               ok           19.1 s t_api=1795187403.6861942 t_up=1795187421.7581542
+[2026-11-20 12:10:22] b01_k3s        memoria                ok           0.8 s swapfree_antes=2097148 memavailable_despues=14134780
+[2026-11-20 12:15:24] b01_k3s        referencia             ok           301.6 s potencia_W=2.166
+[2026-11-20 12:22:04] b01_k3s        construccion           error        400.1 s intento=1 energia_J=2259.472
+[2026-11-20 12:22:04] b01_k3s        verificacion           error         
+[2026-11-20 12:22:10] b01_k3s        destruccion_reintento  ok           6.5 s 
+[2026-11-20 12:24:05] b01_k3s        interrumpido           SIGINT        
